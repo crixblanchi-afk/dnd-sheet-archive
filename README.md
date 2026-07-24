@@ -1,7 +1,7 @@
 # D&D Sheet Archive
 
-Archivio Flutter per schede personaggio D&D 5e, disponibile su Android, Linux
-e Web.
+Archivio Flutter per schede personaggio D&D 5e, disponibile su Android, Linux,
+Windows e Web.
 I dati vengono salvati localmente e possono essere sincronizzati manualmente
 con Google Drive dal menu cloud nella schermata principale.
 
@@ -79,6 +79,14 @@ Build AppImage ARM64 da una macchina x86_64 con Docker:
 ./scripts/build_appimage_arm64.sh
 ```
 
+Avvio Windows da PowerShell:
+
+```powershell
+flutter run -d windows `
+  --dart-define="GOOGLE_DESKTOP_CLIENT_ID=CLIENT_ID_DESKTOP.apps.googleusercontent.com" `
+  --dart-define="GOOGLE_DESKTOP_CLIENT_SECRET=CLIENT_SECRET_DESKTOP"
+```
+
 Lo script crea una build release, prepara l'AppDir, include le dipendenze
 native rilevate e salva il risultato eseguibile in `dist/`. Se `linuxdeploy` e
 `appimagetool` non sono installati, scarica le AppImage ufficiali nella cache
@@ -98,8 +106,9 @@ vanno inseriti nel repository.
 
 Quando viene pubblicata una GitHub Release con destinazione `main`, GitHub
 Actions esegue analisi e test, crea un APK Android firmato e una AppImage Linux
-x86_64, quindi allega entrambi i file alla release. Credenziali OAuth e chiave
-di firma Android vengono lette esclusivamente dai GitHub Actions Secrets.
+x86_64, crea un archivio Windows x64, quindi allega i file alla release.
+Credenziali OAuth e chiave di firma Android vengono lette esclusivamente dai
+GitHub Actions Secrets.
 
 ## Sviluppo
 

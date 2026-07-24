@@ -102,19 +102,22 @@ class GoogleDriveSyncService extends ChangeNotifier
 
   GoogleDriveSyncState get state => _state;
   GoogleSignInAccount? get currentUser => _currentUser;
-  bool get isConnected => _isLinuxDesktop
+  bool get isConnected => _isDesktop
       ? _desktopAuth.isConnected
       : _currentUser != null || _hasAuthorization;
   DateTime? get lastSyncAt => _lastSyncAt;
   String? get errorMessage => _errorMessage;
   bool get hasPendingChanges => _syncTracker.hasPendingChanges;
-  bool get _isLinuxDesktop =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
+  bool get _isDesktop =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.windows);
   bool get isConfigured {
     if (kIsWeb) return _webClientId.isNotEmpty;
     return switch (defaultTargetPlatform) {
       TargetPlatform.android => _androidServerClientId.isNotEmpty,
       TargetPlatform.linux => _desktopAuth.isConfigured,
+      TargetPlatform.windows => _desktopAuth.isConfigured,
       _ => false,
     };
   }
@@ -126,7 +129,7 @@ class GoogleDriveSyncService extends ChangeNotifier
       notifyListeners();
       return;
     }
-    if (_isLinuxDesktop) {
+    if (_isDesktop) {
       await _desktopAuth.restore();
       if (_desktopAuth.isConnected) notifyListeners();
       return;
@@ -215,7 +218,7 @@ class GoogleDriveSyncService extends ChangeNotifier
     if (!isConfigured) {
       throw const GoogleDriveConfigurationMissing();
     }
-    if (!_isLinuxDesktop && !_signInInitialized) {
+    if (!_isDesktop && !_signInInitialized) {
       throw StateError(
         _errorMessage ?? 'Inizializzazione di Google Drive non riuscita.',
       );
@@ -228,7 +231,7 @@ class GoogleDriveSyncService extends ChangeNotifier
     _errorMessage = null;
     notifyListeners();
     try {
-      if (_isLinuxDesktop) {
+      if (_isDesktop) {
         try {
           if (!interactive && !_desktopAuth.isConnected) {
             throw const GoogleDriveSignInRequired();
@@ -413,7 +416,7 @@ class GoogleDriveSyncService extends ChangeNotifier
 
   Future<void> signOut() async {
     await _initialization;
-    if (_isLinuxDesktop) {
+    if (_isDesktop) {
       await _desktopAuth.signOut();
       _state = GoogleDriveSyncState.idle;
       _errorMessage = null;

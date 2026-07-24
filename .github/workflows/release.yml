@@ -1,19 +1,23 @@
 name: Build release
 
 on:
+  pull_request:
+    branches: [main]
   release:
     types: [published]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: release-${{ github.event.release.tag_name }}
+  group: ${{ github.workflow }}-${{ github.event.release.tag_name || github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
   test:
-    if: github.event.release.target_commitish == 'main'
+    if: >-
+      github.event_name == 'pull_request' ||
+      github.event.release.target_commitish == 'main'
     runs-on: ubuntu-latest
     steps:
       - name: Check out release
@@ -39,6 +43,9 @@ jobs:
 
   android:
     needs: test
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     env:
       GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
@@ -91,6 +98,9 @@ jobs:
 
   linux:
     needs: test
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     env:
       GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
@@ -131,4 +141,71 @@ jobs:
         run: >-
           gh release upload "${{ github.event.release.tag_name }}"
           dist/*.AppImage
+          --clobber
+
+  windows:
+    needs: test
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    env:
+      GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.GOOGLE_DESKTOP_CLIENT_ID }}
+      GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.GOOGLE_DESKTOP_CLIENT_SECRET }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Check out release
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.9
+          channel: stable
+          cache: true
+
+      - name: Build Windows application
+        shell: pwsh
+        run: |
+          flutter pub get
+          flutter build windows --release `
+            --dart-define="GOOGLE_DESKTOP_CLIENT_ID=$env:GOOGLE_DESKTOP_CLIENT_ID" `
+            --dart-define="GOOGLE_DESKTOP_CLIENT_SECRET=$env:GOOGLE_DESKTOP_CLIENT_SECRET"
+
+      - name: Package Windows application
+        if: github.event_name == 'release'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $visualStudio = & $vswhere -latest -products * -property installationPath
+          $redistVersion = (
+            Get-Content "$visualStudio\VC\Auxiliary\Build\Microsoft.VCRedistVersion.default.txt"
+          ).Trim()
+          $crtDirectory = (
+            "$visualStudio\VC\Redist\MSVC\$redistVersion\x64\Microsoft.VC143.CRT"
+          )
+          $releaseDirectory = 'build/windows/x64/runner/Release'
+          $runtimeLibraries = @(
+            "$crtDirectory/msvcp140.dll"
+            "$crtDirectory/vcruntime140.dll"
+            "$crtDirectory/vcruntime140_1.dll"
+          )
+          Copy-Item -Path $runtimeLibraries -Destination $releaseDirectory
+
+          $safeTag = $env:RELEASE_TAG -replace '[\\/:*?"<>|]', '-'
+          $archive = "dnd-sheet-archive-$safeTag-windows-x64.zip"
+          Compress-Archive `
+            -Path "$releaseDirectory/*" `
+            -DestinationPath $archive
+          "WINDOWS_ARCHIVE=$archive" >> $env:GITHUB_ENV
+
+      - name: Attach Windows archive to release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload "$env:RELEASE_TAG"
+          "$env:WINDOWS_ARCHIVE"
           --clobber
