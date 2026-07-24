@@ -108,7 +108,8 @@ Quando viene pubblicata una GitHub Release con destinazione `main`, GitHub
 Actions esegue analisi e test, crea un APK Android firmato e una AppImage Linux
 x86_64, una AppImage Linux ARM64, un archivio Windows x64 e un bundle Web,
 quindi allega i file alla release. Credenziali OAuth e chiave di firma Android
-vengono lette esclusivamente dai GitHub Actions Secrets.
+vengono lette esclusivamente dai GitHub Actions Secrets. La AppImage ARM64
+viene compilata direttamente su un runner GitHub ARM64 nativo.
 
 ## Sviluppo
 
