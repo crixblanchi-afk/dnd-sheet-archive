@@ -106,9 +106,9 @@ vanno inseriti nel repository.
 
 Quando viene pubblicata una GitHub Release con destinazione `main`, GitHub
 Actions esegue analisi e test, crea un APK Android firmato e una AppImage Linux
-x86_64, crea un archivio Windows x64, quindi allega i file alla release.
-Credenziali OAuth e chiave di firma Android vengono lette esclusivamente dai
-GitHub Actions Secrets.
+x86_64, una AppImage Linux ARM64, un archivio Windows x64 e un bundle Web,
+quindi allega i file alla release. Credenziali OAuth e chiave di firma Android
+vengono lette esclusivamente dai GitHub Actions Secrets.
 
 ## Sviluppo
 

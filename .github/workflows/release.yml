@@ -143,6 +143,80 @@ jobs:
           dist/*.AppImage
           --clobber
 
+  linux-arm64:
+    needs: test
+    if: >-
+      github.event_name == 'release' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+      GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.GOOGLE_DESKTOP_CLIENT_ID }}
+      GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.GOOGLE_DESKTOP_CLIENT_SECRET }}
+    steps:
+      - name: Check out release
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Build ARM64 AppImage
+        run: ./scripts/build_appimage_arm64.sh
+
+      - name: Attach ARM64 AppImage to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload "${{ github.event.release.tag_name }}"
+          dist/*-aarch64.AppImage
+          --clobber
+
+  web:
+    needs: test
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Check out release
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.9
+          channel: stable
+          cache: true
+
+      - name: Build Web application
+        run: |
+          flutter pub get
+          flutter build web --release \
+            --dart-define="GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID"
+
+      - name: Package Web application
+        if: github.event_name == 'release'
+        run: |
+          safe_tag="${RELEASE_TAG//\//-}"
+          archive="dnd-sheet-archive-$safe_tag-web.tar.gz"
+          tar -C build/web -czf "$archive" .
+          echo "WEB_ARCHIVE=$archive" >> "$GITHUB_ENV"
+
+      - name: Attach Web archive to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload "$RELEASE_TAG"
+          "$WEB_ARCHIVE"
+          --clobber
+
   windows:
     needs: test
     permissions:
