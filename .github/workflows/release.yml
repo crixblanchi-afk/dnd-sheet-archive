@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -44,8 +45,6 @@ jobs:
   android:
     needs: test
     if: github.event_name == 'release'
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
     env:
       GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
@@ -57,6 +56,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -88,19 +88,17 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk \
             "dnd-sheet-archive-${{ github.event.release.tag_name }}-android.apk"
 
-      - name: Attach APK to release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release upload "${{ github.event.release.tag_name }}"
-          "dnd-sheet-archive-${{ github.event.release.tag_name }}-android.apk"
-          --clobber
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-android
+          path: dnd-sheet-archive-${{ github.event.release.tag_name }}-android.apk
+          if-no-files-found: error
+          retention-days: 1
 
   linux:
     needs: test
     if: github.event_name == 'release'
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
     env:
       GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
@@ -111,6 +109,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
 
       - name: Install Linux build dependencies
         run: |
@@ -135,21 +134,17 @@ jobs:
           flutter pub get
           ./scripts/build_appimage.sh
 
-      - name: Attach AppImage to release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release upload "${{ github.event.release.tag_name }}"
-          dist/*.AppImage
-          --clobber
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-linux-x64
+          path: dist/*-x86_64.AppImage
+          if-no-files-found: error
+          retention-days: 1
 
   linux-arm64:
     needs: test
-    if: >-
-      github.event_name == 'release' ||
-      github.event.pull_request.head.repo.full_name == github.repository
-    permissions:
-      contents: write
+    if: github.event_name == 'release'
     runs-on: ubuntu-24.04-arm
     container:
       image: ghcr.io/cirruslabs/flutter:3.41.9
@@ -162,6 +157,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
 
       - name: Install Linux build dependencies
         run: |
@@ -189,28 +185,27 @@ jobs:
           flutter pub get
           ./scripts/build_appimage.sh
 
-      - name: Attach ARM64 AppImage to release
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release upload "${{ github.event.release.tag_name }}"
-          dist/*-aarch64.AppImage
-          --clobber
+      - name: Upload ARM64 AppImage artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-linux-arm64
+          path: dist/*-aarch64.AppImage
+          if-no-files-found: error
+          retention-days: 1
 
   web:
     needs: test
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
     env:
-      GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+      GOOGLE_WEB_CLIENT_ID: >-
+        ${{ github.event_name == 'release' && secrets.GOOGLE_WEB_CLIENT_ID || '' }}
       RELEASE_TAG: ${{ github.event.release.tag_name }}
     steps:
       - name: Check out release
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -233,29 +228,30 @@ jobs:
           tar -C build/web -czf "$archive" .
           echo "WEB_ARCHIVE=$archive" >> "$GITHUB_ENV"
 
-      - name: Attach Web archive to release
+      - name: Upload Web archive artifact
         if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release upload "$RELEASE_TAG"
-          "$WEB_ARCHIVE"
-          --clobber
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-web
+          path: ${{ env.WEB_ARCHIVE }}
+          if-no-files-found: error
+          retention-days: 1
 
   windows:
     needs: test
-    permissions:
-      contents: write
     runs-on: windows-latest
     env:
-      GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.GOOGLE_DESKTOP_CLIENT_ID }}
-      GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.GOOGLE_DESKTOP_CLIENT_SECRET }}
+      GOOGLE_DESKTOP_CLIENT_ID: >-
+        ${{ github.event_name == 'release' && secrets.GOOGLE_DESKTOP_CLIENT_ID || '' }}
+      GOOGLE_DESKTOP_CLIENT_SECRET: >-
+        ${{ github.event_name == 'release' && secrets.GOOGLE_DESKTOP_CLIENT_SECRET || '' }}
       RELEASE_TAG: ${{ github.event.release.tag_name }}
     steps:
       - name: Check out release
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -299,12 +295,33 @@ jobs:
             -DestinationPath $archive
           "WINDOWS_ARCHIVE=$archive" >> $env:GITHUB_ENV
 
-      - name: Attach Windows archive to release
+      - name: Upload Windows archive artifact
         if: github.event_name == 'release'
-        shell: pwsh
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-windows
+          path: ${{ env.WINDOWS_ARCHIVE }}
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-release-assets:
+    needs: [android, linux, linux-arm64, web, windows]
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Attach assets to release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          gh release upload "$env:RELEASE_TAG"
-          "$env:WINDOWS_ARCHIVE"
+          gh release upload "${{ github.event.release.tag_name }}"
+          release-assets/*
           --clobber
