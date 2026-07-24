@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -eu
+
+if [ -z "${APPDIR:-}" ]; then
+  APPDIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+fi
+
+payload="$APPDIR/usr/lib/dnd_sheet_archive"
+export LD_LIBRARY_PATH="$APPDIR/usr/lib:$payload/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+exec "$payload/dnd_sheet_archive" "$@"

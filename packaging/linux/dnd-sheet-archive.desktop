@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=D&D Sheet Archive
+Comment=Archivio di schede personaggio D&D 5e
+Exec=dnd_sheet_archive
+Icon=dnd-sheet-archive
+Terminal=false
+Categories=Utility;
+StartupWMClass=com.example.dnd_sheet_archive
+X-AppImage-Name=D&D Sheet Archive

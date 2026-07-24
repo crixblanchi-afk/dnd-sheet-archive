@@ -1,0 +1,90 @@
+import 'package:dnd_sheet_archive/data/character_repository.dart';
+import 'package:dnd_sheet_archive/data/local_archive_sync_store.dart';
+import 'package:dnd_sheet_archive/models/character.dart';
+import 'package:dnd_sheet_archive/models/sheet_field.dart';
+import 'package:dnd_sheet_archive/screens/sheet_screen.dart';
+import 'package:dnd_sheet_archive/sync/archive_sync_tracker.dart';
+import 'package:dnd_sheet_archive/sync/google_drive_sync_service.dart';
+import 'package:dnd_sheet_archive/widgets/sheet_page.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sembast/sembast_memory.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets(
+    'a pan starting outside the active field releases focus on the real sheet',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(612, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final database = await databaseFactoryMemory.openDatabase(
+        'sheet-screen-focus.db',
+      );
+      addTearDown(database.close);
+      final driveSync = GoogleDriveSyncService(
+        LocalArchiveSyncStore(database),
+        syncTracker: ArchiveSyncTracker.inMemory(hasPendingChanges: true),
+      );
+      final repository = _FakeRepository();
+      final character = Character(
+        id: 'character',
+        name: 'Character',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        locked: false,
+      );
+      await tester.runAsync(SheetFieldDef.loadByPage);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SheetScreen(
+            character: character,
+            repository: repository,
+            driveSync: driveSync,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+
+      final loadError = find.textContaining('Impossibile caricare');
+      if (loadError.evaluate().isNotEmpty) {
+        fail(tester.widget<Text>(loadError).data!);
+      }
+      expect(find.byType(SheetPage), findsNWidgets(3));
+      expect(find.byIcon(Icons.cloud_upload_outlined), findsNothing);
+      final characterName = find.byKey(const ValueKey('CharacterName'));
+      expect(characterName, findsOneWidget);
+      await tester.tapAt(tester.getCenter(characterName));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 550));
+      expect(find.byType(TextField), findsOneWidget);
+
+      final pan = await tester.startGesture(const Offset(500, 760));
+      await tester.pump();
+      expect(find.byType(TextField), findsNothing);
+      await pan.moveBy(const Offset(-20, -20));
+      await pan.up();
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      driveSync.dispose();
+    },
+  );
+}
+
+class _FakeRepository implements CharacterRepository {
+  @override
+  Future<void> saveCharacter(Character character) async {}
+
+  @override
+  Future<void> createSnapshot(Character character, String reason) async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}

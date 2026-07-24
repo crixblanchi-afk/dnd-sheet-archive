@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -eu
+
+payload=/app/lib/dnd_sheet_archive
+export LD_LIBRARY_PATH="$payload/lib"
+
+exec "$payload/dnd_sheet_archive" "$@"
