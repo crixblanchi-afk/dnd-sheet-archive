@@ -41,13 +41,14 @@ class DesktopGoogleAuth {
 
   bool get isConfigured => clientId.isNotEmpty && clientSecret.isNotEmpty;
   bool get isConnected => _client != null;
+  bool get _isSupportedDesktop => Platform.isLinux || Platform.isWindows;
 
   /// Ricrea il client dalle credenziali salvate su disco, senza interazione.
   ///
   /// Se le credenziali salvate sono illeggibili o non coprono più gli scope
   /// richiesti vengono scartate: servirà un nuovo consenso interattivo.
   Future<void> restore() async {
-    if (_client != null || !Platform.isLinux || !isConfigured) return;
+    if (_client != null || !_isSupportedDesktop || !isConfigured) return;
     try {
       final file = await _credentialsFile();
       if (!file.existsSync()) return;
@@ -80,8 +81,10 @@ class DesktopGoogleAuth {
   Future<http.Client> authenticatedClient() async {
     final existing = _client;
     if (existing != null) return existing;
-    if (!Platform.isLinux) {
-      throw UnsupportedError('OAuth desktop è configurato soltanto per Linux.');
+    if (!_isSupportedDesktop) {
+      throw UnsupportedError(
+        'OAuth desktop è supportato soltanto su Linux e Windows.',
+      );
     }
     if (!isConfigured) {
       throw const DesktopGoogleAuthException(
@@ -133,7 +136,9 @@ class DesktopGoogleAuth {
       await file.writeAsString(jsonEncode(credentials.toJson()), flush: true);
       // Il refresh token dà pieno accesso all'appDataFolder: va tenuto
       // leggibile soltanto dall'utente.
-      await Process.run('chmod', ['600', file.path]);
+      if (Platform.isLinux) {
+        await Process.run('chmod', ['600', file.path]);
+      }
     } catch (_) {
       // Senza persistenza il sync resta comunque attivo in questa sessione.
     }
@@ -149,7 +154,12 @@ class DesktopGoogleAuth {
   }
 
   void _openBrowser(String authorizationUrl) {
-    final result = Process.runSync('xdg-open', [authorizationUrl]);
+    final result = Platform.isWindows
+        ? Process.runSync('rundll32', [
+            'url.dll,FileProtocolHandler',
+            authorizationUrl,
+          ])
+        : Process.runSync('xdg-open', [authorizationUrl]);
     if (result.exitCode != 0) {
       throw DesktopGoogleAuthException(
         'Impossibile aprire il browser predefinito (${result.stderr}).',
