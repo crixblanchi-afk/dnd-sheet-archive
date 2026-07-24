@@ -94,6 +94,13 @@ Per le build di distribuzione va passato il `--dart-define` appropriato a
 Client ID e client secret devono restare nella configurazione locale e non
 vanno inseriti nel repository.
 
+## Release automatiche
+
+Quando viene pubblicata una GitHub Release con destinazione `main`, GitHub
+Actions esegue analisi e test, crea un APK Android firmato e una AppImage Linux
+x86_64, quindi allega entrambi i file alla release. Credenziali OAuth e chiave
+di firma Android vengono lette esclusivamente dai GitHub Actions Secrets.
+
 ## Sviluppo
 
 ```sh
