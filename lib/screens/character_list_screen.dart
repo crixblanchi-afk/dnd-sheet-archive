@@ -28,6 +28,12 @@ class CharacterListScreen extends StatefulWidget {
 class _CharacterListScreenState extends State<CharacterListScreen> {
   CharacterRepository get repository => widget.repository;
 
+  // Ogni notifica del servizio Drive ricostruisce la schermata: creare lo
+  // stream in `build` farebbe disiscrivere e rieseguire la query sembast a
+  // ogni giro.
+  late final Stream<List<CharacterSummary>> _characters = repository
+      .watchCharacters();
+
   @override
   void initState() {
     super.initState();
@@ -259,7 +265,7 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
       actions: [_driveAction()],
     ),
     body: StreamBuilder<List<CharacterSummary>>(
-      stream: repository.watchCharacters(),
+      stream: _characters,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());

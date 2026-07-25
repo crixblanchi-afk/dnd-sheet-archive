@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import '../models/sheet_layout.dart';
+
 class TransformationWheelScroller extends StatefulWidget {
   const TransformationWheelScroller({
     super.key,
@@ -31,8 +33,6 @@ class _TransformationWheelScrollerState
   // wheel notches into frame-aligned movement.
   static const _smoothingTimeConstant = Duration(milliseconds: 42);
   static const _wheelScaleFactor = 200.0;
-  static const _minScale = .3;
-  static const _maxScale = 6.0;
 
   late final Ticker _ticker;
   Duration? _lastTick;
@@ -43,6 +43,49 @@ class _TransformationWheelScrollerState
   void initState() {
     super.initState();
     _ticker = createTicker(_handleTick);
+    widget.controller.addListener(_enforceHorizontalBounds);
+    // Il listener scatta solo sui cambi successivi: la posizione di partenza
+    // va comunque verificata una volta.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _enforceHorizontalBounds();
+    });
+  }
+
+  @override
+  void didUpdateWidget(TransformationWheelScroller oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.controller, oldWidget.controller)) {
+      oldWidget.controller.removeListener(_enforceHorizontalBounds);
+      widget.controller.addListener(_enforceHorizontalBounds);
+    }
+    if (widget.viewportSize != oldWidget.viewportSize ||
+        widget.contentSize != oldWidget.contentSize) {
+      // Ridimensionando la finestra cambiano i limiti senza che la matrice si
+      // muova, quindi nessun listener scatta: la posizione va rivalutata a
+      // fine fotogramma, perché toccare il controller durante il build
+      // notificherebbe `InteractiveViewer` mentre si sta costruendo.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _enforceHorizontalBounds();
+      });
+    }
+  }
+
+  /// Rimette la scheda al centro dopo che `InteractiveViewer` l'ha spostata.
+  ///
+  /// A ogni interazione `InteractiveViewer` riporta la traslazione dentro il
+  /// proprio `boundaryMargin`; quando la finestra è più larga della pagina
+  /// quel limite è più stretto del viewport e incolla la scheda al bordo
+  /// sinistro. La correzione va quindi riapplicata dopo di lui.
+  void _enforceHorizontalBounds() {
+    final matrix = widget.controller.value;
+    final translationX = matrix.storage[12];
+    final clamped = clampSheetTranslationX(
+      translationX,
+      widget.viewportSize.width,
+      widget.contentSize.width * matrix.getMaxScaleOnAxis(),
+    );
+    if ((clamped - translationX).abs() < .01) return;
+    widget.controller.value = matrix.clone()..storage[12] = clamped;
   }
 
   @override
@@ -70,11 +113,11 @@ class _TransformationWheelScrollerState
       _targetY = matrix.storage[13];
     }
     if (event.scrollDelta.dx != 0) {
-      final maxX = math.max(
-        0.0,
-        widget.contentSize.width * scale - widget.viewportSize.width,
+      _targetX = clampSheetTranslationX(
+        _targetX - event.scrollDelta.dx,
+        widget.viewportSize.width,
+        widget.contentSize.width * scale,
       );
-      _targetX = (_targetX - event.scrollDelta.dx).clamp(-maxX, 0.0);
     }
     if (event.scrollDelta.dy != 0) {
       final maxY = math.max(
@@ -95,8 +138,8 @@ class _TransformationWheelScrollerState
     final currentScale = widget.controller.value.getMaxScaleOnAxis();
     final scaleChange = math.exp(-event.scrollDelta.dy / _wheelScaleFactor);
     final targetScale = (currentScale * scaleChange).clamp(
-      _minScale,
-      _maxScale,
+      sheetMinScale,
+      sheetMaxScale,
     );
     if ((targetScale - currentScale).abs() < .0001) return;
 
@@ -104,10 +147,16 @@ class _TransformationWheelScrollerState
     // under the cursor stays in place while zooming.
     final focalPoint = event.localPosition;
     final scenePoint = widget.controller.toScene(focalPoint);
-    widget.controller.value = Matrix4.identity()
+    final target = Matrix4.identity()
       ..translateByDouble(focalPoint.dx, focalPoint.dy, 0, 1)
       ..scaleByDouble(targetScale, targetScale, 1, 1)
       ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
+    target.storage[12] = clampSheetTranslationX(
+      target.storage[12],
+      widget.viewportSize.width,
+      widget.contentSize.width * targetScale,
+    );
+    widget.controller.value = target;
   }
 
   void _handleTick(Duration elapsed) {
@@ -145,6 +194,7 @@ class _TransformationWheelScrollerState
 
   @override
   void dispose() {
+    widget.controller.removeListener(_enforceHorizontalBounds);
     _ticker.dispose();
     super.dispose();
   }

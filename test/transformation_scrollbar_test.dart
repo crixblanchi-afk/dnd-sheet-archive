@@ -5,6 +5,90 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('una scheda più stretta della finestra resta centrata', (
+    tester,
+  ) async {
+    final controller = TransformationController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 400,
+            height: 200,
+            child: TransformationWheelScroller(
+              controller: controller,
+              viewportSize: const Size(400, 200),
+              contentSize: const Size(300, 600),
+              child: const SizedBox(width: 300, height: 600),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(controller.value.storage[12], closeTo(50, .01));
+
+    // È quello che fa `InteractiveViewer` a ogni interazione quando il suo
+    // boundaryMargin è più stretto del viewport: riappoggia tutto a sinistra.
+    controller.value = Matrix4.identity();
+    await tester.pump();
+
+    expect(controller.value.storage[12], closeTo(50, .01));
+
+    // Anche uno scorrimento orizzontale non deve staccarla dal centro.
+    await tester.sendEventToBinding(
+      const PointerScrollEvent(
+        position: Offset(100, 100),
+        scrollDelta: Offset(60, 0),
+        kind: PointerDeviceKind.mouse,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(controller.value.storage[12], closeTo(50, .01));
+    controller.dispose();
+  });
+
+  testWidgets('il centraggio segue il ridimensionamento della finestra', (
+    tester,
+  ) async {
+    final controller = TransformationController();
+
+    Widget build(double viewportWidth) => MaterialApp(
+      home: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: viewportWidth,
+          height: 200,
+          child: TransformationWheelScroller(
+            controller: controller,
+            viewportSize: Size(viewportWidth, 200),
+            contentSize: const Size(300, 600),
+            child: const SizedBox(width: 300, height: 600),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(build(400));
+    await tester.pump();
+    expect(controller.value.storage[12], closeTo(50, .01));
+
+    await tester.pumpWidget(build(700));
+    await tester.pump();
+    expect(controller.value.storage[12], closeTo(200, .01));
+
+    // Tornando più stretta della scheda il centraggio non si applica più e
+    // la scheda resta scorrevole dal bordo sinistro.
+    await tester.pumpWidget(build(200));
+    await tester.pump();
+    expect(controller.value.storage[12], closeTo(0, .01));
+
+    controller.dispose();
+  });
+
   testWidgets('horizontal scrollbar drag pans the transformation', (
     tester,
   ) async {

@@ -38,6 +38,8 @@ class DesktopGoogleAuth {
   auth.AutoRefreshingAuthClient? _client;
   http.Client? _restoredBaseClient;
   StreamSubscription<auth.AccessCredentials>? _credentialUpdates;
+  Future<void>? _restoreInProgress;
+  Completer<auth.AutoRefreshingAuthClient>? _browserLaunch;
 
   bool get isConfigured => clientId.isNotEmpty && clientSecret.isNotEmpty;
   bool get isConnected => _client != null;
@@ -47,7 +49,21 @@ class DesktopGoogleAuth {
   ///
   /// Se le credenziali salvate sono illeggibili o non coprono più gli scope
   /// richiesti vengono scartate: servirà un nuovo consenso interattivo.
-  Future<void> restore() async {
+  ///
+  /// Le chiamate concorrenti condividono lo stesso tentativo: avvio del
+  /// servizio e sincronizzazione manuale possono sovrapporsi, e due ripristini
+  /// in parallelo lascerebbero un `http.Client` orfano.
+  Future<void> restore() {
+    final pending = _restoreInProgress;
+    if (pending != null) return pending;
+    final operation = _restore();
+    _restoreInProgress = operation;
+    return operation.whenComplete(() {
+      if (identical(_restoreInProgress, operation)) _restoreInProgress = null;
+    });
+  }
+
+  Future<void> _restore() async {
     if (_client != null || !_isSupportedDesktop || !isConfigured) return;
     try {
       final file = await _credentialsFile();
@@ -96,15 +112,26 @@ class DesktopGoogleAuth {
     if (restored != null) return restored;
 
     try {
-      final client = await auth.clientViaUserConsent(
-        auth.ClientId(clientId, clientSecret),
-        scopes,
-        _openBrowser,
-        customPostAuthPage: _successPage,
-      );
-      _adopt(client);
-      await _saveCredentials(client.credentials);
-      return client;
+      final launch = Completer<auth.AutoRefreshingAuthClient>();
+      _browserLaunch = launch;
+      try {
+        // Se il browser non parte, il consenso non arriverà mai: senza questa
+        // corsa l'attesa resterebbe appesa a tempo indefinito.
+        final client = await Future.any([
+          auth.clientViaUserConsent(
+            auth.ClientId(clientId, clientSecret),
+            scopes,
+            _openBrowser,
+            customPostAuthPage: _successPage,
+          ),
+          launch.future,
+        ]);
+        _adopt(client);
+        await _saveCredentials(client.credentials);
+        return client;
+      } finally {
+        _browserLaunch = null;
+      }
     } on auth.UserConsentException {
       throw const DesktopGoogleAuthCanceled();
     } on DesktopGoogleAuthException {
@@ -133,14 +160,28 @@ class DesktopGoogleAuth {
     try {
       final file = await _credentialsFile();
       await file.parent.create(recursive: true);
-      await file.writeAsString(jsonEncode(credentials.toJson()), flush: true);
       // Il refresh token dà pieno accesso all'appDataFolder: va tenuto
-      // leggibile soltanto dall'utente.
-      if (Platform.isLinux) {
-        await Process.run('chmod', ['600', file.path]);
-      }
+      // leggibile soltanto dall'utente. Restringere prima la directory chiude
+      // la finestra in cui il file appena scritto è ancora leggibile da tutti
+      // secondo la umask. Su Windows la ACL per utente di %APPDATA% copre già
+      // lo stesso scopo.
+      await _restrictToOwner(file.parent.path, '700');
+      await file.writeAsString(jsonEncode(credentials.toJson()), flush: true);
+      await _restrictToOwner(file.path, '600');
     } catch (_) {
-      // Senza persistenza il sync resta comunque attivo in questa sessione.
+      // Un token che non si riesce a proteggere non va lasciato sul disco:
+      // senza persistenza il sync resta comunque attivo in questa sessione.
+      await _deleteStoredCredentials();
+    }
+  }
+
+  Future<void> _restrictToOwner(String path, String mode) async {
+    if (!Platform.isLinux && !Platform.isMacOS) return;
+    final result = await Process.run('chmod', [mode, path]);
+    if (result.exitCode != 0) {
+      throw DesktopGoogleAuthException(
+        'Impossibile restringere i permessi di $path (${result.stderr}).',
+      );
     }
   }
 
@@ -154,17 +195,32 @@ class DesktopGoogleAuth {
   }
 
   void _openBrowser(String authorizationUrl) {
-    final result = Platform.isWindows
-        ? Process.runSync('rundll32', [
-            'url.dll,FileProtocolHandler',
-            authorizationUrl,
-          ])
-        : Process.runSync('xdg-open', [authorizationUrl]);
-    if (result.exitCode != 0) {
-      throw DesktopGoogleAuthException(
-        'Impossibile aprire il browser predefinito (${result.stderr}).',
-      );
-    }
+    final executable = Platform.isWindows ? 'rundll32' : 'xdg-open';
+    final arguments = Platform.isWindows
+        ? ['url.dll,FileProtocolHandler', authorizationUrl]
+        : [authorizationUrl];
+    // Avviare il browser può richiedere tempo e questa callback gira sul
+    // thread della UI: l'esito viene raccolto in modo asincrono e, se il
+    // lancio fallisce, interrompe l'attesa del consenso.
+    unawaited(
+      Process.run(executable, arguments).then(
+        (result) {
+          if (result.exitCode == 0) return;
+          _failBrowserLaunch(
+            'Impossibile aprire il browser predefinito (${result.stderr}).',
+          );
+        },
+        onError: (Object error) => _failBrowserLaunch(
+          'Impossibile aprire il browser predefinito ($error).',
+        ),
+      ),
+    );
+  }
+
+  void _failBrowserLaunch(String message) {
+    final launch = _browserLaunch;
+    if (launch == null || launch.isCompleted) return;
+    launch.completeError(DesktopGoogleAuthException(message));
   }
 
   Future<void> signOut() async {

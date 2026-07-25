@@ -69,7 +69,12 @@ void main() {
     final coalesced = await repository.listVersions(character.id);
     expect(coalesced, hasLength(1));
     expect(coalesced.single.id, first.id);
-    expect((await repository.getVersion(first.id))!.fields['WIS'], '18');
+    final updated = (await repository.getVersion(first.id))!;
+    expect(updated.fields['WIS'], '18');
+    // L'ancora della finestra non si sposta, ma il merge deve poter
+    // riconoscere l'aggiornamento più recente fra due dispositivi.
+    expect(updated.createdAt, first.createdAt);
+    expect(updated.updatedAt, now);
 
     for (var day = 1; day <= maxSnapshotsPerCharacter + 2; day++) {
       now = DateTime.utc(2026, 1, 1 + day, 10);

@@ -12,8 +12,13 @@ sessione viene ripristinata agli avvii successivi e il sync riparte anche per le
 modifiche rimaste in sospeso.
 
 La cronologia conserva al massimo 10 versioni per personaggio. Le chiusure e i
-blocchi avvenuti nella stessa finestra di 24 ore aggiornano un unico snapshot
-automatico invece di crearne uno nuovo.
+blocchi avvenuti entro 24 ore dal primo snapshot automatico aggiornano quello
+stesso snapshot invece di crearne uno nuovo; passata la finestra si riparte con
+una versione nuova.
+
+Il ritratto sulla seconda pagina viene salvato dentro la scheda, quindi finisce
+anche nelle versioni e nel backup Drive: le immagini oltre 512 KB vengono
+rifiutate.
 
 ## Sincronizzazione Google Drive
 
@@ -21,7 +26,8 @@ Il sync usa un file JSON nello spazio privato `appDataFolder` e richiede
 soltanto lo scope OAuth `drive.appdata`. Le schede e le versioni vengono unite
 per UUID; per i conflitti sui personaggi prevale `updatedAt` più recente. Le
 cancellazioni vengono sincronizzate e non fanno ricomparire dati provenienti da
-un dispositivo non aggiornato.
+un dispositivo non aggiornato; la traccia di una cancellazione resta nel backup
+per 90 giorni, così l'elenco non cresce all'infinito.
 
 Configurazione Google Cloud:
 

@@ -16,6 +16,14 @@ class ArchiveSyncData {
 
   static const schemaVersion = 1;
 
+  /// Per quanto una cancellazione resta nel backup come lapide.
+  ///
+  /// Serve a impedire che un dispositivo rimasto indietro faccia ricomparire
+  /// un personaggio eliminato altrove, quindi la finestra deve essere ben più
+  /// larga del tempo che un dispositivo può passare offline; senza un limite,
+  /// però, l'elenco crescerebbe per sempre.
+  static const deletionRetention = Duration(days: 90);
+
   final DateTime generatedAt;
   final List<Character> characters;
   final List<CharacterVersion> versions;
@@ -86,6 +94,7 @@ class ArchiveSyncData {
     ArchiveSyncData remote, {
     DateTime? generatedAt,
   }) {
+    final mergedAt = (generatedAt ?? DateTime.now()).toUtc();
     final deletions = Map<String, DateTime>.of(local.deletions);
     for (final entry in remote.deletions.entries) {
       final current = deletions[entry.key];
@@ -112,6 +121,14 @@ class ArchiveSyncData {
       }
     }
 
+    // Le lapidi hanno già fatto il loro lavoro su ogni dispositivo che si è
+    // sincronizzato nella finestra di conservazione: tenerle oltre gonfierebbe
+    // il backup senza limite.
+    final oldestKeptDeletion = mergedAt.subtract(deletionRetention);
+    deletions.removeWhere(
+      (_, deletedAt) => deletedAt.toUtc().isBefore(oldestKeptDeletion),
+    );
+
     final versions = <String, CharacterVersion>{};
     for (final version in [...local.versions, ...remote.versions]) {
       if (!characters.containsKey(version.characterId)) continue;
@@ -131,7 +148,7 @@ class ArchiveSyncData {
     final sortedVersions = retainedVersions
       ..sort((a, b) => a.id.compareTo(b.id));
     return ArchiveSyncData(
-      generatedAt: (generatedAt ?? DateTime.now()).toUtc(),
+      generatedAt: mergedAt,
       characters: sortedCharacters,
       versions: sortedVersions,
       deletions: deletions,
@@ -151,6 +168,11 @@ class ArchiveSyncData {
     CharacterVersion candidate,
     CharacterVersion current,
   ) {
+    // Due dispositivi che aggiornano lo stesso snapshot dentro la stessa
+    // finestra di 24 ore ne condividono il `createdAt`: a discriminare è
+    // l'ultima modifica, non l'apertura.
+    final updateOrder = candidate.updatedAt.compareTo(current.updatedAt);
+    if (updateOrder != 0) return updateOrder > 0;
     final timestampOrder = candidate.createdAt.compareTo(current.createdAt);
     if (timestampOrder != 0) return timestampOrder > 0;
     return _stableJson(

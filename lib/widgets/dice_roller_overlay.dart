@@ -21,6 +21,9 @@ class DiceRollerOverlay extends StatefulWidget {
 
 class _DiceRollerOverlayState extends State<DiceRollerOverlay> {
   static const _dice = [4, 6, 8, 10, 12, 20, 100];
+  // Tenendo premuto un dado i risultati si accumulerebbero senza limite per
+  // tutta la loro durata: oltre questa soglia i più vecchi lasciano il posto.
+  static const _maxVisibleRolls = 12;
 
   final List<_DieRoll> _rolls = [];
   final Map<int, Timer> _expiryTimers = {};
@@ -37,15 +40,25 @@ class _DiceRollerOverlayState extends State<DiceRollerOverlay> {
       sides: sides,
       result: _random.nextInt(sides) + 1,
     );
-    setState(() => _rolls.add(roll));
     _expiryTimers[roll.id] = Timer(widget.rollLifetime, () {
+      _expiryTimers.remove(roll.id);
       if (!mounted) return;
       setState(() {
         _rolls.removeWhere((item) => item.id == roll.id);
         _revealedRollIds.remove(roll.id);
       });
-      _expiryTimers.remove(roll.id);
     });
+    setState(() {
+      _rolls.add(roll);
+      while (_rolls.length > _maxVisibleRolls) {
+        _discardRoll(_rolls.removeAt(0).id);
+      }
+    });
+  }
+
+  void _discardRoll(int rollId) {
+    _expiryTimers.remove(rollId)?.cancel();
+    _revealedRollIds.remove(rollId);
   }
 
   void _markRollRevealed(int rollId) {
