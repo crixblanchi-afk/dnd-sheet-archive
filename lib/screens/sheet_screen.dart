@@ -170,6 +170,13 @@ class _SheetScreenState extends State<SheetScreen>
       ..translateByDouble(focalPoint.dx, focalPoint.dy, 0, 1)
       ..scaleByDouble(targetScale, targetScale, 1, 1)
       ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
+    // Rimpicciolendo, la scheda può diventare più stretta della finestra: il
+    // punto focale da solo la lascerebbe sbilanciata su un lato.
+    target.storage[12] = clampSheetTranslationX(
+      target.storage[12],
+      viewportSize.width,
+      _sheetSize.width * targetScale,
+    );
     _panAnimation =
         Matrix4Tween(
           begin: _transformationController.value,
@@ -225,8 +232,20 @@ class _SheetScreenState extends State<SheetScreen>
                           .clamp(sheetMinScale, 1.0);
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) {
-                          _transformationController.value =
-                              Matrix4.diagonal3Values(scale, scale, 1);
+                          // Su finestre più larghe della pagina la scheda
+                          // resterebbe appoggiata al bordo sinistro, con
+                          // tutto lo spazio vuoto a destra.
+                          _transformationController.value = Matrix4.identity()
+                            ..translateByDouble(
+                              sheetCenterOffset(
+                                constraints.maxWidth,
+                                sheetPageWidth * scale,
+                              ),
+                              0,
+                              0,
+                              1,
+                            )
+                            ..scaleByDouble(scale, scale, 1, 1);
                         }
                       });
                     }

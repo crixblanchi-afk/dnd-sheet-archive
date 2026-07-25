@@ -7,17 +7,31 @@ import 'checkbox_overlay.dart';
 import 'image_field_overlay.dart';
 import 'text_field_overlay.dart';
 
-// Position of the blank "Character Appearance" portrait box printed on
-// page 2 of the official sheet artwork. It isn't a fillable PDF form field,
-// so it has no entry in fields.json and its bounds are hand-measured from
-// assets/sheet/page-2.png instead.
-const _appearanceImageField = (
-  page: 1,
-  x: 31.0,
-  y: 128.0,
-  width: 172.0,
-  height: 222.0,
-);
+// I riquadri illustrati della pagina 2 non sono campi modulo del PDF, quindi
+// non hanno una voce in fields.json: i loro limiti sono misurati a mano
+// sull'artwork in assets/sheet/page-2.png.
+const _imageFields = [
+  // "Character Appearance", la colonna di sinistra.
+  (
+    name: 'CharacterAppearanceImage',
+    page: 1,
+    x: 31.0,
+    y: 128.0,
+    width: 172.0,
+    height: 222.0,
+  ),
+  // Il riquadro del simbolo in "Allies & Organizations": la cornice va da
+  // x 417.6 a 566.3 e da y 142 a 290, ma la parte alta è occupata dal campo
+  // FactionName (fino a y 169.3) e il fondo dalla dicitura "SYMBOL".
+  (
+    name: 'FactionSymbolImage',
+    page: 1,
+    x: 420.0,
+    y: 171.0,
+    width: 143.0,
+    height: 114.0,
+  ),
+];
 
 class SheetPage extends StatelessWidget {
   const SheetPage({
@@ -66,18 +80,20 @@ class SheetPage extends StatelessWidget {
                       sheetController: controller,
                     ),
             ),
-          if (pageIndex == _appearanceImageField.page)
-            Positioned(
-              left: _appearanceImageField.x,
-              top: _appearanceImageField.y,
-              width: _appearanceImageField.width,
-              height: _appearanceImageField.height,
-              child: ImageFieldOverlay(
-                key: const ValueKey('CharacterAppearanceImage'),
-                fieldName: 'CharacterAppearanceImage',
-                sheetController: controller,
+          for (final imageField in _imageFields)
+            if (imageField.page == pageIndex)
+              Positioned(
+                left: imageField.x,
+                top: imageField.y,
+                width: imageField.width,
+                height: imageField.height,
+                child: ImageFieldOverlay(
+                  key: ValueKey(imageField.name),
+                  fieldName: imageField.name,
+                  boxSize: Size(imageField.width, imageField.height),
+                  sheetController: controller,
+                ),
               ),
-            ),
         ],
       ),
     ),

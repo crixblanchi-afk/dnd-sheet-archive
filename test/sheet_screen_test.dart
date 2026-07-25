@@ -2,6 +2,7 @@ import 'package:dnd_sheet_archive/data/character_repository.dart';
 import 'package:dnd_sheet_archive/data/local_archive_sync_store.dart';
 import 'package:dnd_sheet_archive/models/character.dart';
 import 'package:dnd_sheet_archive/models/sheet_field.dart';
+import 'package:dnd_sheet_archive/models/sheet_layout.dart';
 import 'package:dnd_sheet_archive/screens/sheet_screen.dart';
 import 'package:dnd_sheet_archive/sync/archive_sync_tracker.dart';
 import 'package:dnd_sheet_archive/sync/google_drive_sync_service.dart';
@@ -76,6 +77,61 @@ void main() {
       driveSync.dispose();
     },
   );
+
+  testWidgets('la scheda si apre centrata in una finestra più larga', (
+    tester,
+  ) async {
+    const viewportWidth = 1000.0;
+    await tester.binding.setSurfaceSize(const Size(viewportWidth, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final database = await databaseFactoryMemory.openDatabase(
+      'sheet-screen-centering.db',
+    );
+    addTearDown(database.close);
+    final driveSync = GoogleDriveSyncService(
+      LocalArchiveSyncStore(database),
+      syncTracker: ArchiveSyncTracker.inMemory(),
+    );
+    await tester.runAsync(SheetFieldDef.loadByPage);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SheetScreen(
+          character: Character(
+            id: 'character',
+            name: 'Character',
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+            locked: false,
+          ),
+          repository: _FakeRepository(),
+          driveSync: driveSync,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump();
+
+    final viewer = tester.widget<InteractiveViewer>(
+      find.byType(InteractiveViewer),
+    );
+    final matrix = viewer.transformationController!.value;
+    final scale = matrix.getMaxScaleOnAxis();
+    expect(
+      matrix.storage[12],
+      closeTo(sheetCenterOffset(viewportWidth, sheetPageWidth * scale), .01),
+    );
+    expect(matrix.storage[12], greaterThan(0));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    driveSync.dispose();
+  });
 }
 
 class _FakeRepository implements CharacterRepository {

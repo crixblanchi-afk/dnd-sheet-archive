@@ -1,27 +1,73 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../controllers/sheet_controller.dart';
 
-// Il ritratto viaggia in base64 dentro il JSON del personaggio, quindi viene
-// riscritto a ogni salvataggio, duplicato in ogni snapshot e caricato su
-// Drive. Con dieci versioni per personaggio un'immagine più grande di così
-// farebbe superare il tetto di download del backup, rendendo la
-// sincronizzazione irrecuperabile da dentro l'app. Il riquadro sulla scheda è
-// di 172x222 punti: mezzo megabyte è già abbondante per riempirlo.
-const _maxImageBytes = 512 * 1024;
+// Le immagini viaggiano in base64 dentro il JSON del personaggio, quindi
+// vengono riscritte a ogni salvataggio, duplicate in ognuna delle dieci
+// versioni e caricate su Drive. Una foto da telefono farebbe superare il tetto
+// di download del backup, rendendo la sincronizzazione irrecuperabile da
+// dentro l'app: viene quindi ridotta al proprio riquadro alla densità di uno
+// schermo hidpi, che è quanto serve per disegnarla nitida.
+const _sheetImagePixelRatio = 2;
+
+// Rete di sicurezza sul file scelto: serve solo a non tentare di decodificare
+// in memoria qualcosa di assurdo, non a limitare le foto normali.
+const _maxSourceImageBytes = 32 * 1024 * 1024;
+
+/// Riduce l'immagine al riquadro che la ospita, se lo eccede.
+///
+/// Restituisce i byte originali quando l'immagine è già abbastanza piccola o
+/// quando il PNG rigenerato risulterebbe più pesante — cosa normale partendo
+/// da un JPEG già compresso.
+Future<Uint8List> fitImageToBox(Uint8List bytes, Size box) async {
+  final maxWidth = box.width * _sheetImagePixelRatio;
+  final maxHeight = box.height * _sheetImagePixelRatio;
+  final codec = await ui.instantiateImageCodecWithSize(
+    await ui.ImmutableBuffer.fromUint8List(bytes),
+    getTargetSize: (width, height) {
+      final scale = math.min(maxWidth / width, maxHeight / height);
+      // Ingrandire costerebbe byte senza aggiungere dettaglio.
+      if (scale >= 1) return ui.TargetImageSize(width: width, height: height);
+      return ui.TargetImageSize(
+        width: math.max(1, (width * scale).round()),
+        height: math.max(1, (height * scale).round()),
+      );
+    },
+  );
+  try {
+    final frame = await codec.getNextFrame();
+    try {
+      final data = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      final resized = data?.buffer.asUint8List();
+      return resized != null && resized.length < bytes.length ? resized : bytes;
+    } finally {
+      frame.image.dispose();
+    }
+  } finally {
+    codec.dispose();
+  }
+}
 
 class ImageFieldOverlay extends StatefulWidget {
   const ImageFieldOverlay({
     super.key,
     required this.fieldName,
+    required this.boxSize,
     required this.sheetController,
   });
 
   final String fieldName;
+
+  /// Dimensione del riquadro sulla scheda, in punti: determina la risoluzione
+  /// alla quale l'immagine scelta viene conservata.
+  final Size boxSize;
+
   final SheetController sheetController;
 
   @override
@@ -33,11 +79,11 @@ class _ImageFieldOverlayState extends State<ImageFieldOverlay> {
   String? _decodedSource;
   Uint8List? _decodedBytes;
 
-  /// Decodifica il ritratto una sola volta per valore memorizzato.
+  /// Decodifica l'immagine una sola volta per valore memorizzato.
   ///
   /// `MemoryImage` confronta i byte per identità: restituire una `Uint8List`
   /// nuova a ogni build manderebbe a vuoto la cache delle immagini e
-  /// costringerebbe a ridecodificare il ritratto di continuo.
+  /// costringerebbe a ridecodificarla di continuo.
   Uint8List? get _imageBytes {
     final stored = widget.sheetController.valueFor(widget.fieldName);
     final source = stored is String && stored.isNotEmpty ? stored : null;
@@ -66,19 +112,21 @@ class _ImageFieldOverlayState extends State<ImageFieldOverlay> {
       final files = result?.files ?? const [];
       final bytes = files.isEmpty ? null : files.first.bytes;
       if (bytes == null) return;
-      if (bytes.length > _maxImageBytes) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Immagine troppo grande: al massimo '
-              '${_maxImageBytes ~/ 1024} KB.',
-            ),
-          ),
+      if (bytes.length > _maxSourceImageBytes) {
+        _report(
+          'Immagine troppo grande: al massimo '
+          '${_maxSourceImageBytes ~/ (1024 * 1024)} MB.',
         );
         return;
       }
-      widget.sheetController.setText(widget.fieldName, base64Encode(bytes));
+      final Uint8List stored;
+      try {
+        stored = await fitImageToBox(bytes, widget.boxSize);
+      } catch (_) {
+        _report('Formato immagine non riconosciuto.');
+        return;
+      }
+      widget.sheetController.setText(widget.fieldName, base64Encode(stored));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -88,8 +136,15 @@ class _ImageFieldOverlayState extends State<ImageFieldOverlay> {
     if (widget.sheetController.locked) return;
     widget.sheetController.setText(widget.fieldName, '');
     // Il valore vive nel controller, che non notifica i singoli campi: senza
-    // questo rebuild il ritratto resterebbe a schermo dopo la rimozione.
+    // questo rebuild l'immagine resterebbe a schermo dopo la rimozione.
     setState(() {});
+  }
+
+  void _report(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
