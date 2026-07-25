@@ -16,9 +16,14 @@ blocchi avvenuti entro 24 ore dal primo snapshot automatico aggiornano quello
 stesso snapshot invece di crearne uno nuovo; passata la finestra si riparte con
 una versione nuova.
 
-Il ritratto sulla seconda pagina viene salvato dentro la scheda, quindi finisce
-anche nelle versioni e nel backup Drive: le immagini oltre 512 KB vengono
-rifiutate.
+La seconda pagina ospita due riquadri per immagini: il ritratto del personaggio
+e il simbolo in “Allies & Organizations”. Si riempiono con un tocco e si
+svuotano con una pressione prolungata.
+
+Le immagini vengono salvate dentro la scheda, quindi finiscono anche nelle sue
+versioni e nel backup Drive. Per questo ognuna viene ridotta al proprio riquadro
+al doppio della risoluzione, quanto basta a disegnarla nitida senza gonfiare il
+backup; viene rifiutato soltanto un file sorgente oltre i 32 MB.
 
 ## Sincronizzazione Google Drive
 
