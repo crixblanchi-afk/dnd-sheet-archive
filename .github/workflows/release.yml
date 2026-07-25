@@ -268,27 +268,56 @@ jobs:
             --dart-define="GOOGLE_DESKTOP_CLIENT_ID=$env:GOOGLE_DESKTOP_CLIENT_ID" `
             --dart-define="GOOGLE_DESKTOP_CLIENT_SECRET=$env:GOOGLE_DESKTOP_CLIENT_SECRET"
 
+      # Gira anche sulle pull request: quando era riservato alle release,
+      # un errore qui si scopriva soltanto a tag già pubblicato.
       - name: Package Windows application
-        if: github.event_name == 'release'
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           $visualStudio = & $vswhere -latest -products * -property installationPath
+          $redistRoot = "$visualStudio\VC\Redist\MSVC"
           $redistVersion = (
             Get-Content "$visualStudio\VC\Auxiliary\Build\Microsoft.VCRedistVersion.default.txt"
           ).Trim()
+          # Il numero del toolset (VC143, VC144, ...) cambia con la versione di
+          # Visual Studio installata sul runner: va cercato, non ipotizzato.
+          $candidates = Get-ChildItem -Path $redistRoot -Recurse -Directory `
+            -Filter 'Microsoft.VC*.CRT' |
+            Where-Object { $_.FullName -like '*\x64\*' }
           $crtDirectory = (
-            "$visualStudio\VC\Redist\MSVC\$redistVersion\x64\Microsoft.VC143.CRT"
+            $candidates |
+              Where-Object { $_.FullName -like "*\$redistVersion\*" } |
+              Select-Object -First 1 -ExpandProperty FullName
           )
+          if (-not $crtDirectory) {
+            $crtDirectory = (
+              $candidates |
+                Sort-Object FullName -Descending |
+                Select-Object -First 1 -ExpandProperty FullName
+            )
+          }
+          if (-not $crtDirectory) {
+            throw "Nessuna runtime library C++ trovata sotto $redistRoot."
+          }
+          Write-Host "Runtime library C++: $crtDirectory"
+
           $releaseDirectory = 'build/windows/x64/runner/Release'
           $runtimeLibraries = @(
             "$crtDirectory/msvcp140.dll"
             "$crtDirectory/vcruntime140.dll"
             "$crtDirectory/vcruntime140_1.dll"
           )
+          foreach ($library in $runtimeLibraries) {
+            if (-not (Test-Path $library)) { throw "Manca $library." }
+          }
           Copy-Item -Path $runtimeLibraries -Destination $releaseDirectory
 
-          $safeTag = $env:RELEASE_TAG -replace '[\\/:*?"<>|]', '-'
+          $safeTag = if ($env:RELEASE_TAG) {
+            $env:RELEASE_TAG -replace '[\\/:*?"<>|]', '-'
+          } else {
+            'dev'
+          }
           $archive = "dnd-sheet-archive-$safeTag-windows-x64.zip"
           Compress-Archive `
             -Path "$releaseDirectory/*" `
