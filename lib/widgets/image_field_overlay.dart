@@ -6,6 +6,14 @@ import 'package:flutter/material.dart';
 
 import '../controllers/sheet_controller.dart';
 
+// Il ritratto viaggia in base64 dentro il JSON del personaggio, quindi viene
+// riscritto a ogni salvataggio, duplicato in ogni snapshot e caricato su
+// Drive. Con dieci versioni per personaggio un'immagine più grande di così
+// farebbe superare il tetto di download del backup, rendendo la
+// sincronizzazione irrecuperabile da dentro l'app. Il riquadro sulla scheda è
+// di 172x222 punti: mezzo megabyte è già abbondante per riempirlo.
+const _maxImageBytes = 512 * 1024;
+
 class ImageFieldOverlay extends StatefulWidget {
   const ImageFieldOverlay({
     super.key,
@@ -22,12 +30,26 @@ class ImageFieldOverlay extends StatefulWidget {
 
 class _ImageFieldOverlayState extends State<ImageFieldOverlay> {
   bool _busy = false;
+  String? _decodedSource;
+  Uint8List? _decodedBytes;
 
+  /// Decodifica il ritratto una sola volta per valore memorizzato.
+  ///
+  /// `MemoryImage` confronta i byte per identità: restituire una `Uint8List`
+  /// nuova a ogni build manderebbe a vuoto la cache delle immagini e
+  /// costringerebbe a ridecodificare il ritratto di continuo.
   Uint8List? get _imageBytes {
     final stored = widget.sheetController.valueFor(widget.fieldName);
-    if (stored is! String || stored.isEmpty) return null;
+    final source = stored is String && stored.isNotEmpty ? stored : null;
+    if (source == _decodedSource) return _decodedBytes;
+    _decodedSource = source;
+    _decodedBytes = source == null ? null : _tryDecode(source);
+    return _decodedBytes;
+  }
+
+  Uint8List? _tryDecode(String source) {
     try {
-      return base64Decode(stored);
+      return base64Decode(source);
     } catch (_) {
       return null;
     }
@@ -43,9 +65,20 @@ class _ImageFieldOverlayState extends State<ImageFieldOverlay> {
       );
       final files = result?.files ?? const [];
       final bytes = files.isEmpty ? null : files.first.bytes;
-      if (bytes != null) {
-        widget.sheetController.setText(widget.fieldName, base64Encode(bytes));
+      if (bytes == null) return;
+      if (bytes.length > _maxImageBytes) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Immagine troppo grande: al massimo '
+              '${_maxImageBytes ~/ 1024} KB.',
+            ),
+          ),
+        );
+        return;
       }
+      widget.sheetController.setText(widget.fieldName, base64Encode(bytes));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -54,6 +87,9 @@ class _ImageFieldOverlayState extends State<ImageFieldOverlay> {
   void _clearImage() {
     if (widget.sheetController.locked) return;
     widget.sheetController.setText(widget.fieldName, '');
+    // Il valore vive nel controller, che non notifica i singoli campi: senza
+    // questo rebuild il ritratto resterebbe a schermo dopo la rimozione.
+    setState(() {});
   }
 
   @override
@@ -69,11 +105,7 @@ class _ImageFieldOverlayState extends State<ImageFieldOverlay> {
           onLongPress: locked || bytes == null ? null : _clearImage,
           child: bytes == null
               ? const SizedBox.expand()
-              : Image.memory(
-                  bytes,
-                  fit: BoxFit.contain,
-                  gaplessPlayback: true,
-                ),
+              : Image.memory(bytes, fit: BoxFit.contain, gaplessPlayback: true),
         ),
       );
     },

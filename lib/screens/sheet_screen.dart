@@ -6,10 +6,15 @@ import '../controllers/sheet_controller.dart';
 import '../data/character_repository.dart';
 import '../models/character.dart';
 import '../models/sheet_field.dart';
+import '../models/sheet_layout.dart';
 import '../sync/google_drive_sync_service.dart';
 import '../widgets/dice_roller_overlay.dart';
 import '../widgets/sheet_page.dart';
 import '../widgets/transformation_scrollbar.dart';
+
+// I pulsanti di zoom si disabilitano appena prima del limite, per non restare
+// attivi quando un altro passo di scala non sarebbe più applicabile.
+const _scaleEpsilon = .001;
 
 class SheetScreen extends StatefulWidget {
   const SheetScreen({
@@ -28,20 +33,23 @@ class SheetScreen extends StatefulWidget {
 }
 
 class _SheetScreenState extends State<SheetScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final SheetController _sheetController;
   late final TransformationController _transformationController;
   late final AnimationController _panAnimationController;
-  Future<List<List<SheetFieldDef>>>? _fields;
+  late final Future<List<List<SheetFieldDef>>> _fields;
   Animation<Matrix4>? _panAnimation;
+  BuildContext? _pendingFieldContext;
   bool _initializedScale = false;
   bool _allowPop = false;
+  bool _exiting = false;
 
-  static const _sheetSize = Size(612, 2400);
+  static const _sheetSize = Size(sheetPageWidth, sheetContentHeight);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _sheetController = SheetController(
       repository: widget.repository,
       character: widget.character,
@@ -61,10 +69,15 @@ class _SheetScreenState extends State<SheetScreen>
   }
 
   Future<void> _exit() async {
-    if (_allowPop) return;
+    // La guardia va alzata prima di qualsiasi await: il pulsante indietro e il
+    // gesto di sistema possono arrivare insieme, e due uscite concorrenti
+    // farebbero due pop, chiudendo anche l'elenco dei personaggi.
+    if (_allowPop || _exiting) return;
+    _exiting = true;
     try {
       await _sheetController.close();
     } catch (_) {
+      _exiting = false;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -74,7 +87,9 @@ class _SheetScreenState extends State<SheetScreen>
       }
       return;
     }
-    await widget.driveSync.syncPendingChanges();
+    // Le modifiche sono già al sicuro nell'archivio locale: il viaggio di rete
+    // verso Drive non deve trattenere la navigazione.
+    unawaited(widget.driveSync.syncPendingChanges());
     if (!mounted) return;
     setState(() => _allowPop = true);
     Navigator.of(context).pop();
@@ -97,35 +112,58 @@ class _SheetScreenState extends State<SheetScreen>
   }
 
   void _ensureVisible(BuildContext fieldContext) {
-    Future<void>.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted || !fieldContext.mounted) return;
-      final box = fieldContext.findRenderObject() as RenderBox?;
-      if (box == null || !box.hasSize) return;
-      final bottom = box.localToGlobal(Offset(0, box.size.height)).dy;
-      final media = MediaQuery.of(context);
-      final visibleBottom = media.size.height - media.viewInsets.bottom - 16;
-      if (bottom <= visibleBottom) return;
-      final overlap = bottom - visibleBottom;
-      final target = _transformationController.value.clone()
-        ..translateByDouble(0.0, -overlap, 0.0, 1.0);
-      _panAnimation =
-          Matrix4Tween(
-            begin: _transformationController.value,
-            end: target,
-          ).animate(
-            CurvedAnimation(
-              parent: _panAnimationController,
-              curve: Curves.easeOut,
-            ),
-          );
-      _panAnimationController.forward(from: 0);
-    });
+    _pendingFieldContext = fieldContext;
+    _scheduleFieldReveal();
+  }
+
+  @override
+  void didChangeMetrics() {
+    // La tastiera si apre con un'animazione, quindi `viewInsets` cresce per
+    // più fotogrammi: rivalutare a ogni cambio di metriche evita di indovinare
+    // una durata fissa e copre anche rotazione e ridimensionamento.
+    if (_pendingFieldContext != null) _scheduleFieldReveal();
+  }
+
+  void _scheduleFieldReveal() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _revealPendingField());
+  }
+
+  void _revealPendingField() {
+    final fieldContext = _pendingFieldContext;
+    if (fieldContext == null) return;
+    if (!mounted || !fieldContext.mounted) {
+      _pendingFieldContext = null;
+      return;
+    }
+    final box = fieldContext.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final bottom = box.localToGlobal(Offset(0, box.size.height)).dy;
+    final media = MediaQuery.of(context);
+    final visibleBottom = media.size.height - media.viewInsets.bottom - 16;
+    if (bottom <= visibleBottom) return;
+    final overlap = bottom - visibleBottom;
+    final target = _transformationController.value.clone()
+      ..translateByDouble(0.0, -overlap, 0.0, 1.0);
+    _panAnimation =
+        Matrix4Tween(
+          begin: _transformationController.value,
+          end: target,
+        ).animate(
+          CurvedAnimation(
+            parent: _panAnimationController,
+            curve: Curves.easeOut,
+          ),
+        );
+    _panAnimationController.forward(from: 0);
   }
 
   void _zoomBy(double factor, Size viewportSize) {
     final currentScale = _transformationController.value.getMaxScaleOnAxis();
-    final targetScale = (currentScale * factor).clamp(.3, 6.0);
-    if ((targetScale - currentScale).abs() < .001) return;
+    final targetScale = (currentScale * factor).clamp(
+      sheetMinScale,
+      sheetMaxScale,
+    );
+    if ((targetScale - currentScale).abs() < _scaleEpsilon) return;
     final focalPoint = viewportSize.center(Offset.zero);
     final scenePoint = _transformationController.toScene(focalPoint);
     final target = Matrix4.identity()
@@ -183,7 +221,8 @@ class _SheetScreenState extends State<SheetScreen>
                     final viewportSize = constraints.biggest;
                     if (!_initializedScale) {
                       _initializedScale = true;
-                      final scale = (constraints.maxWidth / 612).clamp(.3, 1.0);
+                      final scale = (constraints.maxWidth / sheetPageWidth)
+                          .clamp(sheetMinScale, 1.0);
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) {
                           _transformationController.value =
@@ -205,21 +244,26 @@ class _SheetScreenState extends State<SheetScreen>
                               transformationController:
                                   _transformationController,
                               constrained: false,
-                              minScale: .3,
-                              maxScale: 6,
+                              minScale: sheetMinScale,
+                              maxScale: sheetMaxScale,
                               scaleFactor: double.infinity,
                               boundaryMargin: const EdgeInsets.all(160),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  for (var page = 0; page < 3; page++) ...[
+                                  for (
+                                    var page = 0;
+                                    page < sheetPageCount;
+                                    page++
+                                  ) ...[
                                     SheetPage(
                                       pageIndex: page,
                                       fields: snapshot.data![page],
                                       controller: _sheetController,
                                       onFieldFocused: _ensureVisible,
                                     ),
-                                    if (page < 2) const SizedBox(height: 12),
+                                    if (page < sheetPageCount - 1)
+                                      const SizedBox(height: sheetPageGap),
                                   ],
                                 ],
                               ),
@@ -306,6 +350,8 @@ class _SheetScreenState extends State<SheetScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pendingFieldContext = null;
     _panAnimationController.dispose();
     _transformationController.dispose();
     unawaited(_closeAndDisposeController());
@@ -351,7 +397,9 @@ class _ZoomControl extends StatelessWidget {
               _ZoomButton(
                 tooltip: 'Riduci zoom',
                 icon: Icons.remove,
-                onPressed: scale > .301 ? onZoomOut : null,
+                onPressed: scale > sheetMinScale + _scaleEpsilon
+                    ? onZoomOut
+                    : null,
               ),
               SizedBox(
                 width: 44,
@@ -364,7 +412,9 @@ class _ZoomControl extends StatelessWidget {
               _ZoomButton(
                 tooltip: 'Aumenta zoom',
                 icon: Icons.add,
-                onPressed: scale < 5.999 ? onZoomIn : null,
+                onPressed: scale < sheetMaxScale - _scaleEpsilon
+                    ? onZoomIn
+                    : null,
               ),
             ],
           ),

@@ -65,11 +65,39 @@ void main() {
         generatedAt: DateTime.utc(2026),
         deletions: {'deleted': DateTime.utc(2026, 1, 2)},
       ),
+      generatedAt: DateTime.utc(2026, 1, 3),
     );
 
     expect(merged.characters, isEmpty);
     expect(merged.versions, isEmpty);
     expect(merged.deletions, contains('deleted'));
+  });
+
+  test('le lapidi scadute non restano nel backup', () {
+    final deletedAt = DateTime.utc(2026, 1, 2);
+    final mergedAt = deletedAt.add(ArchiveSyncData.deletionRetention);
+    final tombstone = ArchiveSyncData(
+      generatedAt: DateTime.utc(2026),
+      deletions: {'deleted': deletedAt},
+    );
+    final empty = ArchiveSyncData(generatedAt: DateTime.utc(2026));
+
+    expect(
+      ArchiveSyncData.merge(
+        tombstone,
+        empty,
+        generatedAt: mergedAt.subtract(const Duration(days: 1)),
+      ).deletions,
+      contains('deleted'),
+    );
+    expect(
+      ArchiveSyncData.merge(
+        tombstone,
+        empty,
+        generatedAt: mergedAt.add(const Duration(days: 1)),
+      ).deletions,
+      isEmpty,
+    );
   });
 
   test('an edit made after a concurrent deletion wins', () {

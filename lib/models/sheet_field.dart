@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'sheet_layout.dart';
+
 enum SheetFieldType { text, checkbox }
 
 enum SheetCheckboxValue {
@@ -80,7 +82,7 @@ class SheetFieldDef {
   static Future<List<List<SheetFieldDef>>> _loadByPage() async {
     final source = await rootBundle.loadString('assets/sheet/fields.json');
     final decoded = await compute(_decodeFieldJson, source);
-    final pages = List.generate(3, (_) => <SheetFieldDef>[]);
+    final pages = List.generate(sheetPageCount, (_) => <SheetFieldDef>[]);
     for (final item in decoded) {
       final field = SheetFieldDef.fromJson(
         Map<String, Object?>.from(item as Map),

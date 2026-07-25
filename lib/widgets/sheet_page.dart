@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../controllers/sheet_controller.dart';
 import '../models/sheet_field.dart';
+import '../models/sheet_layout.dart';
 import 'checkbox_overlay.dart';
 import 'image_field_overlay.dart';
 import 'text_field_overlay.dart';
@@ -34,8 +35,8 @@ class SheetPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: 612,
-    height: 792,
+    width: sheetPageWidth,
+    height: sheetPageHeight,
     child: RepaintBoundary(
       child: Stack(
         children: [

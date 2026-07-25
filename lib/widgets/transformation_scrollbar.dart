@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import '../models/sheet_layout.dart';
+
 class TransformationWheelScroller extends StatefulWidget {
   const TransformationWheelScroller({
     super.key,
@@ -31,8 +33,6 @@ class _TransformationWheelScrollerState
   // wheel notches into frame-aligned movement.
   static const _smoothingTimeConstant = Duration(milliseconds: 42);
   static const _wheelScaleFactor = 200.0;
-  static const _minScale = .3;
-  static const _maxScale = 6.0;
 
   late final Ticker _ticker;
   Duration? _lastTick;
@@ -95,8 +95,8 @@ class _TransformationWheelScrollerState
     final currentScale = widget.controller.value.getMaxScaleOnAxis();
     final scaleChange = math.exp(-event.scrollDelta.dy / _wheelScaleFactor);
     final targetScale = (currentScale * scaleChange).clamp(
-      _minScale,
-      _maxScale,
+      sheetMinScale,
+      sheetMaxScale,
     );
     if ((targetScale - currentScale).abs() < .0001) return;
 

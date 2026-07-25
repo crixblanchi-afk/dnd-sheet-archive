@@ -74,6 +74,9 @@ class GoogleDriveSyncService extends ChangeNotifier
   static const _desktopClientSecret = String.fromEnvironment(
     'GOOGLE_DESKTOP_CLIENT_SECRET',
   );
+  // Tetto di sicurezza sul backup scaricato. Il limite di dimensione imposto
+  // ai ritratti in `ImageFieldOverlay` tiene il file ben sotto questa soglia
+  // anche con l'archivio pieno e tutte le versioni conservate.
   static const _maxDownloadBytes = 20 * 1024 * 1024;
   // Una richiesta che non risponde mai non deve lasciare lo stato bloccato su
   // "syncing", che rifiuterebbe ogni sincronizzazione successiva.
@@ -99,6 +102,7 @@ class GoogleDriveSyncService extends ChangeNotifier
   GoogleDriveSyncState _state = GoogleDriveSyncState.idle;
   DateTime? _lastSyncAt;
   String? _errorMessage;
+  Object? _activeSync;
 
   GoogleDriveSyncState get state => _state;
   GoogleSignInAccount? get currentUser => _currentUser;
@@ -230,6 +234,8 @@ class GoogleDriveSyncService extends ChangeNotifier
     _state = GoogleDriveSyncState.syncing;
     _errorMessage = null;
     notifyListeners();
+    final token = Object();
+    _activeSync = token;
     try {
       if (_isDesktop) {
         try {
@@ -237,7 +243,7 @@ class GoogleDriveSyncService extends ChangeNotifier
             throw const GoogleDriveSignInRequired();
           }
           final client = await _desktopAuth.authenticatedClient();
-          return await _syncWithClient(client).timeout(_syncTimeout);
+          return await _syncWithClient(client, token).timeout(_syncTimeout);
         } on drive.DetailedApiRequestError catch (error) {
           if (_isAuthorizationFailure(error)) {
             await _desktopAuth.signOut();
@@ -287,7 +293,7 @@ class GoogleDriveSyncService extends ChangeNotifier
       final client = _AuthorizedClient(http.Client(), headers);
       try {
         try {
-          return await _syncWithClient(client).timeout(_syncTimeout);
+          return await _syncWithClient(client, token).timeout(_syncTimeout);
         } on drive.DetailedApiRequestError catch (error) {
           if (_isAuthorizationFailure(error)) {
             final accessToken = _accessToken;
@@ -319,10 +325,15 @@ class GoogleDriveSyncService extends ChangeNotifier
       _errorMessage = _friendlyError(error);
       notifyListeners();
       rethrow;
+    } finally {
+      if (identical(_activeSync, token)) _activeSync = null;
     }
   }
 
-  Future<DriveSyncSummary> _syncWithClient(http.Client client) async {
+  Future<DriveSyncSummary> _syncWithClient(
+    http.Client client,
+    Object token,
+  ) async {
     final syncingRevision = _syncTracker.revision;
     final api = drive.DriveApi(client);
     final remoteFile = await _findRemoteFile(api);
@@ -355,11 +366,17 @@ class GoogleDriveSyncService extends ChangeNotifier
         $fields: 'id',
       );
     }
-    await _syncTracker.markSyncedThrough(syncingRevision);
     final completedAt = DateTime.now().toUtc();
-    _lastSyncAt = completedAt;
-    _state = GoogleDriveSyncState.success;
-    notifyListeners();
+    // Il timeout non annulla la richiesta sottostante: un tentativo
+    // abbandonato può arrivare in fondo molto dopo, e non deve né dichiarare
+    // riuscito un sync che l'utente ha visto fallire né marcare come inviate
+    // revisioni appartenenti a un tentativo più recente.
+    if (identical(_activeSync, token)) {
+      await _syncTracker.markSyncedThrough(syncingRevision);
+      _lastSyncAt = completedAt;
+      _state = GoogleDriveSyncState.success;
+      notifyListeners();
+    }
     return DriveSyncSummary(
       characters: merged.characters.length,
       versions: merged.versions.length,

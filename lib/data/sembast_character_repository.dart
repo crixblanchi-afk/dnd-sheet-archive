@@ -132,6 +132,7 @@ class SembastCharacterRepository implements CharacterRepository {
     final now = _now().toUtc();
     await database.transaction((transaction) async {
       var versionId = _uuid.v4();
+      var createdAt = now;
       if (isAutomaticSnapshot(reason)) {
         final records = await _versions.find(
           transaction,
@@ -146,6 +147,10 @@ class SembastCharacterRepository implements CharacterRepository {
           final age = now.difference(previous.createdAt);
           if (!age.isNegative && age < automaticSnapshotWindow) {
             versionId = previous.id;
+            // La finestra resta ancorata all'apertura dello snapshot: se
+            // scorresse a ogni aggiornamento, chi modifica la scheda tutti i
+            // giorni resterebbe per sempre con una sola versione.
+            createdAt = previous.createdAt;
           }
           break;
         }
@@ -154,7 +159,7 @@ class SembastCharacterRepository implements CharacterRepository {
         character,
         id: versionId,
         reason: reason,
-        createdAt: now,
+        createdAt: createdAt,
       );
       await _versions.record(version.id).put(transaction, version.toJson());
       await _pruneSnapshots(transaction, character.id);

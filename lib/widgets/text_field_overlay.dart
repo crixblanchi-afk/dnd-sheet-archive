@@ -12,6 +12,16 @@ import 'inline_markdown.dart';
 const _minimumFieldFontSize = 1.0;
 const _textFitSafetyFactor = .8;
 
+/// Tutto ciò che, cambiando, obbliga a rimisurare il testo del campo.
+typedef _FitKey = ({
+  String text,
+  double maxWidth,
+  double maxHeight,
+  bool markdown,
+  TextScaler textScaler,
+  TextDirection textDirection,
+});
+
 class TextFieldOverlay extends StatefulWidget {
   const TextFieldOverlay({
     super.key,
@@ -34,12 +44,49 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
   late String _value;
   bool _editing = false;
   bool _hasGlobalPointerRoute = false;
+  _FitKey? _fitKey;
+  TextStyle? _fitStyle;
 
   @override
   void initState() {
     super.initState();
     _value =
         widget.sheetController.valueFor(widget.field.name)?.toString() ?? '';
+  }
+
+  @override
+  void didUpdateWidget(TextFieldOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // La geometria e lo stile di base arrivano dalla definizione del campo:
+    // se cambia, la misura in cache non vale più.
+    if (!identical(widget.field, oldWidget.field)) {
+      _fitKey = null;
+      _fitStyle = null;
+    }
+  }
+
+  /// Riusa l'ultimo adattamento del font finché nulla di rilevante cambia.
+  ///
+  /// La ricerca della dimensione costa fino a undici layout di `TextPainter`,
+  /// e la scheda tiene vive centinaia di caselle insieme: senza cache ogni
+  /// ricostruzione dell'albero le rimisurerebbe tutte.
+  TextStyle _fittedStyle(_FitKey key, TextStyle baseStyle, TextAlign align) {
+    final cached = _fitStyle;
+    if (cached != null && _fitKey == key) return cached;
+    final style = _fittedTextStyle(
+      text: key.text,
+      baseStyle: baseStyle,
+      maxWidth: key.maxWidth,
+      maxHeight: key.maxHeight,
+      multiline: widget.field.multiline,
+      textAlign: align,
+      textDirection: key.textDirection,
+      textScaler: key.textScaler,
+      markdown: key.markdown,
+    );
+    _fitKey = key;
+    _fitStyle = style;
+    return style;
   }
 
   void _handleFocus() {
@@ -120,16 +167,17 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
               valueListenable: widget.sheetController.lockedState,
               builder: (context, locked, _) => LayoutBuilder(
                 builder: (context, constraints) {
-                  final fittedStyle = _fittedTextStyle(
-                    text: _value,
-                    baseStyle: baseTextStyle,
-                    maxWidth: constraints.maxWidth - 2,
-                    maxHeight: constraints.maxHeight,
-                    multiline: field.multiline,
-                    textAlign: alignment,
-                    textDirection: Directionality.of(context),
-                    textScaler: MediaQuery.textScalerOf(context),
-                    markdown: !_editing,
+                  final fittedStyle = _fittedStyle(
+                    (
+                      text: _value,
+                      maxWidth: constraints.maxWidth - 2,
+                      maxHeight: constraints.maxHeight,
+                      markdown: !_editing,
+                      textScaler: MediaQuery.textScalerOf(context),
+                      textDirection: Directionality.of(context),
+                    ),
+                    baseTextStyle,
+                    alignment,
                   );
                   return _editing
                       ? TextField(
