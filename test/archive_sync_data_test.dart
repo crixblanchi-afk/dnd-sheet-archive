@@ -218,6 +218,71 @@ void main() {
     expect(merged.versions.single.fields['AC'], '20');
     expect(merged.versions.single.createdAt, DateTime.utc(2026, 1, 2));
   });
+
+  test('con la stessa apertura decide l\'ultimo aggiornamento', () {
+    // È il caso di due dispositivi che aggiornano lo stesso snapshot dentro la
+    // stessa finestra di 24 ore: l'ancora `createdAt` è identica su entrambi.
+    const anchor = 'ancorato';
+    final character = _character(
+      id: 'coalesced',
+      name: 'Current',
+      updatedAt: DateTime.utc(2026, 1, 5),
+    );
+    final opened = DateTime.utc(2026, 1, 1);
+
+    // Valori scelti perché l'ordine lessicografico ('9' > '2') è l'opposto
+    // di quello cronologico: il ripiego sul confronto del JSON sceglierebbe
+    // il corpo sbagliato.
+    character.fields['AC'] = '9';
+    final older = _version(
+      character,
+      anchor,
+      createdAt: opened,
+      updatedAt: DateTime.utc(2026, 1, 1, 9),
+    );
+    character.fields['AC'] = '20';
+    final newer = _version(
+      character,
+      anchor,
+      createdAt: opened,
+      updatedAt: DateTime.utc(2026, 1, 1, 17),
+    );
+
+    for (final ordering in [
+      [older, newer],
+      [newer, older],
+    ]) {
+      final merged = ArchiveSyncData.merge(
+        ArchiveSyncData(
+          generatedAt: DateTime.utc(2026),
+          characters: [character],
+          versions: [ordering.first],
+        ),
+        ArchiveSyncData(
+          generatedAt: DateTime.utc(2026),
+          characters: [character],
+          versions: [ordering.last],
+        ),
+        generatedAt: DateTime.utc(2026, 1, 6),
+      );
+
+      expect(merged.versions.single.fields['AC'], '20');
+      expect(merged.versions.single.createdAt, opened);
+      expect(merged.versions.single.updatedAt, DateTime.utc(2026, 1, 1, 17));
+    }
+  });
+
+  test('uno snapshot senza updatedAt ricade sull\'apertura', () {
+    final json = _version(
+      _character(id: 'legacy', name: 'Legacy', updatedAt: DateTime.utc(2026)),
+      'vecchio',
+      createdAt: DateTime.utc(2026, 1, 4),
+    ).toJson()..remove('updatedAt');
+
+    final restored = CharacterVersion.fromJson(json);
+
+    expect(restored.updatedAt, DateTime.utc(2026, 1, 4));
+  });
 }
 
 Character _character({
@@ -237,9 +302,11 @@ CharacterVersion _version(
   Character character,
   String id, {
   DateTime? createdAt,
+  DateTime? updatedAt,
 }) => CharacterVersion.fromCharacter(
   character,
   id: id,
   reason: 'session',
   createdAt: createdAt ?? DateTime.utc(2026),
+  updatedAt: updatedAt,
 );

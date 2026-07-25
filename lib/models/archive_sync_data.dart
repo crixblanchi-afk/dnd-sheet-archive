@@ -168,6 +168,11 @@ class ArchiveSyncData {
     CharacterVersion candidate,
     CharacterVersion current,
   ) {
+    // Due dispositivi che aggiornano lo stesso snapshot dentro la stessa
+    // finestra di 24 ore ne condividono il `createdAt`: a discriminare è
+    // l'ultima modifica, non l'apertura.
+    final updateOrder = candidate.updatedAt.compareTo(current.updatedAt);
+    if (updateOrder != 0) return updateOrder > 0;
     final timestampOrder = candidate.createdAt.compareTo(current.createdAt);
     if (timestampOrder != 0) return timestampOrder > 0;
     return _stableJson(

@@ -160,6 +160,9 @@ class SembastCharacterRepository implements CharacterRepository {
         id: versionId,
         reason: reason,
         createdAt: createdAt,
+        // L'ancora della finestra resta ferma, ma il merge deve poter dire
+        // quale aggiornamento dello snapshot è il più recente.
+        updatedAt: now,
       );
       await _versions.record(version.id).put(transaction, version.toJson());
       await _pruneSnapshots(transaction, character.id);

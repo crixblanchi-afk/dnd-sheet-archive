@@ -349,6 +349,14 @@ class GoogleDriveSyncService extends ChangeNotifier
       bytes.length,
       contentType: _mimeType,
     );
+    // Il timeout non annulla la richiesta sottostante, e su desktop il client
+    // HTTP è condiviso, quindi nemmeno la sua chiusura la interrompe: senza
+    // questo controllo un tentativo abbandonato scriverebbe il proprio payload
+    // sopra quello, più recente, già caricato dal tentativo che l'ha
+    // sostituito, facendo sparire da Drive modifiche già marcate come inviate.
+    if (!identical(_activeSync, token)) {
+      throw TimeoutException('Sincronizzazione Drive abbandonata.');
+    }
     if (remoteFile == null) {
       await api.files.create(
         drive.File()
