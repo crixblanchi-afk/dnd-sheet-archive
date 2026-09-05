@@ -93,7 +93,7 @@ BEGIN
             VALUE "FileDescription", "D&D Sheet Archive" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "dnd_sheet_archive" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Cristiano Blanchi. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Cristiano Blanchi. Licensed under the MIT License." "\0"
             VALUE "OriginalFilename", "dnd_sheet_archive.exe" "\0"
             VALUE "ProductName", "D&D Sheet Archive" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

@@ -129,3 +129,14 @@ flutter pub get
 flutter test
 flutter analyze
 ```
+
+## Licenza
+
+Il codice originale del progetto è distribuito sotto [licenza MIT](LICENSE).
+Copyright (c) 2026 Cristiano Blanchi.
+
+Le dipendenze e i materiali di terzi mantengono le rispettive licenze e i
+relativi diritti. Il font Roboto Slab è distribuito sotto
+[licenza Apache 2.0](assets/fonts/licenses/RobotoSlab-LICENSE.txt).
+La licenza MIT del progetto non si estende a PDF, immagini, marchi o contenuti
+D&D di terzi.
