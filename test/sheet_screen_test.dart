@@ -8,6 +8,8 @@ import 'package:dnd_sheet_archive/sync/archive_sync_tracker.dart';
 import 'package:dnd_sheet_archive/sync/google_drive_sync_service.dart';
 import 'package:dnd_sheet_archive/widgets/sheet_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sembast/sembast_memory.dart';
 
@@ -78,60 +80,115 @@ void main() {
     },
   );
 
-  testWidgets('la scheda si apre centrata in una finestra più larga', (
-    tester,
-  ) async {
-    const viewportWidth = 1000.0;
-    await tester.binding.setSurfaceSize(const Size(viewportWidth, 800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets(
+    'la scheda resta centrata e lo zoom manuale annulla il ripristino fit-width',
+    (tester) async {
+      const viewportWidth = 1000.0;
+      await tester.binding.setSurfaceSize(const Size(viewportWidth, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final database = await databaseFactoryMemory.openDatabase(
-      'sheet-screen-centering.db',
-    );
-    addTearDown(database.close);
-    final driveSync = GoogleDriveSyncService(
-      LocalArchiveSyncStore(database),
-      syncTracker: ArchiveSyncTracker.inMemory(),
-    );
-    await tester.runAsync(SheetFieldDef.loadByPage);
+      final database = await databaseFactoryMemory.openDatabase(
+        'sheet-screen-centering.db',
+      );
+      addTearDown(database.close);
+      final driveSync = GoogleDriveSyncService(
+        LocalArchiveSyncStore(database),
+        syncTracker: ArchiveSyncTracker.inMemory(),
+      );
+      await tester.runAsync(SheetFieldDef.loadByPage);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: SheetScreen(
-          character: Character(
-            id: 'character',
-            name: 'Character',
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
-            locked: false,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SheetScreen(
+            character: Character(
+              id: 'character',
+              name: 'Character',
+              createdAt: DateTime(2026),
+              updatedAt: DateTime(2026),
+              locked: false,
+            ),
+            repository: _FakeRepository(),
+            driveSync: driveSync,
           ),
-          repository: _FakeRepository(),
-          driveSync: driveSync,
         ),
-      ),
-    );
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 50)),
-    );
-    await tester.pump(const Duration(milliseconds: 50));
-    await tester.pump();
+      );
+      await tester.pump();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump();
 
-    final viewer = tester.widget<InteractiveViewer>(
-      find.byType(InteractiveViewer),
-    );
-    final matrix = viewer.transformationController!.value;
-    final scale = matrix.getMaxScaleOnAxis();
-    expect(
-      matrix.storage[12],
-      closeTo(sheetCenterOffset(viewportWidth, sheetPageWidth * scale), .01),
-    );
-    expect(matrix.storage[12], greaterThan(0));
+      final viewer = tester.widget<InteractiveViewer>(
+        find.byType(InteractiveViewer),
+      );
+      final matrix = viewer.transformationController!.value;
+      final scale = matrix.getMaxScaleOnAxis();
+      expect(
+        matrix.storage[12],
+        closeTo(sheetCenterOffset(viewportWidth, sheetPageWidth * scale), .01),
+      );
+      expect(matrix.storage[12], greaterThan(0));
 
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-    driveSync.dispose();
-  });
+      final controller = viewer.transformationController!;
+      final fit = find.byTooltip('Adatta alla larghezza della finestra');
+      final restore = find.byTooltip('Ripristina lo zoom precedente');
+      Future<void> finishZoom() async {
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+
+      await tester.tap(fit);
+      await finishZoom();
+      expect(controller.value.getMaxScaleOnAxis(), closeTo(1000 / 612, .001));
+      expect(restore, findsOneWidget);
+      controller.value = controller.value.clone()
+        ..translateByDouble(0, -50, 0, 1);
+      await tester.pump();
+      expect(restore, findsOneWidget);
+      await tester.tap(restore);
+      await finishZoom();
+      expect(controller.value.getMaxScaleOnAxis(), closeTo(scale, .001));
+
+      for (final tooltip in ['Aumenta zoom', 'Riduci zoom']) {
+        await tester.tap(fit);
+        await finishZoom();
+        await tester.tap(find.byTooltip(tooltip));
+        await finishZoom();
+        expect(fit, findsOneWidget);
+        expect(restore, findsNothing);
+      }
+
+      // Una modifica esterna durante l'animazione (come un pinch) deve vincere.
+      await tester.tap(fit);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      controller.value = controller.value.clone()..scaleByDouble(.9, .9, 1, 1);
+      final manualScale = controller.value.getMaxScaleOnAxis();
+      await finishZoom();
+      expect(fit, findsOneWidget);
+      expect(controller.value.getMaxScaleOnAxis(), closeTo(manualScale, .001));
+
+      await tester.tap(fit);
+      await finishZoom();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendEventToBinding(
+        const PointerScrollEvent(
+          position: Offset(500, 400),
+          scrollDelta: Offset(0, -80),
+          kind: PointerDeviceKind.mouse,
+        ),
+      );
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+      expect(fit, findsOneWidget);
+      expect(restore, findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      driveSync.dispose();
+    },
+  );
 }
 
 class _FakeRepository implements CharacterRepository {

@@ -42,6 +42,8 @@ class _SheetScreenState extends State<SheetScreen>
   BuildContext? _pendingFieldContext;
   bool _initializedScale = false;
   double? _scaleBeforeFitWidth;
+  double _lastScale = 1;
+  bool _applyingZoomAnimation = false;
   bool _allowPop = false;
   bool _exiting = false;
 
@@ -55,7 +57,8 @@ class _SheetScreenState extends State<SheetScreen>
       repository: widget.repository,
       character: widget.character,
     );
-    _transformationController = TransformationController();
+    _transformationController = TransformationController()
+      ..addListener(_handleScaleChange);
     _panAnimationController =
         AnimationController(
           vsync: this,
@@ -63,7 +66,12 @@ class _SheetScreenState extends State<SheetScreen>
         )..addListener(() {
           final animation = _panAnimation;
           if (animation != null) {
-            _transformationController.value = animation.value;
+            _applyingZoomAnimation = true;
+            try {
+              _transformationController.value = animation.value;
+            } finally {
+              _applyingZoomAnimation = false;
+            }
           }
         });
     _fields = SheetFieldDef.loadByPage();
@@ -160,7 +168,30 @@ class _SheetScreenState extends State<SheetScreen>
 
   void _zoomBy(double factor, Size viewportSize) {
     final currentScale = _transformationController.value.getMaxScaleOnAxis();
+    final targetScale = (currentScale * factor).clamp(
+      sheetMinScale,
+      sheetMaxScale,
+    );
+    if ((targetScale - currentScale).abs() < _scaleEpsilon) return;
+    _clearFitWidth();
     _zoomTo(currentScale * factor, viewportSize);
+  }
+
+  void _clearFitWidth() {
+    if (_scaleBeforeFitWidth == null) return;
+    setState(() => _scaleBeforeFitWidth = null);
+  }
+
+  void _handleScaleChange() {
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    final changed = (scale - _lastScale).abs() > .000001;
+    _lastScale = scale;
+    // Pan e animazioni dell'app conservano lo zoom da ripristinare.
+    // Pinch e Ctrl+rotellina modificano direttamente il controller.
+    if (changed && !_applyingZoomAnimation) {
+      _panAnimationController.stop();
+      _clearFitWidth();
+    }
   }
 
   void _toggleFitWidth(Size viewportSize) {
