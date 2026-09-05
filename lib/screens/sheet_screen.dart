@@ -41,6 +41,7 @@ class _SheetScreenState extends State<SheetScreen>
   Animation<Matrix4>? _panAnimation;
   BuildContext? _pendingFieldContext;
   bool _initializedScale = false;
+  double? _scaleBeforeFitWidth;
   bool _allowPop = false;
   bool _exiting = false;
 
@@ -159,17 +160,43 @@ class _SheetScreenState extends State<SheetScreen>
 
   void _zoomBy(double factor, Size viewportSize) {
     final currentScale = _transformationController.value.getMaxScaleOnAxis();
-    final targetScale = (currentScale * factor).clamp(
-      sheetMinScale,
-      sheetMaxScale,
+    _zoomTo(currentScale * factor, viewportSize);
+  }
+
+  void _toggleFitWidth(Size viewportSize) {
+    final previousScale = _scaleBeforeFitWidth;
+    setState(() {
+      _scaleBeforeFitWidth = previousScale == null
+          ? _transformationController.value.getMaxScaleOnAxis()
+          : null;
+    });
+    _zoomTo(
+      previousScale ?? viewportSize.width / sheetPageWidth,
+      viewportSize,
+      fitWidth: true,
     );
-    if ((targetScale - currentScale).abs() < _scaleEpsilon) return;
-    final focalPoint = viewportSize.center(Offset.zero);
+  }
+
+  void _zoomTo(double scale, Size viewportSize, {bool fitWidth = false}) {
+    final currentScale = _transformationController.value.getMaxScaleOnAxis();
+    final targetScale = scale.clamp(sheetMinScale, sheetMaxScale);
+    if (!fitWidth && (targetScale - currentScale).abs() < _scaleEpsilon) {
+      return;
+    }
+    final focalPoint = fitWidth
+        ? Offset(viewportSize.width / 2, 0)
+        : viewportSize.center(Offset.zero);
     final scenePoint = _transformationController.toScene(focalPoint);
     final target = Matrix4.identity()
       ..translateByDouble(focalPoint.dx, focalPoint.dy, 0, 1)
       ..scaleByDouble(targetScale, targetScale, 1, 1)
       ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
+    if (fitWidth) {
+      // Conserva la posizione di lettura senza lasciare spazio oltre le pagine.
+      final maxScroll = (_sheetSize.height * targetScale - viewportSize.height)
+          .clamp(0.0, double.infinity);
+      target.storage[13] = target.storage[13].clamp(-maxScroll, 0.0);
+    }
     // Rimpicciolendo, la scheda può diventare più stretta della finestra: il
     // punto focale da solo la lascerebbe sbilanciata su un lato.
     target.storage[12] = clampSheetTranslationX(
@@ -325,6 +352,8 @@ class _SheetScreenState extends State<SheetScreen>
                               controller: _transformationController,
                               onZoomOut: () => _zoomBy(.8, viewportSize),
                               onZoomIn: () => _zoomBy(1.25, viewportSize),
+                              onFitWidth: () => _toggleFitWidth(viewportSize),
+                              canRestoreZoom: _scaleBeforeFitWidth != null,
                             ),
                           ),
                         ),
@@ -393,11 +422,15 @@ class _ZoomControl extends StatelessWidget {
     required this.controller,
     required this.onZoomOut,
     required this.onZoomIn,
+    required this.onFitWidth,
+    required this.canRestoreZoom,
   });
 
   final TransformationController controller;
   final VoidCallback onZoomOut;
   final VoidCallback onZoomIn;
+  final VoidCallback onFitWidth;
+  final bool canRestoreZoom;
 
   @override
   Widget build(BuildContext context) => Material(
@@ -413,6 +446,7 @@ class _ZoomControl extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const SizedBox(width: 6),
               _ZoomButton(
                 tooltip: 'Riduci zoom',
                 icon: Icons.remove,
@@ -435,6 +469,15 @@ class _ZoomControl extends StatelessWidget {
                     ? onZoomIn
                     : null,
               ),
+              const SizedBox(height: 18, child: VerticalDivider(width: 9)),
+              _ZoomButton(
+                tooltip: canRestoreZoom
+                    ? 'Ripristina lo zoom precedente'
+                    : 'Adatta alla larghezza della finestra',
+                icon: canRestoreZoom ? Icons.zoom_out_map : Icons.fit_screen,
+                onPressed: onFitWidth,
+              ),
+              const SizedBox(width: 6),
             ],
           ),
         );
