@@ -1,0 +1,67 @@
+name: Android login diagnostics
+on:
+  push:
+    branches: [codex/android-login-diagnostics]
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: release
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.9
+          channel: stable
+          cache: true
+      - name: Verify and restore signing configuration
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "$GOOGLE_SERVER_CLIENT_ID"
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_PASSWORD"
+          keystore_path="$RUNNER_TEMP/dnd-sheet-archive-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          chmod 600 "$keystore_path"
+          echo "ANDROID_KEYSTORE_PATH=$keystore_path" >> "$GITHUB_ENV"
+      - name: Analyze and test
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Build signed APK
+        run: |
+          flutter build apk --release --build-name=1.0.2 --build-number=3 --dart-define="GOOGLE_SERVER_CLIENT_ID=$GOOGLE_SERVER_CLIENT_ID"
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/dnd-sheet-archive-1.0.2-login-diagnostics.apk
+      - name: Verify signature
+        run: |
+          apksigner_path="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          "$apksigner_path" verify --verbose --print-certs dist/*.apk > dist/signature.txt
+          cat dist/signature.txt
+          grep -qi 'fe28c0d429002e97a66524670b9b574d9689dafa' dist/signature.txt
+          sha256sum dist/*.apk > dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: android-login-diagnostics
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Remove temporary signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/dnd-sheet-archive-release.jks"
