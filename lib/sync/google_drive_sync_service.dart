@@ -466,7 +466,9 @@ class GoogleDriveSyncService extends ChangeNotifier
   String _friendlyError(Object error) {
     if (error is GoogleSignInException) {
       return switch (error.code) {
-        GoogleSignInExceptionCode.canceled => 'Accesso Google annullato.',
+        GoogleSignInExceptionCode.canceled =>
+          'Accesso Google interrotto. Se non hai annullato, verifica in Google '
+              'Cloud il pacchetto Android e lo SHA-1 della firma dell’APK.',
         GoogleSignInExceptionCode.clientConfigurationError =>
           'Configurazione OAuth Google non valida.',
         _ => 'Accesso Google non riuscito.',
