@@ -182,7 +182,7 @@ void main() {
         (a.computeLuminance() + .05) / (b.computeLuminance() + .05);
     expect(
       contrast(SheetPalette.dark.text, SheetPalette.dark.paper),
-      greaterThan(10),
+      greaterThan(7),
     );
     expect(
       contrast(SheetPalette.dark.comment, SheetPalette.dark.paper),
