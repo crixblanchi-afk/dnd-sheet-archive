@@ -39,7 +39,7 @@ class ThemePreferences extends ChangeNotifier {
       (_) async {
         await _store.record('theme_mode').put(database, mode.name);
       },
-      onError: (Object _, StackTrace __) async {
+      onError: (Object _, StackTrace _) async {
         await _store.record('theme_mode').put(database, mode.name);
       },
     );
