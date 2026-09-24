@@ -8,11 +8,11 @@ void main() {
   test('nel tema scuro il grassetto spicca sul testo normale', () {
     final span = buildInlineMarkdownSpan(
       'Testo **importante**',
-      const TextStyle(color: Color(0xffcbc5ba), fontFamily: 'RobotoSlab'),
+      const TextStyle(color: Color(0xffd4c9b8), fontFamily: 'RobotoSlab'),
     );
     final bold = _spans(span).last.style!;
     expect(bold.fontWeight, FontWeight.w800);
-    expect(bold.color, const Color(0xfff8f0df));
+    expect(bold.color, const Color(0xffe5d9c6));
     expect(_spans(span).first.style, isNull);
   });
 
