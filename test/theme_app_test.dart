@@ -31,7 +31,6 @@ void main() {
       );
       final preferences = ThemePreferences.inMemory(mode: ThemeMode.light);
       addTearDown(preferences.dispose);
-      addTearDown(driveSync.dispose);
       addTearDown(tracker.dispose);
       addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
       await tester.runAsync(SheetFieldDef.loadByPage);
@@ -83,6 +82,7 @@ void main() {
         Theme.of(tester.element(find.byType(SheetScreen))).brightness,
         Brightness.dark,
       );
+      driveSync.dispose();
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
     },
