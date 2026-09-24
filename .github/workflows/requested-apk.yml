@@ -4,6 +4,9 @@ on:
     branches: [codex/apk-dark-20260924]
 permissions:
   contents: read
+concurrency:
+  group: requested-android-apk
+  cancel-in-progress: true
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -16,6 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: c78feea62c51f8a6f81738165539e42c41d4da54
           persist-credentials: false
       - uses: actions/setup-java@v5
         with:
