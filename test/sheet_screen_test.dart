@@ -189,6 +189,91 @@ void main() {
       driveSync.dispose();
     },
   );
+  for (final systemBack in [true, false]) {
+    testWidgets(
+      '${systemBack ? 'system' : 'button'} back hides the keyboard before leaving',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(612, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        addTearDown(tester.view.resetViewInsets);
+
+        final database = await databaseFactoryMemory.openDatabase(
+          'sheet-screen-back-$systemBack.db',
+        );
+        addTearDown(database.close);
+        final driveSync = GoogleDriveSyncService(
+          LocalArchiveSyncStore(database),
+          syncTracker: ArchiveSyncTracker.inMemory(),
+        );
+        final character = Character(
+          id: 'character',
+          name: 'Character',
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          locked: false,
+        );
+        final navigator = GlobalKey<NavigatorState>();
+        await tester.runAsync(SheetFieldDef.loadByPage);
+        await tester.pumpWidget(
+          MaterialApp(
+            navigatorKey: navigator,
+            home: const Scaffold(body: Text('Character list')),
+          ),
+        );
+        navigator.currentState!.push<void>(
+          MaterialPageRoute(
+            builder: (_) => SheetScreen(
+              character: character,
+              repository: _FakeRepository(),
+              driveSync: driveSync,
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await tester.pumpAndSettle();
+
+        final nameField = find.byKey(const ValueKey('CharacterName'));
+        await tester.tapAt(tester.getCenter(nameField));
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField), 'Updated name');
+        tester.view.viewInsets = FakeViewPadding(
+          bottom: 300 * tester.view.devicePixelRatio,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.testTextInput.isVisible, isTrue);
+
+        Future<void> goBack() async {
+          if (systemBack) {
+            await tester.binding.handlePopRoute();
+          } else {
+            await tester.tap(find.byTooltip('Indietro'));
+          }
+          await tester.pumpAndSettle();
+        }
+
+        await goBack();
+        expect(find.byType(SheetScreen), findsOneWidget);
+        expect(tester.testTextInput.isVisible, isFalse);
+        expect(find.byType(TextField), findsNothing);
+        expect(character.fields['CharacterName'], 'Updated name');
+
+        // Il sistema comunica la chiusura della tastiera tramite le metriche.
+        tester.view.resetViewInsets();
+        await tester.pumpAndSettle();
+        await goBack();
+        expect(find.byType(SheetScreen), findsNothing);
+        expect(find.text('Character list'), findsOneWidget);
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        driveSync.dispose();
+      },
+    );
+  }
+
 }
 
 class _FakeRepository implements CharacterRepository {
