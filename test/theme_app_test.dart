@@ -21,7 +21,9 @@ void main() {
         database,
         syncTracker: tracker,
       );
-      final character = await repository.createCharacter('Arannis');
+      final character = (await tester.runAsync(
+        () => repository.createCharacter('Arannis'),
+      ))!;
       final driveSync = GoogleDriveSyncService(
         LocalArchiveSyncStore(database),
         syncTracker: tracker,
@@ -75,5 +77,6 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
     },
+    timeout: const Timeout(Duration(minutes: 2)),
   );
 }

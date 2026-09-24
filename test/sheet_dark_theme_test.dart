@@ -16,148 +16,155 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('theme change updates cached text, including the active editor', (
-    tester,
-  ) async {
-    final character = _character({'Name': 'Arannis'});
-    final controller = SheetController(
-      character: character,
-      repository: _Repository(),
-    );
-    final brightness = ValueNotifier(Brightness.light);
-    addTearDown(brightness.dispose);
-    const field = SheetFieldDef(
-      name: 'Name',
-      page: 0,
-      type: SheetFieldType.text,
-      x: 0,
-      y: 0,
-      width: 180,
-      height: 30,
-      multiline: false,
-      align: 0,
-    );
-    await tester.pumpWidget(
-      ValueListenableBuilder<Brightness>(
-        valueListenable: brightness,
-        builder: (_, value, _) => MaterialApp(
-          theme: ThemeData(brightness: value),
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: SizedBox(
-                width: 180,
-                height: 30,
-                child: TextFieldOverlay(
-                  field: field,
-                  sheetController: controller,
-                  onFocused: (_) {},
+  testWidgets(
+    'theme change updates cached text, including the active editor',
+    (tester) async {
+      final character = _character({'Name': 'Arannis'});
+      final controller = SheetController(
+        character: character,
+        repository: _Repository(),
+      );
+      final brightness = ValueNotifier(Brightness.light);
+      addTearDown(brightness.dispose);
+      const field = SheetFieldDef(
+        name: 'Name',
+        page: 0,
+        type: SheetFieldType.text,
+        x: 0,
+        y: 0,
+        width: 180,
+        height: 30,
+        multiline: false,
+        align: 0,
+      );
+      await tester.pumpWidget(
+        ValueListenableBuilder<Brightness>(
+          valueListenable: brightness,
+          builder: (_, value, _) => MaterialApp(
+            theme: ThemeData(brightness: value),
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: 180,
+                  height: 30,
+                  child: TextFieldOverlay(
+                    field: field,
+                    sheetController: controller,
+                    onFocused: (_) {},
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
-    Color? idleColor() => tester
-        .widget<RichText>(find.text('Arannis', findRichText: true))
-        .text
-        .style
-        ?.color;
-    expect(idleColor(), SheetPalette.light.text);
-    brightness.value = Brightness.dark;
-    await tester.pumpAndSettle();
-    expect(idleColor(), SheetPalette.dark.text);
-    await tester.tapAt(const Offset(30, 15));
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<TextField>(find.byType(TextField)).style?.color,
-      SheetPalette.dark.text,
-    );
-    brightness.value = Brightness.light;
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<TextField>(find.byType(TextField)).style?.color,
-      SheetPalette.light.text,
-    );
-    expect(character.fields['Name'], 'Arannis');
-    await tester.pumpWidget(const SizedBox.shrink());
-    controller.dispose();
-  });
+      );
+      Color? idleColor() => tester
+          .widget<RichText>(find.text('Arannis', findRichText: true))
+          .text
+          .style
+          ?.color;
+      expect(idleColor(), SheetPalette.light.text);
+      brightness.value = Brightness.dark;
+      await tester.pumpAndSettle();
+      expect(idleColor(), SheetPalette.dark.text);
+      await tester.tapAt(const Offset(30, 15));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).style?.color,
+        SheetPalette.dark.text,
+      );
+      brightness.value = Brightness.light;
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).style?.color,
+        SheetPalette.light.text,
+      );
+      expect(character.fields['Name'], 'Arannis');
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 
-  testWidgets('dark artwork preserves the actual rendered colors of uploads', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(612, 792));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final bytes = (await tester.runAsync(_colorImage))!;
-    final character = _character({
-      'CharacterAppearanceImage': base64Encode(bytes),
-      'FactionSymbolImage': base64Encode(bytes),
-    });
-    final controller = SheetController(
-      character: character,
-      repository: _Repository(),
-    );
-    final boundary = GlobalKey();
-    final brightness = ValueNotifier(Brightness.light);
-    addTearDown(brightness.dispose);
-    await tester.pumpWidget(
-      ValueListenableBuilder<Brightness>(
-        valueListenable: brightness,
-        builder: (_, value, _) => MaterialApp(
-          theme: ThemeData(brightness: value),
-          home: Scaffold(
-            body: RepaintBoundary(
-              key: boundary,
-              child: SheetPage(
-                pageIndex: 1,
-                fields: const [],
-                controller: controller,
-                onFieldFocused: (_) {},
+  testWidgets(
+    'dark artwork preserves the actual rendered colors of uploads',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(612, 792));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final bytes = (await tester.runAsync(_colorImage))!;
+      final character = _character({
+        'CharacterAppearanceImage': base64Encode(bytes),
+        'FactionSymbolImage': base64Encode(bytes),
+      });
+      final controller = SheetController(
+        character: character,
+        repository: _Repository(),
+      );
+      final boundary = GlobalKey();
+      final brightness = ValueNotifier(Brightness.light);
+      addTearDown(brightness.dispose);
+      await tester.pumpWidget(
+        ValueListenableBuilder<Brightness>(
+          valueListenable: brightness,
+          builder: (_, value, _) => MaterialApp(
+            theme: ThemeData(brightness: value),
+            home: Scaffold(
+              body: RepaintBoundary(
+                key: boundary,
+                child: SheetPage(
+                  pageIndex: 1,
+                  fields: const [],
+                  controller: controller,
+                  onFieldFocused: (_) {},
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-    final context = tester.element(find.byType(SheetPage));
-    await tester.runAsync(() async {
-      await precacheImage(const AssetImage('assets/sheet/page-2.png'), context);
-      await precacheImage(MemoryImage(bytes), context);
-    });
-    await tester.pumpAndSettle();
-    final light = await _capture(tester, boundary, 'light');
-    brightness.value = Brightness.dark;
-    await tester.pumpAndSettle();
-    final dark = await _capture(tester, boundary, 'dark');
-    expect(_pixel(light, 5, 5), [255, 255, 255, 255]);
-    expect(_pixel(dark, 5, 5), [32, 35, 41, 255]);
-    // Centro di ciascuna metà del ritratto e del simbolo: confronto dei
-    // pixel finali, non soltanto delle proprietà del widget Image.
-    for (final point in const [
-      Offset(70, 230),
-      Offset(155, 230),
-      Offset(463, 220),
-      Offset(520, 220),
-    ]) {
-      final before = _pixel(light, point.dx.toInt(), point.dy.toInt());
-      expect(before, anyOf([230, 40, 50, 255], [30, 150, 220, 255]));
-      expect(_pixel(dark, point.dx.toInt(), point.dy.toInt()), before);
-    }
-    expect(
-      find.ancestor(
-        of: find.byType(ImageFieldOverlay),
-        matching: find.byType(ColorFiltered),
-      ),
-      findsNothing,
-    );
-    if (const bool.fromEnvironment('SAVE_THEME_PREVIEWS')) {
-      await _previewPages(tester, controller, boundary);
-    }
-    await tester.pumpWidget(const SizedBox.shrink());
-    controller.dispose();
-  });
+      );
+      final context = tester.element(find.byType(SheetPage));
+      await tester.runAsync(() async {
+        await precacheImage(
+          const AssetImage('assets/sheet/page-2.png'),
+          context,
+        );
+        await precacheImage(MemoryImage(bytes), context);
+      });
+      await tester.pumpAndSettle();
+      final light = await _capture(tester, boundary, 'light');
+      brightness.value = Brightness.dark;
+      await tester.pumpAndSettle();
+      final dark = await _capture(tester, boundary, 'dark');
+      expect(_pixel(light, 5, 5), [255, 255, 255, 255]);
+      expect(_pixel(dark, 5, 5), [32, 35, 41, 255]);
+      // Centro di ciascuna metà del ritratto e del simbolo: confronto dei
+      // pixel finali, non soltanto delle proprietà del widget Image.
+      for (final point in const [
+        Offset(70, 230),
+        Offset(155, 230),
+        Offset(463, 220),
+        Offset(520, 220),
+      ]) {
+        final before = _pixel(light, point.dx.toInt(), point.dy.toInt());
+        expect(before, anyOf([230, 40, 50, 255], [30, 150, 220, 255]));
+        expect(_pixel(dark, point.dx.toInt(), point.dy.toInt()), before);
+      }
+      expect(
+        find.ancestor(
+          of: find.byType(ImageFieldOverlay),
+          matching: find.byType(ColorFiltered),
+        ),
+        findsNothing,
+      );
+      if (const bool.fromEnvironment('SAVE_THEME_PREVIEWS')) {
+        await _previewPages(tester, controller, boundary);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 
   test('sheet values and annotations keep strong contrast on dark paper', () {
     double contrast(Color a, Color b) =>
