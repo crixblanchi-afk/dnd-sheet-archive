@@ -362,7 +362,7 @@ class _SheetScreenState extends State<SheetScreen>
                         ),
                         Positioned(
                           left: 8,
-                          right: 148,
+                          right: 8,
                           bottom: bottomPadding + 4,
                           height: 12,
                           child: RepaintBoundary(
