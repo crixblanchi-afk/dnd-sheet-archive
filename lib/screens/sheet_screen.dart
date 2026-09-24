@@ -11,7 +11,6 @@ import '../models/sheet_layout.dart';
 import '../sync/google_drive_sync_service.dart';
 import '../widgets/dice_roller_overlay.dart';
 import '../widgets/sheet_page.dart';
-import '../widgets/theme_mode_button.dart';
 import '../theme/sheet_palette.dart';
 import '../widgets/transformation_scrollbar.dart';
 
@@ -421,31 +420,17 @@ class _SheetScreenState extends State<SheetScreen>
                     tooltip: 'Indietro',
                     child: const Icon(Icons.arrow_back),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Material(
-                        color: Theme.of(context).colorScheme.surface,
-                        shape: const CircleBorder(),
-                        elevation: 2,
-                        child: const ThemeModeButton(),
-                      ),
-                      const SizedBox(width: 8),
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _sheetController.lockedState,
-                        builder: (context, locked, _) =>
-                            FloatingActionButton.small(
-                              heroTag: 'lock',
-                              onPressed: _toggleLock,
-                              tooltip: locked
-                                  ? 'Sblocca scheda'
-                                  : 'Blocca scheda',
-                              child: Icon(
-                                locked ? Icons.lock : Icons.lock_open,
-                              ),
-                            ),
-                      ),
-                    ],
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _sheetController.lockedState,
+                    builder: (context, locked, _) =>
+                        FloatingActionButton.small(
+                          heroTag: 'lock',
+                          onPressed: _toggleLock,
+                          tooltip: locked
+                              ? 'Sblocca scheda'
+                              : 'Blocca scheda',
+                          child: Icon(locked ? Icons.lock : Icons.lock_open),
+                        ),
                   ),
                 ],
               ),
