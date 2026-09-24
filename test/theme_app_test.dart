@@ -6,6 +6,7 @@ import 'package:dnd_sheet_archive/screens/sheet_screen.dart';
 import 'package:dnd_sheet_archive/sync/archive_sync_tracker.dart';
 import 'package:dnd_sheet_archive/sync/google_drive_sync_service.dart';
 import 'package:dnd_sheet_archive/theme/theme_preferences.dart';
+import 'package:dnd_sheet_archive/widgets/sheet_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sembast/sembast_memory.dart';
@@ -43,16 +44,24 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.tap(find.text(character.name));
-      await tester.pump();
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 50)),
-      );
+      // Navigation reads Sembast before the sheet starts loading its assets.
+      // Alternate real I/O and frames until both stages have completed.
+      for (var attempt = 0; attempt < 100; attempt++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        if (find.byType(SheetPage).evaluate().length == 3) break;
+      }
+      expect(find.byType(SheetPage), findsNWidgets(3));
       await tester.pumpAndSettle();
       expect(find.byType(SheetScreen), findsOneWidget);
       Future<void> choose(String label) async {
         await tester.tap(find.byTooltip('Aspetto'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text(label));
+        await tester.tap(
+          find.widgetWithText(CheckedPopupMenuItem<ThemeMode>, label),
+        );
         await tester.pumpAndSettle();
       }
 
