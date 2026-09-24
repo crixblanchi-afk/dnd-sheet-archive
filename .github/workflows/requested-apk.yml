@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: 7fad1e9a54019da89148186d6bdeca7287a125ca
+          ref: 55c8dd6c4c1a04ffcaa7e02a17e05d59de3d49c0
           persist-credentials: false
       - uses: actions/setup-java@v5
         with:
@@ -49,15 +49,15 @@ jobs:
           echo "ANDROID_KEYSTORE_PATH=$keystore_path" >> "$GITHUB_ENV"
       - name: Build signed APK
         run: |
-          flutter build apk --release --build-name=1.0.5 --build-number=6 \
+          flutter build apk --release --build-name=1.0.6 --build-number=7 \
             --dart-define="GOOGLE_SERVER_CLIENT_ID=$GOOGLE_SERVER_CLIENT_ID"
-          cp build/app/outputs/flutter-apk/app-release.apk dnd-sheet-archive-v1.0.5-android.apk
-          sha256sum dnd-sheet-archive-v1.0.5-android.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dnd-sheet-archive-v1.0.6-android.apk
+          sha256sum dnd-sheet-archive-v1.0.6-android.apk
       - name: Upload APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: signed-android-apk
-          path: dnd-sheet-archive-v1.0.5-android.apk
+          path: dnd-sheet-archive-v1.0.6-android.apk
           if-no-files-found: error
           retention-days: 7
       - name: Remove signing key
