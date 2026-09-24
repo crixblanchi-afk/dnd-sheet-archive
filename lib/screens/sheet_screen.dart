@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../controllers/sheet_controller.dart';
 import '../data/character_repository.dart';
@@ -84,6 +85,16 @@ class _SheetScreenState extends State<SheetScreen>
     // gesto di sistema possono arrivare insieme, e due uscite concorrenti
     // farebbero due pop, chiudendo anche l'elenco dei personaggi.
     if (_allowPop || _exiting) return;
+    // Un indietro con la tastiera aperta termina solo l'input, senza chiudere
+    // il controller della scheda. Leggi le metriche correnti anche se il campo
+    // ha già perso il focus al pointer-down sul pulsante Indietro.
+    if (View.of(context).viewInsets.bottom > 0) {
+      _pendingFieldContext = null;
+      _panAnimationController.stop();
+      FocusScope.of(context).unfocus();
+      await SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+      return;
+    }
     _exiting = true;
     try {
       await _sheetController.close();
