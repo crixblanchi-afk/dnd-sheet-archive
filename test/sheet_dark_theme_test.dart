@@ -147,7 +147,7 @@ void main() {
         Offset(520, 220),
       ]) {
         final before = _pixel(light, point.dx.toInt(), point.dy.toInt());
-        expect(before, anyOf([230, 40, 50, 255], [30, 150, 220, 255]));
+        expect(before, anyOf(equals([230, 40, 50, 255]), equals([30, 150, 220, 255])));
         expect(_pixel(dark, point.dx.toInt(), point.dy.toInt()), before);
       }
       expect(
