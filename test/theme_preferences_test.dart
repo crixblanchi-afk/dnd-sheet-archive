@@ -42,7 +42,9 @@ void main() {
     }.entries) {
       await tester.tap(find.byTooltip('Aspetto'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(entry.key));
+      await tester.tap(
+        find.widgetWithText(CheckedPopupMenuItem<ThemeMode>, entry.key),
+      );
       await tester.pumpAndSettle();
       expect(preferences.mode, entry.value);
       await tester.tap(find.byTooltip('Aspetto'));
