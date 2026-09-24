@@ -11,7 +11,6 @@ import '../models/sheet_layout.dart';
 import '../sync/google_drive_sync_service.dart';
 import '../widgets/dice_roller_overlay.dart';
 import '../widgets/sheet_page.dart';
-import '../widgets/theme_mode_button.dart';
 import '../theme/sheet_palette.dart';
 import '../widgets/transformation_scrollbar.dart';
 
@@ -233,7 +232,7 @@ class _SheetScreenState extends State<SheetScreen>
     final scenePoint = _transformationController.toScene(focalPoint);
     final target = Matrix4.identity()
       ..translateByDouble(focalPoint.dx, focalPoint.dy, 0, 1)
-      ..scaleByDouble(targetScale, targetScale, 1, 1)
+      ..scaleByDouble(targetScale, targetScale, targetScale, 1)
       ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
     if (fitWidth) {
       // Conserva la posizione di lettura senza lasciare spazio oltre le pagine.
@@ -316,7 +315,7 @@ class _SheetScreenState extends State<SheetScreen>
                               0,
                               1,
                             )
-                            ..scaleByDouble(scale, scale, 1, 1);
+                            ..scaleByDouble(scale, scale, scale, 1);
                         }
                       });
                     }
@@ -362,7 +361,7 @@ class _SheetScreenState extends State<SheetScreen>
                         ),
                         Positioned(
                           left: 8,
-                          right: 148,
+                          right: 8,
                           bottom: bottomPadding + 4,
                           height: 12,
                           child: RepaintBoundary(
@@ -421,31 +420,17 @@ class _SheetScreenState extends State<SheetScreen>
                     tooltip: 'Indietro',
                     child: const Icon(Icons.arrow_back),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Material(
-                        color: Theme.of(context).colorScheme.surface,
-                        shape: const CircleBorder(),
-                        elevation: 2,
-                        child: const ThemeModeButton(),
-                      ),
-                      const SizedBox(width: 8),
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _sheetController.lockedState,
-                        builder: (context, locked, _) =>
-                            FloatingActionButton.small(
-                              heroTag: 'lock',
-                              onPressed: _toggleLock,
-                              tooltip: locked
-                                  ? 'Sblocca scheda'
-                                  : 'Blocca scheda',
-                              child: Icon(
-                                locked ? Icons.lock : Icons.lock_open,
-                              ),
-                            ),
-                      ),
-                    ],
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _sheetController.lockedState,
+                    builder: (context, locked, _) =>
+                        FloatingActionButton.small(
+                          heroTag: 'lock',
+                          onPressed: _toggleLock,
+                          tooltip: locked
+                              ? 'Sblocca scheda'
+                              : 'Blocca scheda',
+                          child: Icon(locked ? Icons.lock : Icons.lock_open),
+                        ),
                   ),
                 ],
               ),
