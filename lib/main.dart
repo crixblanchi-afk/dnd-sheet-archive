@@ -10,6 +10,7 @@ import 'data/sembast_character_repository.dart';
 import 'screens/character_list_screen.dart';
 import 'sync/archive_sync_tracker.dart';
 import 'sync/google_drive_sync_service.dart';
+import 'theme/theme_preferences.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,7 @@ Future<_AppServices> _openServices() async {
   final database = await openAppDatabase();
   final syncTracker = await ArchiveSyncTracker.open(database);
   return _AppServices(
+    themePreferences: await ThemePreferences.open(database),
     repository: SembastCharacterRepository(database, syncTracker: syncTracker),
     driveSync: GoogleDriveSyncService(
       LocalArchiveSyncStore(database),
@@ -30,10 +32,15 @@ Future<_AppServices> _openServices() async {
 }
 
 class _AppServices {
-  const _AppServices({required this.repository, required this.driveSync});
+  const _AppServices({
+    required this.repository,
+    required this.driveSync,
+    required this.themePreferences,
+  });
 
   final SembastCharacterRepository repository;
   final GoogleDriveSyncService driveSync;
+  final ThemePreferences themePreferences;
 }
 
 class _BootstrapApp extends StatefulWidget {
@@ -55,6 +62,7 @@ class _BootstrapAppState extends State<_BootstrapApp> {
         return DndSheetArchiveApp(
           repository: services.repository,
           driveSync: services.driveSync,
+          themePreferences: services.themePreferences,
         );
       }
       return MaterialApp(
@@ -79,26 +87,35 @@ class DndSheetArchiveApp extends StatelessWidget {
     super.key,
     required this.repository,
     required this.driveSync,
+    required this.themePreferences,
   });
 
   final SembastCharacterRepository repository;
   final GoogleDriveSyncService driveSync;
+  final ThemePreferences themePreferences;
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'Schede D&D 5e',
-    debugShowCheckedModeBanner: false,
-    theme: _appTheme(Brightness.light),
-    darkTheme: _appTheme(Brightness.dark),
-    themeMode: ThemeMode.system,
-    home: CharacterListScreen(repository: repository, driveSync: driveSync),
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: themePreferences,
+    builder: (context, _) => MaterialApp(
+      title: 'Schede D&D 5e',
+      debugShowCheckedModeBanner: false,
+      theme: _appTheme(Brightness.light),
+      darkTheme: _appTheme(Brightness.dark),
+      themeMode: themePreferences.mode,
+      builder: (context, child) =>
+          ThemePreferenceScope(preferences: themePreferences, child: child!),
+      home: CharacterListScreen(repository: repository, driveSync: driveSync),
+    ),
   );
 }
 
 ThemeData _appTheme(Brightness brightness) => ThemeData(
   brightness: brightness,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xff7b1f1f),
+    seedColor: brightness == Brightness.dark
+        ? const Color(0xffe5bd78)
+        : const Color(0xff7b1f1f),
     brightness: brightness,
   ),
   useMaterial3: true,

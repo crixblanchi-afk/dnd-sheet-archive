@@ -25,6 +25,11 @@ versioni e nel backup Drive. Per questo ognuna viene ridotta al proprio riquadro
 al doppio della risoluzione, quanto basta a disegnarla nitida senza gonfiare il
 backup; viene rifiutato soltanto un file sorgente oltre i 32 MB.
 
+Il menu **Aspetto**, disponibile nell'elenco e nella scheda, permette di scegliere
+**Chiaro**, **Scuro** o **Sistema**. La scelta viene ricordata sul dispositivo.
+Il tema scuro adatta anche la carta, le cornici, le etichette, i campi e gli
+indicatori della scheda: ritratto e simbolo mantengono i colori originali.
+
 ## Sincronizzazione Google Drive
 
 Il sync usa un file JSON nello spazio privato `appDataFolder` e richiede

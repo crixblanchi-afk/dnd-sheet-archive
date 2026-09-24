@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../controllers/sheet_controller.dart';
 import '../models/sheet_field.dart';
+import '../theme/sheet_palette.dart';
 import 'comment_dialog.dart';
 
 class CheckboxOverlay extends StatefulWidget {
@@ -63,8 +64,8 @@ class _CheckboxOverlayState extends State<CheckboxOverlay> {
             Icon(
               Icons.circle,
               color: _value == SheetCheckboxValue.expertise
-                  ? const Color(0xffc62828)
-                  : Colors.black,
+                  ? SheetPalette.of(context).expertise
+                  : SheetPalette.of(context).text,
               size:
                   (widget.field.width < widget.field.height
                       ? widget.field.width
@@ -76,14 +77,14 @@ class _CheckboxOverlayState extends State<CheckboxOverlay> {
               widget.field.name,
             ),
             builder: (context, hasComment, _) => hasComment
-                ? const Align(
+                ? Align(
                     alignment: Alignment.topRight,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: Color(0xffd32f2f),
+                        color: SheetPalette.of(context).comment,
                         shape: BoxShape.circle,
                       ),
-                      child: SizedBox.square(dimension: 7),
+                      child: const SizedBox.square(dimension: 7),
                     ),
                   )
                 : const SizedBox.shrink(),
