@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 
 import '../controllers/sheet_controller.dart';
 import '../models/sheet_field.dart';
+import '../theme/sheet_palette.dart';
 import 'comment_dialog.dart';
 import 'inline_markdown.dart';
 
@@ -15,6 +16,7 @@ const _textFitSafetyFactor = .8;
 /// Tutto ciò che, cambiando, obbliga a rimisurare il testo del campo.
 typedef _FitKey = ({
   String text,
+  Color color,
   double maxWidth,
   double maxHeight,
   bool markdown,
@@ -150,7 +152,7 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
       _ => TextAlign.left,
     };
     final baseTextStyle = TextStyle(
-      color: Colors.black,
+      color: SheetPalette.of(context).text,
       fontFamily: 'RobotoSlab',
       fontSize: field.multiline ? 9.5 : (field.height * .62).clamp(7.0, 14.0),
       height: 1,
@@ -170,6 +172,7 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
                   final fittedStyle = _fittedStyle(
                     (
                       text: _value,
+                      color: baseTextStyle.color!,
                       maxWidth: constraints.maxWidth - 2,
                       maxHeight: constraints.maxHeight,
                       markdown: !_editing,
@@ -191,6 +194,7 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
                           maxLines: field.multiline ? null : 1,
                           expands: field.multiline,
                           style: fittedStyle,
+                          cursorColor: SheetPalette.of(context).accent,
                           decoration: const InputDecoration(
                             border: InputBorder.none,
                             isCollapsed: true,
@@ -355,14 +359,14 @@ class _CommentDot extends StatelessWidget {
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
     valueListenable: listenable,
     builder: (context, hasComment, _) => hasComment
-        ? const Align(
+        ? Align(
             alignment: Alignment.topRight,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Color(0xffd32f2f),
+                color: SheetPalette.of(context).comment,
                 shape: BoxShape.circle,
               ),
-              child: SizedBox.square(dimension: 7),
+              child: const SizedBox.square(dimension: 7),
             ),
           )
         : const SizedBox.shrink(),

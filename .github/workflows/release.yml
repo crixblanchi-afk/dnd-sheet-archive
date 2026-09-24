@@ -40,7 +40,16 @@ jobs:
         run: flutter analyze
 
       - name: Test
-        run: flutter test
+        run: flutter test --dart-define=SAVE_THEME_PREVIEWS=true
+
+      - name: Upload sheet theme previews
+        if: github.event_name == 'pull_request' && !cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sheet-theme-previews
+          path: build/theme-previews/*.png
+          if-no-files-found: ignore
+          retention-days: 7
 
   android:
     needs: test

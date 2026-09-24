@@ -256,7 +256,9 @@ class _TransformationScrollbarState extends State<TransformationScrollbar> {
                           ? 4
                           : double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.black26,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white24
+                            : Colors.black26,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),

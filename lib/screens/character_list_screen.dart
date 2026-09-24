@@ -5,6 +5,7 @@ import '../data/character_repository.dart';
 import '../models/character.dart';
 import '../sync/google_drive_sync_service.dart';
 import '../widgets/version_history_sheet.dart';
+import '../widgets/theme_mode_button.dart';
 import 'sheet_screen.dart';
 
 enum _CharacterAction { rename, history, delete }
@@ -262,7 +263,7 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('Schede D&D 5e'),
-      actions: [_driveAction()],
+      actions: [const ThemeModeButton(), _driveAction()],
     ),
     body: StreamBuilder<List<CharacterSummary>>(
       stream: _characters,

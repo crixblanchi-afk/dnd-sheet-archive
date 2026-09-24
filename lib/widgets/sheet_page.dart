@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../controllers/sheet_controller.dart';
 import '../models/sheet_field.dart';
 import '../models/sheet_layout.dart';
+import '../theme/sheet_palette.dart';
 import 'checkbox_overlay.dart';
 import 'image_field_overlay.dart';
 import 'text_field_overlay.dart';
@@ -54,13 +55,7 @@ class SheetPage extends StatelessWidget {
     child: RepaintBoundary(
       child: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/sheet/page-${pageIndex + 1}.png',
-              fit: BoxFit.fill,
-              filterQuality: FilterQuality.medium,
-            ),
-          ),
+          Positioned.fill(child: SheetArtwork(pageIndex: pageIndex)),
           for (final field in fields)
             Positioned(
               left: field.x,
