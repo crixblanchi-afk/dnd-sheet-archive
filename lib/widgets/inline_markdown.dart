@@ -28,7 +28,7 @@ TextSpan buildInlineMarkdownSpan(String source, TextStyle baseStyle) {
           fontWeight: match.bold
               ? (dark ? FontWeight.w800 : FontWeight.bold)
               : null,
-          color: match.bold && dark ? const Color(0xfff8f0df) : null,
+          color: match.bold && dark ? const Color(0xffe5d9c6) : null,
           fontStyle: match.italic ? FontStyle.italic : null,
         ),
       ),
