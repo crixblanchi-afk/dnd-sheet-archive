@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 TextSpan buildInlineMarkdownSpan(String source, TextStyle baseStyle) {
   final children = <InlineSpan>[];
   var cursor = 0;
+  final dark = baseStyle.color != null &&
+      ThemeData.estimateBrightnessForColor(baseStyle.color!) ==
+          Brightness.light;
 
   while (cursor < source.length) {
     final match = _nextMarkdownMatch(source, cursor);
@@ -22,7 +25,10 @@ TextSpan buildInlineMarkdownSpan(String source, TextStyle baseStyle) {
       TextSpan(
         text: match.text,
         style: TextStyle(
-          fontWeight: match.bold ? FontWeight.bold : null,
+          fontWeight: match.bold
+              ? (dark ? FontWeight.w800 : FontWeight.bold)
+              : null,
+          color: match.bold && dark ? const Color(0xfff8f0df) : null,
           fontStyle: match.italic ? FontStyle.italic : null,
         ),
       ),

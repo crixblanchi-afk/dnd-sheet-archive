@@ -12,7 +12,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 PAPER = (32, 35, 41)  # SheetPalette.dark.paper
-INK = (221, 216, 205)  # SheetPalette.dark.ink
+INK = (174, 176, 173)  # SheetPalette.dark.ink
 
 
 for page in range(1, 4):

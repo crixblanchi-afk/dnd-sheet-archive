@@ -33,8 +33,8 @@ class SheetPalette {
   static const dark = SheetPalette(
     workspace: Color(0xff111418),
     paper: Color(0xff202329),
-    ink: Color(0xffddd8cd),
-    text: Color(0xfff2eadb),
+    ink: Color(0xffaeb0ad),
+    text: Color(0xffcbc5ba),
     accent: Color(0xffe5bd78),
     comment: Color(0xffffa08e),
     expertise: Color(0xffffa08e),

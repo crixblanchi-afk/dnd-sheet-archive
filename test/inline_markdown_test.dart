@@ -5,6 +5,17 @@ import 'package:flutter_test/flutter_test.dart';
 const _baseStyle = TextStyle(fontFamily: 'RobotoSlab', fontSize: 10);
 
 void main() {
+  test('nel tema scuro il grassetto spicca sul testo normale', () {
+    final span = buildInlineMarkdownSpan(
+      'Testo **importante**',
+      const TextStyle(color: Color(0xffcbc5ba), fontFamily: 'RobotoSlab'),
+    );
+    final bold = _spans(span).last.style!;
+    expect(bold.fontWeight, FontWeight.w800);
+    expect(bold.color, const Color(0xfff8f0df));
+    expect(_spans(span).first.style, isNull);
+  });
+
   test('il testo senza delimitatori resta un unico frammento', () {
     final span = buildInlineMarkdownSpan('Solo testo', _baseStyle);
 
