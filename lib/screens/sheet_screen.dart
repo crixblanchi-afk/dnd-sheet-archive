@@ -233,7 +233,7 @@ class _SheetScreenState extends State<SheetScreen>
     final scenePoint = _transformationController.toScene(focalPoint);
     final target = Matrix4.identity()
       ..translateByDouble(focalPoint.dx, focalPoint.dy, 0, 1)
-      ..scaleByDouble(targetScale, targetScale, 1, 1)
+      ..scaleByDouble(targetScale, targetScale, targetScale, 1)
       ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
     if (fitWidth) {
       // Conserva la posizione di lettura senza lasciare spazio oltre le pagine.
@@ -316,7 +316,7 @@ class _SheetScreenState extends State<SheetScreen>
                               0,
                               1,
                             )
-                            ..scaleByDouble(scale, scale, 1, 1);
+                            ..scaleByDouble(scale, scale, scale, 1);
                         }
                       });
                     }

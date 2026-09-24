@@ -42,36 +42,6 @@ class SheetPalette {
 
   static SheetPalette of(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? dark : light;
-
-  /// Nero → inchiostro, bianco → carta, alpha invariato. Il filtro va
-  /// applicato esclusivamente all'artwork, mai allo Stack della pagina.
-  ColorFilter get artworkFilter {
-    final r = (paper.r - ink.r);
-    final g = (paper.g - ink.g);
-    final b = (paper.b - ink.b);
-    return ColorFilter.matrix([
-      r * .2126,
-      r * .7152,
-      r * .0722,
-      0,
-      ink.r * 255,
-      g * .2126,
-      g * .7152,
-      g * .0722,
-      0,
-      ink.g * 255,
-      b * .2126,
-      b * .7152,
-      b * .0722,
-      0,
-      ink.b * 255,
-      0,
-      0,
-      0,
-      1,
-      0,
-    ]);
-  }
 }
 
 class SheetArtwork extends StatelessWidget {
@@ -82,24 +52,18 @@ class SheetArtwork extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
-    final image = Image.asset(
-      'assets/sheet/page-${pageIndex + 1}.png',
-      fit: BoxFit.fill,
-      filterQuality: FilterQuality.medium,
-    );
+    // Precomputed artwork avoids full-page GPU filter passes while panning.
+    // Uploaded pictures are separate widgets and keep their original pixels.
+    final suffix = Theme.of(context).brightness == Brightness.dark
+        ? '-dark'
+        : '';
     return ColoredBox(
       color: palette.paper,
-      child: Theme.of(context).brightness == Brightness.dark
-          ? ColorFiltered(
-              colorFilter: palette.artworkFilter,
-              // La curva tonale mantiene leggibili le etichette grigie del
-              // PDF; una semplice inversione le renderebbe troppo scure.
-              child: ColorFiltered(
-                colorFilter: const ColorFilter.srgbToLinearGamma(),
-                child: image,
-              ),
-            )
-          : image,
+      child: Image.asset(
+        'assets/sheet/page-${pageIndex + 1}$suffix.png',
+        fit: BoxFit.fill,
+        filterQuality: FilterQuality.medium,
+      ),
     );
   }
 }

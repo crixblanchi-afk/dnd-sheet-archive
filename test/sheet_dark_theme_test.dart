@@ -134,7 +134,15 @@ void main() {
       await tester.pumpAndSettle();
       final light = await _capture(tester, boundary, 'light');
       brightness.value = Brightness.dark;
+      await tester.pump();
+      await tester.runAsync(
+        () => precacheImage(
+          const AssetImage('assets/sheet/page-2-dark.png'),
+          context,
+        ),
+      );
       await tester.pumpAndSettle();
+      expect(find.byType(ColorFiltered), findsNothing);
       final dark = await _capture(tester, boundary, 'dark');
       expect(_pixel(light, 5, 5), [255, 255, 255, 255]);
       expect(_pixel(dark, 5, 5), [32, 35, 41, 255]);
@@ -147,7 +155,10 @@ void main() {
         Offset(520, 220),
       ]) {
         final before = _pixel(light, point.dx.toInt(), point.dy.toInt());
-        expect(before, anyOf(equals([230, 40, 50, 255]), equals([30, 150, 220, 255])));
+        expect(
+          before,
+          anyOf(equals([230, 40, 50, 255]), equals([30, 150, 220, 255])),
+        );
         expect(_pixel(dark, point.dx.toInt(), point.dy.toInt()), before);
       }
       expect(
@@ -292,7 +303,10 @@ Future<void> _previewPages(
       final context = tester.element(find.byType(SheetPage));
       await tester.runAsync(
         () => precacheImage(
-          AssetImage('assets/sheet/page-${page + 1}.png'),
+          AssetImage(
+            'assets/sheet/page-${page + 1}'
+            '${brightness == Brightness.dark ? '-dark' : ''}.png',
+          ),
           context,
         ),
       );
