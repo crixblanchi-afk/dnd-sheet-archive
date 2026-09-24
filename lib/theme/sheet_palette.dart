@@ -31,10 +31,10 @@ class SheetPalette {
   );
 
   static const dark = SheetPalette(
-    workspace: Color(0xff111418),
-    paper: Color(0xff202329),
-    ink: Color(0xffaeb0ad),
-    text: Color(0xffcbc5ba),
+    workspace: Colors.black,
+    paper: Color(0xff24211e),
+    ink: Color(0xffc2b8a9),
+    text: Color(0xffd4c9b8),
     accent: Color(0xffe5bd78),
     comment: Color(0xffffa08e),
     expertise: Color(0xffffa08e),

@@ -145,7 +145,7 @@ void main() {
       expect(find.byType(ColorFiltered), findsNothing);
       final dark = await _capture(tester, boundary, 'dark');
       expect(_pixel(light, 5, 5), [255, 255, 255, 255]);
-      expect(_pixel(dark, 5, 5), [32, 35, 41, 255]);
+      expect(_pixel(dark, 5, 5), [36, 33, 30, 255]);
       // Centro di ciascuna metà del ritratto e del simbolo: confronto dei
       // pixel finali, non soltanto delle proprietà del widget Image.
       for (final point in const [
@@ -188,6 +188,11 @@ void main() {
       contrast(SheetPalette.dark.comment, SheetPalette.dark.paper),
       greaterThan(4.5),
     );
+  });
+
+  test('dark sheet uses pure black outside its warm paper', () {
+    expect(SheetPalette.dark.workspace, Colors.black);
+    expect(SheetPalette.dark.paper, const Color(0xff24211e));
   });
 }
 
