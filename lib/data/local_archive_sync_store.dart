@@ -14,11 +14,15 @@ class LocalArchiveSyncStore {
 
   Future<ArchiveSyncData> read() => _read(database);
 
-  Future<ArchiveSyncData> mergeAndReplace(ArchiveSyncData remote) async {
+  Future<ArchiveSyncData> mergeAndReplace(
+    ArchiveSyncData remote, {
+    void Function()? beforeReplace,
+  }) async {
     late ArchiveSyncData merged;
     await database.transaction((transaction) async {
       final local = await _read(transaction);
       merged = ArchiveSyncData.merge(local, remote);
+      beforeReplace?.call();
       await _characters.delete(transaction);
       await _versions.delete(transaction);
       await _tombstones.delete(transaction);

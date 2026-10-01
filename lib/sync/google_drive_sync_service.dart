@@ -48,7 +48,12 @@ class GoogleDriveSyncService extends ChangeNotifier
     this._localStore, {
     ArchiveSyncTracker? syncTracker,
     this.automaticSyncInterval = const Duration(minutes: 5),
-  }) : _syncTracker = syncTracker ?? ArchiveSyncTracker.inMemory(),
+    this.maxBackupBytes = 20 * 1024 * 1024,
+    this.syncTimeout = const Duration(minutes: 2),
+    DesktopGoogleAuth? desktopAuth,
+  }) : assert(maxBackupBytes > 0),
+       _providedDesktopAuth = desktopAuth,
+       _syncTracker = syncTracker ?? ArchiveSyncTracker.inMemory(),
        _ownsSyncTracker = syncTracker == null {
     _syncTracker.addListener(_localChangesChanged);
     _initialization = _initialize();
@@ -74,24 +79,23 @@ class GoogleDriveSyncService extends ChangeNotifier
   static const _desktopClientSecret = String.fromEnvironment(
     'GOOGLE_DESKTOP_CLIENT_SECRET',
   );
-  // Tetto di sicurezza sul backup scaricato. Il limite di dimensione imposto
-  // ai ritratti in `ImageFieldOverlay` tiene il file ben sotto questa soglia
-  // anche con l'archivio pieno e tutte le versioni conservate.
-  static const _maxDownloadBytes = 20 * 1024 * 1024;
-  // Una richiesta che non risponde mai non deve lasciare lo stato bloccato su
-  // "syncing", che rifiuterebbe ogni sincronizzazione successiva.
-  static const _syncTimeout = Duration(minutes: 2);
-
   final LocalArchiveSyncStore _localStore;
   final ArchiveSyncTracker _syncTracker;
   final bool _ownsSyncTracker;
   final Duration automaticSyncInterval;
+
+  /// Lo stesso tetto vale per upload e download, inclusi i byte UTF-8.
+  final int maxBackupBytes;
+  final Duration syncTimeout;
+  final DesktopGoogleAuth? _providedDesktopAuth;
   late final GoogleSignIn _signIn = GoogleSignIn.instance;
-  late final DesktopGoogleAuth _desktopAuth = DesktopGoogleAuth(
-    clientId: _desktopClientId,
-    clientSecret: _desktopClientSecret,
-    scopes: _scopes,
-  );
+  late final DesktopGoogleAuth _desktopAuth =
+      _providedDesktopAuth ??
+      DesktopGoogleAuth(
+        clientId: _desktopClientId,
+        clientSecret: _desktopClientSecret,
+        scopes: _scopes,
+      );
   late final Future<void> _initialization;
   late final Timer _automaticSyncTimer;
   StreamSubscription<GoogleSignInAuthenticationEvent>? _authSubscription;
@@ -103,6 +107,12 @@ class GoogleDriveSyncService extends ChangeNotifier
   DateTime? _lastSyncAt;
   String? _errorMessage;
   Object? _activeSync;
+  bool _disposed = false;
+
+  @override
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
 
   GoogleDriveSyncState get state => _state;
   GoogleSignInAccount? get currentUser => _currentUser;
@@ -203,7 +213,8 @@ class GoogleDriveSyncService extends ChangeNotifier
   }
 
   Future<bool> syncPendingChanges({bool interactive = false}) async {
-    if (!hasPendingChanges ||
+    if (_disposed ||
+        !hasPendingChanges ||
         _state == GoogleDriveSyncState.syncing ||
         !isConfigured ||
         (!interactive && !isConnected)) {
@@ -219,6 +230,7 @@ class GoogleDriveSyncService extends ChangeNotifier
 
   Future<DriveSyncSummary> sync({bool interactive = true}) async {
     await _initialization;
+    if (_disposed) throw StateError('Il servizio Drive è stato chiuso.');
     if (!isConfigured) {
       throw const GoogleDriveConfigurationMissing();
     }
@@ -243,7 +255,7 @@ class GoogleDriveSyncService extends ChangeNotifier
             throw const GoogleDriveSignInRequired();
           }
           final client = await _desktopAuth.authenticatedClient();
-          return await _syncWithClient(client, token).timeout(_syncTimeout);
+          return await _syncWithClient(client, token).timeout(syncTimeout);
         } on drive.DetailedApiRequestError catch (error) {
           if (_isAuthorizationFailure(error)) {
             await _desktopAuth.signOut();
@@ -293,7 +305,7 @@ class GoogleDriveSyncService extends ChangeNotifier
       final client = _AuthorizedClient(http.Client(), headers);
       try {
         try {
-          return await _syncWithClient(client, token).timeout(_syncTimeout);
+          return await _syncWithClient(client, token).timeout(syncTimeout);
         } on drive.DetailedApiRequestError catch (error) {
           if (_isAuthorizationFailure(error)) {
             final accessToken = _accessToken;
@@ -340,10 +352,21 @@ class GoogleDriveSyncService extends ChangeNotifier
     final remote = remoteFile == null
         ? null
         : await _download(api, remoteFile.id!);
+    _checkActive(token);
     final merged = remote == null
         ? await _localStore.read()
-        : await _localStore.mergeAndReplace(remote);
+        : await _localStore.mergeAndReplace(
+            remote,
+            beforeReplace: () => _checkActive(token),
+          );
     final bytes = utf8.encode(jsonEncode(merged.toJson()));
+    if (bytes.length > maxBackupBytes) {
+      throw FormatException(
+        'Il backup supera il limite di ${maxBackupBytes ~/ (1024 * 1024)} MB. '
+        'Riduci le immagini o il numero di schede prima di riprovare. '
+        'I dati locali e il backup su Drive restano conservati.',
+      );
+    }
     final media = drive.Media(
       Stream<List<int>>.value(bytes),
       bytes.length,
@@ -354,9 +377,7 @@ class GoogleDriveSyncService extends ChangeNotifier
     // questo controllo un tentativo abbandonato scriverebbe il proprio payload
     // sopra quello, più recente, già caricato dal tentativo che l'ha
     // sostituito, facendo sparire da Drive modifiche già marcate come inviate.
-    if (!identical(_activeSync, token)) {
-      throw TimeoutException('Sincronizzazione Drive abbandonata.');
-    }
+    _checkActive(token);
     if (remoteFile == null) {
       await api.files.create(
         drive.File()
@@ -400,6 +421,12 @@ class GoogleDriveSyncService extends ChangeNotifier
             detail.reason == 'invalidCredentials',
       );
 
+  void _checkActive(Object token) {
+    if (!identical(_activeSync, token)) {
+      throw TimeoutException('Sincronizzazione Drive abbandonata.');
+    }
+  }
+
   Future<drive.File?> _findRemoteFile(drive.DriveApi api) async {
     final result = await api.files.list(
       spaces: 'appDataFolder',
@@ -422,10 +449,10 @@ class GoogleDriveSyncService extends ChangeNotifier
     }
     final bytes = <int>[];
     await for (final chunk in response.stream) {
-      bytes.addAll(chunk);
-      if (bytes.length > _maxDownloadBytes) {
+      if (bytes.length + chunk.length > maxBackupBytes) {
         throw const FormatException('Il backup Drive è troppo grande.');
       }
+      bytes.addAll(chunk);
     }
     final decoded = jsonDecode(utf8.decode(bytes));
     if (decoded is! Map) {
@@ -491,6 +518,8 @@ class GoogleDriveSyncService extends ChangeNotifier
 
   @override
   void dispose() {
+    _disposed = true;
+    _activeSync = null;
     WidgetsBinding.instance.removeObserver(this);
     _automaticSyncTimer.cancel();
     _syncTracker.removeListener(_localChangesChanged);

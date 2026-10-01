@@ -6,6 +6,15 @@ abstract class CharacterRepository {
   Future<Character?> getCharacter(String id);
   Future<Character> createCharacter(String name);
   Future<void> saveCharacter(Character character);
+  Future<Character> saveCharacterEdits(
+    Character character,
+    Character base,
+  ) async {
+    await saveCharacter(character);
+    return character.copy();
+  }
+
+  Stream<Character?> watchCharacter(String id) => const Stream.empty();
   Future<void> renameCharacter(String id, String newName);
   Future<void> deleteCharacter(String id);
   Future<List<VersionMeta>> listVersions(String characterId);

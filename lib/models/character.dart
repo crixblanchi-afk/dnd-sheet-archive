@@ -20,6 +20,17 @@ class Character {
 
   Character copy() => Character.fromJson(toJson());
 
+  void rename(String value) {
+    name = value;
+    for (final field in const ['CharacterName', 'CharacterName 2']) {
+      if (value.isEmpty) {
+        fields.remove(field);
+      } else {
+        fields[field] = value;
+      }
+    }
+  }
+
   Map<String, Object?> toJson() => {
     'id': id,
     'name': name,

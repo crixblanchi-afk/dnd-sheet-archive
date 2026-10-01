@@ -22,24 +22,31 @@ class DesktopGoogleAuth {
     required this.clientId,
     required String clientSecret,
     required this.scopes,
+    this.consentTimeout = const Duration(minutes: 2),
+    Future<void> Function(String)? openBrowser,
     Future<Directory> Function() supportDirectory =
         getApplicationSupportDirectory,
   }) : clientSecret = clientSecret.isNotEmpty
            ? clientSecret
            : Platform.environment['GOOGLE_DESKTOP_CLIENT_SECRET'] ?? '',
-       _supportDirectory = supportDirectory;
+       _supportDirectory = supportDirectory,
+       _browserOpener = openBrowser;
 
   static const _credentialsFileName = 'google_drive_credentials.json';
 
   final String clientId;
   final String clientSecret;
   final List<String> scopes;
+  final Duration consentTimeout;
+  final Future<void> Function(String)? _browserOpener;
   final Future<Directory> Function() _supportDirectory;
   auth.AutoRefreshingAuthClient? _client;
   http.Client? _restoredBaseClient;
   StreamSubscription<auth.AccessCredentials>? _credentialUpdates;
   Future<void>? _restoreInProgress;
   Completer<auth.AutoRefreshingAuthClient>? _browserLaunch;
+  Future<http.Client>? _authenticationInProgress;
+  bool _disposed = false;
 
   bool get isConfigured => clientId.isNotEmpty && clientSecret.isNotEmpty;
   bool get isConnected => _client != null;
@@ -76,6 +83,7 @@ class DesktopGoogleAuth {
           !scopes.every(credentials.scopes.contains)) {
         throw const FormatException('Credenziali salvate non utilizzabili.');
       }
+      if (_disposed) return;
       final baseClient = http.Client();
       try {
         final client = auth.autoRefreshingClient(
@@ -94,7 +102,20 @@ class DesktopGoogleAuth {
     }
   }
 
-  Future<http.Client> authenticatedClient() async {
+  Future<http.Client> authenticatedClient() {
+    if (_disposed) throw StateError('Il servizio OAuth è stato chiuso.');
+    final pending = _authenticationInProgress;
+    if (pending != null) return pending;
+    final operation = _authenticateClient();
+    _authenticationInProgress = operation;
+    return operation.whenComplete(() {
+      if (identical(_authenticationInProgress, operation)) {
+        _authenticationInProgress = null;
+      }
+    });
+  }
+
+  Future<http.Client> _authenticateClient() async {
     final existing = _client;
     if (existing != null) return existing;
     if (!_isSupportedDesktop) {
@@ -108,34 +129,66 @@ class DesktopGoogleAuth {
       );
     }
     await restore();
+    if (_disposed) throw const DesktopGoogleAuthCanceled();
     final restored = _client;
     if (restored != null) return restored;
 
     try {
       final launch = Completer<auth.AutoRefreshingAuthClient>();
       _browserLaunch = launch;
+      Uri? authorizationUri;
+      var accepted = false;
       try {
         // Se il browser non parte, il consenso non arriverà mai: senza questa
         // corsa l'attesa resterebbe appesa a tempo indefinito.
+        final consent = auth.clientViaUserConsent(
+          auth.ClientId(clientId, clientSecret),
+          scopes,
+          (url) {
+            authorizationUri = Uri.parse(url);
+            if (!identical(_browserLaunch, launch)) {
+              unawaited(_cancelConsent(authorizationUri!));
+              return;
+            }
+            _openBrowser(url, launch);
+          },
+          customPostAuthPage: _successPage,
+        );
+        // Un consenso completato dopo il timeout non deve adottare un client
+        // vecchio né lasciarlo aperto. La callback locale viene chiusa sotto.
+        unawaited(
+          consent.then<void>((client) {
+            if (!identical(_browserLaunch, launch)) client.close();
+          }, onError: (Object _) {}),
+        );
         final client = await Future.any([
-          auth.clientViaUserConsent(
-            auth.ClientId(clientId, clientSecret),
-            scopes,
-            _openBrowser,
-            customPostAuthPage: _successPage,
-          ),
+          consent,
           launch.future,
-        ]);
+        ]).timeout(consentTimeout);
+        if (_disposed) {
+          client.close();
+          throw const DesktopGoogleAuthCanceled();
+        }
         _adopt(client);
+        accepted = true;
         await _saveCredentials(client.credentials);
         return client;
       } finally {
         _browserLaunch = null;
+        if (!accepted && authorizationUri != null) {
+          await _cancelConsent(authorizationUri!);
+        }
       }
     } on auth.UserConsentException {
       throw const DesktopGoogleAuthCanceled();
     } on DesktopGoogleAuthException {
       rethrow;
+    } on DesktopGoogleAuthCanceled {
+      rethrow;
+    } on TimeoutException {
+      throw const DesktopGoogleAuthException(
+        'Accesso Google scaduto. Completa il consenso nel browser e riprova.',
+      );
     } catch (error) {
       throw DesktopGoogleAuthException(
         'Accesso OAuth desktop non riuscito: $error',
@@ -194,7 +247,49 @@ class DesktopGoogleAuth {
     }
   }
 
-  void _openBrowser(String authorizationUrl) {
+  // googleapis_auth non espone un cancel del server loopback: inviamo la
+  // normale risposta OAuth di annullamento alla callback di questo tentativo.
+  // Così il flusso libera sia la porta locale sia il client HTTP sottostante.
+  Future<void> _cancelConsent(Uri authorizationUri) async {
+    final redirect = authorizationUri.queryParameters['redirect_uri'];
+    if (redirect == null) return;
+    final uri = Uri.parse(redirect);
+    if (uri.scheme != 'http' ||
+        !const ['localhost', '127.0.0.1', '::1'].contains(uri.host)) {
+      return;
+    }
+    final client = http.Client();
+    try {
+      await client
+          .get(
+            uri.replace(
+              queryParameters: {
+                'state': authorizationUri.queryParameters['state'] ?? '',
+                'error': 'access_denied',
+              },
+            ),
+          )
+          .timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // Il server può essere già stato chiuso da un'altra risposta OAuth.
+    } finally {
+      client.close();
+    }
+  }
+
+  void _openBrowser(
+    String authorizationUrl,
+    Completer<auth.AutoRefreshingAuthClient> launch,
+  ) {
+    final opener = _browserOpener;
+    if (opener != null) {
+      unawaited(
+        Future<void>.sync(
+          () => opener(authorizationUrl),
+        ).catchError((Object error) => _failBrowserLaunch(launch, '$error')),
+      );
+      return;
+    }
     final executable = Platform.isWindows ? 'rundll32' : 'xdg-open';
     final arguments = Platform.isWindows
         ? ['url.dll,FileProtocolHandler', authorizationUrl]
@@ -207,19 +302,23 @@ class DesktopGoogleAuth {
         (result) {
           if (result.exitCode == 0) return;
           _failBrowserLaunch(
+            launch,
             'Impossibile aprire il browser predefinito (${result.stderr}).',
           );
         },
         onError: (Object error) => _failBrowserLaunch(
+          launch,
           'Impossibile aprire il browser predefinito ($error).',
         ),
       ),
     );
   }
 
-  void _failBrowserLaunch(String message) {
-    final launch = _browserLaunch;
-    if (launch == null || launch.isCompleted) return;
+  void _failBrowserLaunch(
+    Completer<auth.AutoRefreshingAuthClient> launch,
+    String message,
+  ) {
+    if (!identical(_browserLaunch, launch) || launch.isCompleted) return;
     launch.completeError(DesktopGoogleAuthException(message));
   }
 
@@ -253,6 +352,11 @@ class DesktopGoogleAuth {
   }
 
   void dispose() {
+    _disposed = true;
+    final launch = _browserLaunch;
+    if (launch != null && !launch.isCompleted) {
+      launch.completeError(const DesktopGoogleAuthCanceled());
+    }
     unawaited(_credentialUpdates?.cancel());
     _credentialUpdates = null;
     _client?.close();

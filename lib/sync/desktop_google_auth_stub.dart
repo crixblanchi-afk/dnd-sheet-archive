@@ -15,11 +15,15 @@ class DesktopGoogleAuth {
     required this.clientId,
     required this.clientSecret,
     required this.scopes,
+    this.consentTimeout = const Duration(minutes: 2),
+    Future<void> Function(String)? openBrowser,
+    Future<Object> Function()? supportDirectory,
   });
 
   final String clientId;
   final String clientSecret;
   final List<String> scopes;
+  final Duration consentTimeout;
 
   bool get isConfigured => false;
   bool get isConnected => false;

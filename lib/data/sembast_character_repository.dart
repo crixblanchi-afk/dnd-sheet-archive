@@ -2,12 +2,13 @@ import 'package:sembast/sembast.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/character.dart';
+import '../models/character_edits.dart';
 import '../models/character_version.dart';
 import '../models/snapshot_policy.dart';
 import '../sync/archive_sync_tracker.dart';
 import 'character_repository.dart';
 
-class SembastCharacterRepository implements CharacterRepository {
+class SembastCharacterRepository extends CharacterRepository {
   SembastCharacterRepository(
     this.database, {
     Uuid? uuid,
@@ -42,6 +43,14 @@ class SembastCharacterRepository implements CharacterRepository {
   }
 
   @override
+  Stream<Character?> watchCharacter(String id) => _characters
+      .record(id)
+      .onSnapshot(database)
+      .map(
+        (record) => record == null ? null : Character.fromJson(record.value),
+      );
+
+  @override
   Future<Character> createCharacter(String name) async {
     final now = _now().toUtc();
     final character = Character(
@@ -52,6 +61,7 @@ class SembastCharacterRepository implements CharacterRepository {
       locked: false,
       fields: {'CharacterName': name.trim()},
     );
+    character.rename(character.name);
     await database.transaction((transaction) async {
       await _characters
           .record(character.id)
@@ -75,11 +85,36 @@ class SembastCharacterRepository implements CharacterRepository {
   }
 
   @override
+  Future<Character> saveCharacterEdits(
+    Character character,
+    Character base,
+  ) async {
+    late Character saved;
+    await database.transaction((transaction) async {
+      final json = await _characters.record(character.id).get(transaction);
+      if (json == null) {
+        throw StateError(
+          'Il personaggio è stato eliminato su un altro dispositivo.',
+        );
+      }
+      saved = applyCharacterEdits(
+        base: base,
+        edited: character,
+        current: Character.fromJson(json),
+      )..updatedAt = _now().toUtc();
+      await _characters.record(saved.id).put(transaction, saved.toJson());
+    });
+    await syncTracker.markChanged();
+    return saved;
+  }
+
+  @override
   Future<void> renameCharacter(String id, String newName) async {
     final character = await getCharacter(id);
     if (character == null) return;
-    character.name = newName.trim();
-    await saveCharacter(character);
+    final base = character.copy();
+    character.rename(newName.trim());
+    await saveCharacterEdits(character, base);
   }
 
   @override
@@ -215,6 +250,7 @@ class SembastCharacterRepository implements CharacterRepository {
         fields: Map.of(version.fields),
         comments: Map.of(version.comments),
       );
+      restored.rename(restored.name);
       await _characters.record(characterId).put(transaction, restored.toJson());
       await _pruneSnapshots(transaction, characterId);
     });

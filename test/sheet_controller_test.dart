@@ -218,7 +218,7 @@ Character _character() {
   );
 }
 
-class _FakeRepository implements CharacterRepository {
+class _FakeRepository extends CharacterRepository {
   _FakeRepository({this.failingSaves = 0});
 
   final int failingSaves;

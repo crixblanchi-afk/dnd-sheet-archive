@@ -387,7 +387,7 @@ class _Fixture {
   );
 }
 
-class _FakeRepository implements CharacterRepository {
+class _FakeRepository extends CharacterRepository {
   @override
   Future<void> saveCharacter(Character character) async {}
 

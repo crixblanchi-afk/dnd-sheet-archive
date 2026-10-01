@@ -147,7 +147,10 @@ void main() {
         Offset(520, 220),
       ]) {
         final before = _pixel(light, point.dx.toInt(), point.dy.toInt());
-        expect(before, anyOf(equals([230, 40, 50, 255]), equals([30, 150, 220, 255])));
+        expect(
+          before,
+          anyOf(equals([230, 40, 50, 255]), equals([30, 150, 220, 255])),
+        );
         expect(_pixel(dark, point.dx.toInt(), point.dy.toInt()), before);
       }
       expect(
@@ -230,7 +233,7 @@ Future<Uint8List> _capture(
 List<int> _pixel(Uint8List pixels, int x, int y) =>
     pixels.sublist((y * 612 + x) * 4, (y * 612 + x) * 4 + 4);
 
-class _Repository implements CharacterRepository {
+class _Repository extends CharacterRepository {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

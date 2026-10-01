@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import '../data/character_repository.dart';
 import '../models/character.dart';
+import '../models/character_edits.dart';
 import '../models/sheet_field.dart';
 
 class SheetController extends ChangeNotifier with WidgetsBindingObserver {
@@ -14,7 +15,20 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
     this.autosaveDelay = const Duration(milliseconds: 800),
     this.sessionCap = const Duration(minutes: 10),
   }) {
+    _persisted = character.copy();
     lockedState = ValueNotifier(character.locked);
+    _characterSubscription = repository.watchCharacter(character.id).listen(
+      (current) {
+        if (_closed || _disposed) return;
+        if (_saveInProgress != null) {
+          _refreshPending = true;
+        } else {
+          _receivePersisted(current);
+        }
+      },
+      // Un errore nello stream non deve interrompere l'editing locale.
+      onError: (Object _) {},
+    );
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -25,6 +39,11 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
   late final ValueNotifier<bool> lockedState;
   final ValueNotifier<bool> dirtyState = ValueNotifier(false);
   final Map<String, ValueNotifier<bool>> _commentStates = {};
+  late Character _persisted;
+  late final StreamSubscription<Character?> _characterSubscription;
+  bool _refreshPending = false;
+  bool _deleted = false;
+  bool _disposed = false;
 
   Timer? _saveTimer;
   Timer? _capTimer;
@@ -35,7 +54,7 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
   bool _closed = false;
   int _revision = 0;
 
-  bool get locked => character.locked;
+  bool get locked => character.locked || _deleted || _closed || _disposed;
   Object? valueFor(String name) => character.fields[name];
   String? commentFor(String name) => character.comments[name];
   ValueListenable<bool> commentStateFor(String name) =>
@@ -46,6 +65,12 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
 
   void setText(String name, String value) {
     if (locked) return;
+    if (name == 'CharacterName' || name == 'CharacterName 2') {
+      character.rename(value);
+      _changed();
+      notifyListeners();
+      return;
+    }
     if (value.isEmpty) {
       character.fields.remove(name);
     } else {
@@ -109,7 +134,7 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> flush() async {
     _saveTimer?.cancel();
     _saveTimer = null;
-    while (_dirty && !_closed) {
+    while (_dirty && !_closed && !_disposed) {
       final activeSave = _saveInProgress;
       if (activeSave != null) {
         await activeSave;
@@ -117,21 +142,50 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       final savingRevision = _revision;
-      final operation = repository.saveCharacter(character);
+      final editing = character.copy();
+      final operation = _saveRevision(
+        editing,
+        _persisted.copy(),
+        savingRevision,
+      );
       _saveInProgress = operation;
       try {
         await operation;
-        if (_revision == savingRevision) {
-          _dirty = false;
-          dirtyState.value = false;
-        }
       } catch (_) {
+        if (_refreshPending && !_disposed && !_closed) {
+          _refreshPending = false;
+          _receivePersisted(await repository.getCharacter(character.id));
+          if (_deleted) return;
+        }
         _dirty = true;
-        if (!_closed) _scheduleSave(const Duration(seconds: 2));
+        if (!_closed && !_disposed) _scheduleSave(const Duration(seconds: 2));
         rethrow;
       } finally {
         if (identical(_saveInProgress, operation)) _saveInProgress = null;
       }
+    }
+  }
+
+  Future<void> _saveRevision(
+    Character editing,
+    Character base,
+    int revision,
+  ) async {
+    final saved = await repository.saveCharacterEdits(editing, base);
+    if (_disposed || _closed) return;
+    // Gli input arrivati durante la scrittura restano da salvare.
+    _replaceCharacter(
+      applyCharacterEdits(base: editing, edited: character, current: saved),
+    );
+    _persisted = saved.copy();
+    while (_refreshPending && !_disposed && !_closed) {
+      _refreshPending = false;
+      _receivePersisted(await repository.getCharacter(character.id));
+    }
+    if (_disposed || _closed) return;
+    if (_revision == revision) {
+      _dirty = false;
+      dirtyState.value = false;
     }
   }
 
@@ -151,6 +205,7 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _finishEditingSession(String reason) async {
     await flush();
+    if (_deleted || _disposed) return;
     final snapshotRevision = _revision;
     await repository.createSnapshot(character, reason);
     if (_revision == snapshotRevision) {
@@ -169,7 +224,7 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> toggleLock() async {
-    if (_closed) return;
+    if (_closed || _deleted || _disposed) return;
     final hadDirtySession = _dirtySinceSnapshot;
     character.locked = !character.locked;
     lockedState.value = character.locked;
@@ -194,6 +249,52 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
     _saveTimer?.cancel();
     _capTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_characterSubscription.cancel());
+  }
+
+  void _receivePersisted(Character? current) {
+    if (_disposed || _closed) return;
+    if (current == null) {
+      _deleted = true;
+      _dirty = false;
+      _dirtySinceSnapshot = false;
+      _saveTimer?.cancel();
+      _capTimer?.cancel();
+      lockedState.value = true;
+      dirtyState.value = false;
+      notifyListeners();
+      return;
+    }
+    if (_deleted) return;
+    final merged = applyCharacterEdits(
+      base: _persisted,
+      edited: character,
+      current: current,
+    );
+    _persisted = current.copy();
+    _replaceCharacter(merged);
+  }
+
+  void _replaceCharacter(Character current) {
+    final changed =
+        character.name != current.name ||
+        character.locked != current.locked ||
+        !mapEquals(character.fields, current.fields) ||
+        !mapEquals(character.comments, current.comments);
+    character.name = current.name;
+    character.updatedAt = current.updatedAt;
+    character.locked = current.locked;
+    character.fields
+      ..clear()
+      ..addAll(current.fields);
+    character.comments
+      ..clear()
+      ..addAll(current.comments);
+    lockedState.value = locked;
+    for (final entry in _commentStates.entries) {
+      entry.value.value = character.comments.containsKey(entry.key);
+    }
+    if (changed) notifyListeners();
   }
 
   @override
@@ -208,6 +309,8 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _disposed = true;
+    unawaited(_characterSubscription.cancel());
     _saveTimer?.cancel();
     _capTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);

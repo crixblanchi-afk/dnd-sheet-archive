@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../data/character_repository.dart';
+import '../export/character_pdf_exporter.dart';
 import '../models/character.dart';
 import '../sync/google_drive_sync_service.dart';
+import '../widgets/character_export_dialog.dart';
 import '../widgets/version_history_sheet.dart';
 import '../widgets/theme_mode_button.dart';
 import 'sheet_screen.dart';
 
-enum _CharacterAction { rename, history, delete }
+enum _CharacterAction { export, rename, history, delete }
 
 enum _DriveAction { sync, signOut }
 
@@ -17,10 +19,12 @@ class CharacterListScreen extends StatefulWidget {
     super.key,
     required this.repository,
     required this.driveSync,
+    this.pdfExporter,
   });
 
   final CharacterRepository repository;
   final GoogleDriveSyncService driveSync;
+  final CharacterPdfExporter? pdfExporter;
 
   @override
   State<CharacterListScreen> createState() => _CharacterListScreenState();
@@ -28,6 +32,8 @@ class CharacterListScreen extends StatefulWidget {
 
 class _CharacterListScreenState extends State<CharacterListScreen> {
   CharacterRepository get repository => widget.repository;
+  late final _pdfExporter = widget.pdfExporter ?? CharacterPdfExporter();
+  bool _exporting = false;
 
   // Ogni notifica del servizio Drive ricostruisce la schermata: creare lo
   // stream in `build` farebbe disiscrivere e rieseguire la query sembast a
@@ -115,6 +121,8 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
     _CharacterAction action,
   ) async {
     switch (action) {
+      case _CharacterAction.export:
+        await _export([item.id]);
       case _CharacterAction.rename:
         final name = await _askName(
           context,
@@ -154,6 +162,74 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
         if (confirmed == true) await repository.deleteCharacter(item.id);
     }
   }
+
+  Future<void> _export([List<String>? ids]) async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      if (ids == null) {
+        final summaries = await repository.watchCharacters().first;
+        if (!mounted) return;
+        if (summaries.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Nessuna scheda da esportare.')),
+          );
+          return;
+        }
+        ids = await showDialog<List<String>>(
+          context: context,
+          builder: (_) => CharacterExportDialog(characters: summaries),
+        );
+      }
+      if (ids == null || ids.isEmpty || !mounted) return;
+      final characters = <Character>[];
+      for (final id in ids) {
+        final character = await repository.getCharacter(id);
+        if (character == null) {
+          throw StateError('Una scheda selezionata è stata eliminata.');
+        }
+        characters.add(character);
+      }
+      final saved = await _pdfExporter.exportCharacters(characters);
+      if (saved && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              characters.length == 1
+                  ? 'Scheda esportata in PDF compilabile.'
+                  : '${characters.length} schede esportate in PDF compilabile.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Esportazione PDF non riuscita. Riprova.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Widget _exportAction() => _exporting
+      ? const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Center(
+            child: SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+          ),
+        )
+      : IconButton(
+          tooltip: 'Esporta schede in PDF',
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+          onPressed: _export,
+        );
 
   Future<void> _performDriveAction(_DriveAction action) async {
     if (action == _DriveAction.signOut) {
@@ -263,7 +339,7 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('Schede D&D 5e'),
-      actions: [const ThemeModeButton(), _driveAction()],
+      actions: [_exportAction(), const ThemeModeButton(), _driveAction()],
     ),
     body: StreamBuilder<List<CharacterSummary>>(
       stream: _characters,
@@ -304,16 +380,21 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
               },
               trailing: PopupMenuButton<_CharacterAction>(
                 onSelected: (action) => _action(context, item, action),
-                itemBuilder: (context) => const [
+                itemBuilder: (context) => [
                   PopupMenuItem(
+                    value: _CharacterAction.export,
+                    enabled: !_exporting,
+                    child: const Text('Esporta PDF'),
+                  ),
+                  const PopupMenuItem(
                     value: _CharacterAction.rename,
                     child: Text('Rinomina'),
                   ),
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: _CharacterAction.history,
                     child: Text('Cronologia versioni'),
                   ),
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: _CharacterAction.delete,
                     child: Text('Elimina'),
                   ),

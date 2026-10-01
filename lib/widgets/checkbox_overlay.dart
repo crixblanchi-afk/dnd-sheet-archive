@@ -30,6 +30,14 @@ class _CheckboxOverlayState extends State<CheckboxOverlay> {
     );
   }
 
+  @override
+  void didUpdateWidget(CheckboxOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _value = SheetCheckboxValue.fromStored(
+      widget.sheetController.valueFor(widget.field.name),
+    );
+  }
+
   void _showComment() => showFieldCommentDialog(
     context: context,
     fieldName: widget.field.name,

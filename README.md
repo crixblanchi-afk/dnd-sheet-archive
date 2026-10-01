@@ -25,6 +25,22 @@ versioni e nel backup Drive. Per questo ognuna viene ridotta al proprio riquadro
 al doppio della risoluzione, quanto basta a disegnarla nitida senza gonfiare il
 backup; viene rifiutato soltanto un file sorgente oltre i 32 MB.
 
+Il backup completo su Drive ha un limite di 20 MB, uguale per caricamento e
+download. Se l'archivio lo supera, il caricamento viene interrotto con un
+messaggio: le schede locali e il backup già presente su Drive restano
+conservati. Riduci le immagini o il numero di schede prima di riprovare.
+
+Il nome nell'elenco e i campi nome nelle due pagine della scheda restano
+sincronizzati, anche quando si usa il comando **Rinomina**.
+
+Nell'elenco, il pulsante **Esporta schede in PDF** permette di selezionare una
+o più schede, oppure tutte. Il PDF contiene tre pagine per personaggio e
+mantiene i campi di testo e le caselle compilabili, con valori indipendenti
+fra le schede. Include anche ritratto, simbolo, competenze e note dei campi;
+anche le schede bloccate nell'app vengono esportate come moduli editabili.
+Il menu della singola scheda offre **Esporta PDF** per esportarla direttamente.
+Su desktop e Android si sceglie dove salvare; sul Web parte il download.
+
 Il menu **Aspetto**, disponibile nell'elenco e nella scheda, permette di scegliere
 **Chiaro**, **Scuro** o **Sistema**. La scelta viene ricordata sul dispositivo.
 Il tema scuro adatta anche la carta, le cornici, le etichette, i campi e gli
@@ -38,6 +54,16 @@ per UUID; per i conflitti sui personaggi prevale `updatedAt` più recente. Le
 cancellazioni vengono sincronizzate e non fanno ricomparire dati provenienti da
 un dispositivo non aggiornato; la traccia di una cancellazione resta nel backup
 per 90 giorni, così l'elenco non cresce all'infinito.
+
+Una scheda aperta riceve gli aggiornamenti da Drive conservando le modifiche
+locali ancora da salvare. Il salvataggio applica solo i campi modificati nella
+sessione: se lo stesso campo viene cambiato anche da remoto, prevale la
+modifica locale esplicita. Un personaggio eliminato da remoto non viene
+ricreato da un editor rimasto aperto.
+
+Su Linux e Windows il consenso Google scade dopo due minuti se non viene
+completato nel browser. Il tentativo viene chiuso e si può riprovare dal menu
+cloud senza riavviare l'applicazione.
 
 Configurazione Google Cloud:
 

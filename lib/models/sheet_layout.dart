@@ -36,3 +36,29 @@ double clampSheetTranslationX(
   final maxScroll = math.max(0.0, scaledSheetWidth - viewportWidth);
   return translationX.clamp(center - maxScroll, center);
 }
+
+// I riquadri illustrati della pagina 2 non sono campi modulo del PDF, quindi
+// non hanno una voce in fields.json: i loro limiti sono misurati a mano
+// sull'artwork in assets/sheet/page-2.png.
+const sheetImageFields = [
+  // "Character Appearance", la colonna di sinistra.
+  (
+    name: 'CharacterAppearanceImage',
+    page: 1,
+    x: 31.0,
+    y: 128.0,
+    width: 172.0,
+    height: 222.0,
+  ),
+  // Il riquadro del simbolo in "Allies & Organizations": la cornice va da
+  // x 417.6 a 566.3 e da y 142 a 290, ma la parte alta è occupata dal campo
+  // FactionName (fino a y 169.3) e il fondo dalla dicitura "SYMBOL".
+  (
+    name: 'FactionSymbolImage',
+    page: 1,
+    x: 420.0,
+    y: 171.0,
+    width: 143.0,
+    height: 114.0,
+  ),
+];

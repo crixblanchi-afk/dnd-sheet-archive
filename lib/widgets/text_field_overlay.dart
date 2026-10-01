@@ -59,6 +59,18 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
   @override
   void didUpdateWidget(TextFieldOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final value =
+        widget.sheetController.valueFor(widget.field.name)?.toString() ?? '';
+    if (_value != value) {
+      _value = value;
+      final controller = _textController;
+      if (controller != null && controller.text != value) {
+        controller.value = TextEditingValue(
+          text: value,
+          selection: TextSelection.collapsed(offset: value.length),
+        );
+      }
+    }
     // La geometria e lo stile di base arrivano dalla definizione del campo:
     // se cambia, la misura in cache non vale più.
     if (!identical(widget.field, oldWidget.field)) {

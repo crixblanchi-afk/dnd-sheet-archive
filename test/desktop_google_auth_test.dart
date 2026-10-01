@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -107,4 +108,121 @@ void main() {
     expect(auth.isConnected, isFalse);
     expect(credentialsFile().existsSync(), isFalse);
   });
+
+  test(
+    'an abandoned browser login times out, closes its callback and can retry',
+    () async {
+      final redirects = <Uri>[];
+      auth = DesktopGoogleAuth(
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        scopes: const ['scope-a'],
+        supportDirectory: () async => tempDir,
+        consentTimeout: const Duration(milliseconds: 100),
+        openBrowser: (url) async {
+          redirects.add(
+            Uri.parse(Uri.parse(url).queryParameters['redirect_uri']!),
+          );
+        },
+      );
+      for (var attempt = 0; attempt < 2; attempt++) {
+        await expectLater(
+          auth!.authenticatedClient(),
+          throwsA(
+            isA<DesktopGoogleAuthException>().having(
+              (error) => error.message,
+              'message',
+              contains('scaduto'),
+            ),
+          ),
+        );
+        expect(auth!.isConnected, isFalse);
+        expect(credentialsFile().existsSync(), isFalse);
+        final redirect = redirects[attempt];
+        await expectLater(
+          Socket.connect(
+            redirect.host,
+            redirect.port,
+            timeout: const Duration(seconds: 1),
+          ),
+          throwsA(isA<SocketException>()),
+        );
+      }
+      expect(redirects, hasLength(2));
+    },
+  );
+
+  test('a browser launch failure closes the callback immediately', () async {
+    Uri? redirect;
+    auth = DesktopGoogleAuth(
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      scopes: const ['scope-a'],
+      supportDirectory: () async => tempDir,
+      openBrowser: (url) async {
+        redirect = Uri.parse(Uri.parse(url).queryParameters['redirect_uri']!);
+        throw StateError('No browser installed');
+      },
+    );
+    await expectLater(
+      auth!.authenticatedClient(),
+      throwsA(
+        isA<DesktopGoogleAuthException>().having(
+          (error) => error.message,
+          'message',
+          contains('No browser installed'),
+        ),
+      ),
+    );
+    await expectLater(
+      Socket.connect(
+        redirect!.host,
+        redirect!.port,
+        timeout: const Duration(seconds: 1),
+      ),
+      throwsA(isA<SocketException>()),
+    );
+  });
+
+  test(
+    'concurrent login requests share one browser and cancel on dispose',
+    () async {
+      final opened = Completer<Uri>();
+      var browsers = 0;
+      auth = DesktopGoogleAuth(
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        scopes: const ['scope-a'],
+        supportDirectory: () async => tempDir,
+        openBrowser: (url) async {
+          browsers++;
+          opened.complete(
+            Uri.parse(Uri.parse(url).queryParameters['redirect_uri']!),
+          );
+        },
+      );
+      final first = auth!.authenticatedClient();
+      final second = auth!.authenticatedClient();
+      final firstCheck = expectLater(
+        first,
+        throwsA(isA<DesktopGoogleAuthCanceled>()),
+      );
+      final secondCheck = expectLater(
+        second,
+        throwsA(isA<DesktopGoogleAuthCanceled>()),
+      );
+      final redirect = await opened.future;
+      auth!.dispose();
+      await Future.wait([firstCheck, secondCheck]);
+      expect(browsers, 1);
+      await expectLater(
+        Socket.connect(
+          redirect.host,
+          redirect.port,
+          timeout: const Duration(seconds: 1),
+        ),
+        throwsA(isA<SocketException>()),
+      );
+    },
+  );
 }
