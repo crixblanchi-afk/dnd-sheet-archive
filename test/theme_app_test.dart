@@ -13,7 +13,7 @@ import 'package:sembast/sembast_memory.dart';
 
 void main() {
   testWidgets(
-    'appearance updates an open sheet and follows system brightness',
+    'appearance selected on the list applies to the sheet and follows system brightness',
     (tester) async {
       final database = await databaseFactoryMemory.openDatabase('theme-app.db');
       addTearDown(database.close);
@@ -42,6 +42,13 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.byTooltip('Aspetto'), findsOneWidget);
+      await tester.tap(find.byTooltip('Aspetto'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(CheckedPopupMenuItem<ThemeMode>, 'Scuro'),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text(character.name));
       // Navigation reads Sembast before the sheet starts loading its assets.
       // Alternate real I/O and frames until both stages have completed.
@@ -55,23 +62,15 @@ void main() {
       expect(find.byType(SheetPage), findsNWidgets(3));
       await tester.pumpAndSettle();
       expect(find.byType(SheetScreen), findsOneWidget);
-      Future<void> choose(String label) async {
-        await tester.tap(find.byTooltip('Aspetto'));
-        await tester.pumpAndSettle();
-        await tester.tap(
-          find.widgetWithText(CheckedPopupMenuItem<ThemeMode>, label),
-        );
-        await tester.pumpAndSettle();
-      }
-
-      await choose('Scuro');
+      expect(find.byTooltip('Aspetto'), findsNothing);
       expect(
         Theme.of(tester.element(find.byType(SheetScreen))).brightness,
         Brightness.dark,
       );
       expect(find.byType(SheetScreen), findsOneWidget);
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
-      await choose('Sistema');
+      await preferences.setMode(ThemeMode.system);
+      await tester.pumpAndSettle();
       expect(
         Theme.of(tester.element(find.byType(SheetScreen))).brightness,
         Brightness.light,

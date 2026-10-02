@@ -163,7 +163,7 @@ void main() {
       await tester.tap(fit);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
-      controller.value = controller.value.clone()..scaleByDouble(.9, .9, 1, 1);
+      controller.value = controller.value.clone()..scaleByDouble(.9, .9, .9, 1);
       final manualScale = controller.value.getMaxScaleOnAxis();
       await finishZoom();
       expect(fit, findsOneWidget);

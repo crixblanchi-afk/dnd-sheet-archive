@@ -134,10 +134,18 @@ void main() {
       await tester.pumpAndSettle();
       final light = await _capture(tester, boundary, 'light');
       brightness.value = Brightness.dark;
+      await tester.pump();
+      await tester.runAsync(
+        () => precacheImage(
+          const AssetImage('assets/sheet/page-2-dark.png'),
+          context,
+        ),
+      );
       await tester.pumpAndSettle();
+      expect(find.byType(ColorFiltered), findsNothing);
       final dark = await _capture(tester, boundary, 'dark');
       expect(_pixel(light, 5, 5), [255, 255, 255, 255]);
-      expect(_pixel(dark, 5, 5), [32, 35, 41, 255]);
+      expect(_pixel(dark, 5, 5), [36, 33, 30, 255]);
       // Centro di ciascuna metà del ritratto e del simbolo: confronto dei
       // pixel finali, non soltanto delle proprietà del widget Image.
       for (final point in const [
@@ -174,12 +182,17 @@ void main() {
         (a.computeLuminance() + .05) / (b.computeLuminance() + .05);
     expect(
       contrast(SheetPalette.dark.text, SheetPalette.dark.paper),
-      greaterThan(10),
+      greaterThan(7),
     );
     expect(
       contrast(SheetPalette.dark.comment, SheetPalette.dark.paper),
       greaterThan(4.5),
     );
+  });
+
+  test('dark sheet uses pure black outside its warm paper', () {
+    expect(SheetPalette.dark.workspace, Colors.black);
+    expect(SheetPalette.dark.paper, const Color(0xff24211e));
   });
 }
 
@@ -295,7 +308,10 @@ Future<void> _previewPages(
       final context = tester.element(find.byType(SheetPage));
       await tester.runAsync(
         () => precacheImage(
-          AssetImage('assets/sheet/page-${page + 1}.png'),
+          AssetImage(
+            'assets/sheet/page-${page + 1}'
+            '${brightness == Brightness.dark ? '-dark' : ''}.png',
+          ),
           context,
         ),
       );

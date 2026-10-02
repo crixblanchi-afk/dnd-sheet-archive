@@ -149,7 +149,7 @@ class _TransformationWheelScrollerState
     final scenePoint = widget.controller.toScene(focalPoint);
     final target = Matrix4.identity()
       ..translateByDouble(focalPoint.dx, focalPoint.dy, 0, 1)
-      ..scaleByDouble(targetScale, targetScale, 1, 1)
+      ..scaleByDouble(targetScale, targetScale, targetScale, 1)
       ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
     target.storage[12] = clampSheetTranslationX(
       target.storage[12],
