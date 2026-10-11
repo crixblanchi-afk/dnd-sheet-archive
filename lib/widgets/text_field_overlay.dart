@@ -30,11 +30,13 @@ class TextFieldOverlay extends StatefulWidget {
     required this.field,
     required this.sheetController,
     required this.onFocused,
+    this.onUnfocused,
   });
 
   final SheetFieldDef field;
   final SheetController sheetController;
   final ValueChanged<BuildContext> onFocused;
+  final ValueChanged<BuildContext>? onUnfocused;
 
   @override
   State<TextFieldOverlay> createState() => _TextFieldOverlayState();
@@ -114,6 +116,7 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
       widget.onFocused(context);
     } else if (_editing && mounted) {
       _removeGlobalPointerRoute();
+      widget.onUnfocused?.call(context);
       setState(() => _editing = false);
     }
   }

@@ -32,6 +32,7 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
   final _viewportKey = GlobalKey();
   Animation<Matrix4>? _panAnimation;
   BuildContext? _pendingFieldContext;
+  bool _revealingField = false;
   bool _initializedScale = false;
   double? _scaleBeforeFitWidth;
   double _lastScale = 1;
@@ -67,6 +68,16 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
     _scheduleFieldReveal();
   }
 
+  void _clearPendingField(BuildContext fieldContext) {
+    // Un altro campo può aver già acquisito il focus.
+    if (!identical(_pendingFieldContext, fieldContext)) return;
+    _pendingFieldContext = null;
+    if (_revealingField) {
+      _panAnimationController.stop();
+      _revealingField = false;
+    }
+  }
+
   @override
   void didChangeMetrics() {
     // La tastiera si apre con un'animazione, quindi `viewInsets` cresce per
@@ -96,8 +107,11 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
         viewport.localToGlobal(Offset(0, viewport.size.height)).dy - 16;
     if (bottom <= visibleBottom) return;
     final overlap = bottom - visibleBottom;
+    // L'overlap è già in pixel del viewport: la traslazione della matrice
+    // va aggiornata direttamente, senza moltiplicarlo di nuovo per lo zoom.
     final target = _transformationController.value.clone()
-      ..translateByDouble(0.0, -overlap, 0.0, 1.0);
+      ..storage[13] -= overlap;
+    _revealingField = true;
     _panAnimation =
         Matrix4Tween(
           begin: _transformationController.value,
@@ -180,6 +194,7 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
       viewportSize.width,
       _sheetSize.width * targetScale,
     );
+    _revealingField = false;
     _panAnimation =
         Matrix4Tween(
           begin: _transformationController.value,
@@ -251,6 +266,7 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
                         fields: widget.fields[page],
                         controller: widget.controller,
                         onFieldFocused: _ensureVisible,
+                        onFieldUnfocused: _clearPendingField,
                       ),
                       if (page < sheetPageCount - 1)
                         const SizedBox(height: sheetPageGap),
