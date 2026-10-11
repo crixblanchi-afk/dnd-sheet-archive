@@ -16,10 +16,12 @@ blocchi avvenuti entro 24 ore dal primo snapshot automatico aggiornano quello
 stesso snapshot invece di crearne uno nuovo; passata la finestra si riparte con
 una versione nuova.
 
-La scheda mostra una pagina alla volta. La barra in basso indica **Pagina 1 di 3**
-e permette di passare alla pagina precedente o successiva. Ogni foglio si adatta
-automaticamente allo spazio disponibile, anche con la tastiera aperta, senza
-zoom né scorrimento. Le modifiche ai campi restano salvate automaticamente.
+Il pulsante **Visualizzazione scheda**, in alto, permette di scegliere **A pagine**
+o **A scorrimento**. La vista a pagine usa tutto lo spazio disponibile, senza
+zoom né barra inferiore: uno swipe orizzontale gira il foglio. La vista a
+scorrimento mostra i tre fogli in una colonna continua e offre zoom, adattamento
+alla larghezza e barre di scorrimento. Cambiare modalità conserva le modifiche
+ai campi, che vengono salvate automaticamente.
 
 La seconda pagina ospita due riquadri per immagini: il ritratto del personaggio
 e il simbolo in “Allies & Organizations”. Si riempiono con un tocco e si

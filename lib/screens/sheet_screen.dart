@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,8 +12,11 @@ import '../models/sheet_layout.dart';
 import '../sync/google_drive_sync_service.dart';
 import '../widgets/dice_roller_overlay.dart';
 import '../widgets/sheet_page.dart';
+import '../widgets/scrollable_sheet_view.dart';
 import '../widgets/theme_mode_button.dart';
 import '../theme/sheet_palette.dart';
+
+enum _SheetViewMode { pages, scroll }
 
 class SheetScreen extends StatefulWidget {
   const SheetScreen({
@@ -36,6 +40,8 @@ class _SheetScreenState extends State<SheetScreen> {
   bool _allowPop = false;
   bool _exiting = false;
   int _pageIndex = 0;
+  _SheetViewMode _viewMode = _SheetViewMode.pages;
+  PageController _pageController = PageController();
 
   @override
   void initState() {
@@ -108,6 +114,44 @@ class _SheetScreenState extends State<SheetScreen> {
     setState(() => _pageIndex = pageIndex);
   }
 
+  void _setViewMode(_SheetViewMode mode) {
+    if (_viewMode == mode) return;
+    FocusScope.of(context).unfocus();
+    if (mode == _SheetViewMode.pages) {
+      _pageController.dispose();
+      _pageController = PageController(initialPage: _pageIndex);
+    }
+    setState(() => _viewMode = mode);
+  }
+
+  Widget _viewModeButton() => Material(
+    color: Theme.of(context).colorScheme.surface,
+    shape: const CircleBorder(),
+    elevation: 2,
+    child: PopupMenuButton<_SheetViewMode>(
+      tooltip: 'Visualizzazione scheda',
+      initialValue: _viewMode,
+      icon: Icon(
+        _viewMode == _SheetViewMode.pages
+            ? Icons.view_carousel_outlined
+            : Icons.view_day_outlined,
+      ),
+      onSelected: _setViewMode,
+      itemBuilder: (_) => [
+        CheckedPopupMenuItem(
+          value: _SheetViewMode.pages,
+          checked: _viewMode == _SheetViewMode.pages,
+          child: const Text('A pagine'),
+        ),
+        CheckedPopupMenuItem(
+          value: _SheetViewMode.scroll,
+          checked: _viewMode == _SheetViewMode.scroll,
+          child: const Text('A scorrimento'),
+        ),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: _allowPop,
@@ -116,58 +160,10 @@ class _SheetScreenState extends State<SheetScreen> {
     },
     child: Scaffold(
       backgroundColor: SheetPalette.of(context).workspace,
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Material(
-          elevation: 3,
-          color: Theme.of(context).colorScheme.surface,
-          child: SafeArea(
-            top: false,
-            child: Row(
-              children: [
-                IconButton(
-                  tooltip: 'Pagina precedente',
-                  onPressed: _pageIndex > 0
-                      ? () => _changePage(_pageIndex - 1)
-                      : null,
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                Expanded(
-                  child: Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      'Pagina ${_pageIndex + 1} di $sheetPageCount',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Pagina successiva',
-                  onPressed: _pageIndex < sheetPageCount - 1
-                      ? () => _changePage(_pageIndex + 1)
-                      : null,
-                  icon: const Icon(Icons.chevron_right),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // Lo Scaffold ha già riservato tastiera e navigazione. Quando
-            // resta poca altezza, lascia questo spazio alla pagina.
             final compactLayout = constraints.maxHeight < 240;
-            final pagePadding = compactLayout
-                ? EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: constraints.maxHeight * .05,
-                  )
-                : const EdgeInsets.fromLTRB(12, 64, 12, 88);
             return Stack(
               fit: StackFit.expand,
               children: [
@@ -193,19 +189,33 @@ class _SheetScreenState extends State<SheetScreen> {
                       if (!snapshot.hasData) {
                         return const Center(child: CircularProgressIndicator());
                       }
-                      return SafeArea(
-                        child: Padding(
-                          padding: pagePadding,
-                          child: Center(
+                      if (_viewMode == _SheetViewMode.scroll) {
+                        return ScrollableSheetView(
+                          controller: _sheetController,
+                          fields: snapshot.data!,
+                          initialPage: _pageIndex,
+                        );
+                      }
+                      return ScrollConfiguration(
+                        behavior: ScrollConfiguration.of(context).copyWith(
+                          dragDevices: {
+                            ...ScrollConfiguration.of(context).dragDevices,
+                            PointerDeviceKind.mouse,
+                          },
+                        ),
+                        child: PageView.builder(
+                          controller: _pageController,
+                          itemCount: sheetPageCount,
+                          onPageChanged: _changePage,
+                          itemBuilder: (context, page) => Semantics(
+                            label: 'Pagina ${page + 1} di $sheetPageCount',
                             child: FittedBox(
                               fit: BoxFit.contain,
                               child: SheetPage(
-                                key: ValueKey(_pageIndex),
-                                pageIndex: _pageIndex,
-                                fields: snapshot.data![_pageIndex],
+                                key: ValueKey(page),
+                                pageIndex: page,
+                                fields: snapshot.data![page],
                                 controller: _sheetController,
-                                // La pagina intera resta visibile anche quando la
-                                // tastiera riduce l'area disponibile.
                                 onFieldFocused: (_) {},
                               ),
                             ),
@@ -215,50 +225,50 @@ class _SheetScreenState extends State<SheetScreen> {
                     },
                   ),
                 ),
-                SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: compactLayout ? 0 : 12,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        FloatingActionButton.small(
-                          heroTag: 'back',
-                          onPressed: _exit,
-                          tooltip: 'Indietro',
-                          child: const Icon(Icons.arrow_back),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Material(
-                              color: Theme.of(context).colorScheme.surface,
-                              shape: const CircleBorder(),
-                              elevation: 2,
-                              child: const ThemeModeButton(),
-                            ),
-                            const SizedBox(width: 8),
-                            ValueListenableBuilder<bool>(
-                              valueListenable: _sheetController.lockedState,
-                              builder: (context, locked, _) =>
-                                  FloatingActionButton.small(
-                                    heroTag: 'lock',
-                                    onPressed: _toggleLock,
-                                    tooltip: locked
-                                        ? 'Sblocca scheda'
-                                        : 'Blocca scheda',
-                                    child: Icon(
-                                      locked ? Icons.lock : Icons.lock_open,
-                                    ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: compactLayout ? 0 : 12,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FloatingActionButton.small(
+                        heroTag: 'back',
+                        onPressed: _exit,
+                        tooltip: 'Indietro',
+                        child: const Icon(Icons.arrow_back),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _viewModeButton(),
+                          const SizedBox(width: 8),
+                          Material(
+                            color: Theme.of(context).colorScheme.surface,
+                            shape: const CircleBorder(),
+                            elevation: 2,
+                            child: const ThemeModeButton(),
+                          ),
+                          const SizedBox(width: 8),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: _sheetController.lockedState,
+                            builder: (context, locked, _) =>
+                                FloatingActionButton.small(
+                                  heroTag: 'lock',
+                                  onPressed: _toggleLock,
+                                  tooltip: locked
+                                      ? 'Sblocca scheda'
+                                      : 'Blocca scheda',
+                                  child: Icon(
+                                    locked ? Icons.lock : Icons.lock_open,
                                   ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 Positioned(
@@ -281,6 +291,7 @@ class _SheetScreenState extends State<SheetScreen> {
 
   @override
   void dispose() {
+    _pageController.dispose();
     unawaited(_closeAndDisposeController());
     super.dispose();
   }
