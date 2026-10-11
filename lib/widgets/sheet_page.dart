@@ -15,12 +15,14 @@ class SheetPage extends StatelessWidget {
     required this.fields,
     required this.controller,
     required this.onFieldFocused,
+    this.onFieldUnfocused,
   });
 
   final int pageIndex;
   final List<SheetFieldDef> fields;
   final SheetController controller;
   final ValueChanged<BuildContext> onFieldFocused;
+  final ValueChanged<BuildContext>? onFieldUnfocused;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -44,6 +46,7 @@ class SheetPage extends StatelessWidget {
                         field: field,
                         sheetController: controller,
                         onFocused: onFieldFocused,
+                        onUnfocused: onFieldUnfocused,
                       )
                     : CheckboxOverlay(
                         key: ValueKey(field.name),
