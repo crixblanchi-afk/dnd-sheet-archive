@@ -13,11 +13,6 @@ import '../widgets/dice_roller_overlay.dart';
 import '../widgets/sheet_page.dart';
 import '../widgets/theme_mode_button.dart';
 import '../theme/sheet_palette.dart';
-import '../widgets/transformation_scrollbar.dart';
-
-// I pulsanti di zoom si disabilitano appena prima del limite, per non restare
-// attivi quando un altro passo di scala non sarebbe più applicabile.
-const _scaleEpsilon = .001;
 
 class SheetScreen extends StatefulWidget {
   const SheetScreen({
@@ -35,48 +30,20 @@ class SheetScreen extends StatefulWidget {
   State<SheetScreen> createState() => _SheetScreenState();
 }
 
-class _SheetScreenState extends State<SheetScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _SheetScreenState extends State<SheetScreen> {
   late final SheetController _sheetController;
-  late final TransformationController _transformationController;
-  late final AnimationController _panAnimationController;
   late final Future<List<List<SheetFieldDef>>> _fields;
-  Animation<Matrix4>? _panAnimation;
-  BuildContext? _pendingFieldContext;
-  bool _initializedScale = false;
-  double? _scaleBeforeFitWidth;
-  double _lastScale = 1;
-  bool _applyingZoomAnimation = false;
   bool _allowPop = false;
   bool _exiting = false;
-
-  static const _sheetSize = Size(sheetPageWidth, sheetContentHeight);
+  int _pageIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _sheetController = SheetController(
       repository: widget.repository,
       character: widget.character,
     );
-    _transformationController = TransformationController()
-      ..addListener(_handleScaleChange);
-    _panAnimationController =
-        AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 220),
-        )..addListener(() {
-          final animation = _panAnimation;
-          if (animation != null) {
-            _applyingZoomAnimation = true;
-            try {
-              _transformationController.value = animation.value;
-            } finally {
-              _applyingZoomAnimation = false;
-            }
-          }
-        });
     _fields = SheetFieldDef.loadByPage();
   }
 
@@ -89,8 +56,6 @@ class _SheetScreenState extends State<SheetScreen>
     // il controller della scheda. Leggi le metriche correnti anche se il campo
     // ha già perso il focus al pointer-down sul pulsante Indietro.
     if (View.of(context).viewInsets.bottom > 0) {
-      _pendingFieldContext = null;
-      _panAnimationController.stop();
       FocusScope.of(context).unfocus();
       await SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
       return;
@@ -133,132 +98,14 @@ class _SheetScreenState extends State<SheetScreen>
     }
   }
 
-  void _ensureVisible(BuildContext fieldContext) {
-    _pendingFieldContext = fieldContext;
-    _scheduleFieldReveal();
-  }
-
-  @override
-  void didChangeMetrics() {
-    // La tastiera si apre con un'animazione, quindi `viewInsets` cresce per
-    // più fotogrammi: rivalutare a ogni cambio di metriche evita di indovinare
-    // una durata fissa e copre anche rotazione e ridimensionamento.
-    if (_pendingFieldContext != null) _scheduleFieldReveal();
-  }
-
-  void _scheduleFieldReveal() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _revealPendingField());
-  }
-
-  void _revealPendingField() {
-    final fieldContext = _pendingFieldContext;
-    if (fieldContext == null) return;
-    if (!mounted || !fieldContext.mounted) {
-      _pendingFieldContext = null;
+  void _changePage(int pageIndex) {
+    if (pageIndex < 0 ||
+        pageIndex >= sheetPageCount ||
+        pageIndex == _pageIndex) {
       return;
     }
-    final box = fieldContext.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    final bottom = box.localToGlobal(Offset(0, box.size.height)).dy;
-    final media = MediaQuery.of(context);
-    final visibleBottom = media.size.height - media.viewInsets.bottom - 16;
-    if (bottom <= visibleBottom) return;
-    final overlap = bottom - visibleBottom;
-    final target = _transformationController.value.clone()
-      ..translateByDouble(0.0, -overlap, 0.0, 1.0);
-    _panAnimation =
-        Matrix4Tween(
-          begin: _transformationController.value,
-          end: target,
-        ).animate(
-          CurvedAnimation(
-            parent: _panAnimationController,
-            curve: Curves.easeOut,
-          ),
-        );
-    _panAnimationController.forward(from: 0);
-  }
-
-  void _zoomBy(double factor, Size viewportSize) {
-    final currentScale = _transformationController.value.getMaxScaleOnAxis();
-    final targetScale = (currentScale * factor).clamp(
-      sheetMinScale,
-      sheetMaxScale,
-    );
-    if ((targetScale - currentScale).abs() < _scaleEpsilon) return;
-    _clearFitWidth();
-    _zoomTo(currentScale * factor, viewportSize);
-  }
-
-  void _clearFitWidth() {
-    if (_scaleBeforeFitWidth == null) return;
-    setState(() => _scaleBeforeFitWidth = null);
-  }
-
-  void _handleScaleChange() {
-    final scale = _transformationController.value.getMaxScaleOnAxis();
-    final changed = (scale - _lastScale).abs() > .000001;
-    _lastScale = scale;
-    // Pan e animazioni dell'app conservano lo zoom da ripristinare.
-    // Pinch e Ctrl+rotellina modificano direttamente il controller.
-    if (changed && !_applyingZoomAnimation) {
-      _panAnimationController.stop();
-      _clearFitWidth();
-    }
-  }
-
-  void _toggleFitWidth(Size viewportSize) {
-    final previousScale = _scaleBeforeFitWidth;
-    setState(() {
-      _scaleBeforeFitWidth = previousScale == null
-          ? _transformationController.value.getMaxScaleOnAxis()
-          : null;
-    });
-    _zoomTo(
-      previousScale ?? viewportSize.width / sheetPageWidth,
-      viewportSize,
-      fitWidth: true,
-    );
-  }
-
-  void _zoomTo(double scale, Size viewportSize, {bool fitWidth = false}) {
-    final currentScale = _transformationController.value.getMaxScaleOnAxis();
-    final targetScale = scale.clamp(sheetMinScale, sheetMaxScale);
-    if (!fitWidth && (targetScale - currentScale).abs() < _scaleEpsilon) {
-      return;
-    }
-    final focalPoint = fitWidth
-        ? Offset(viewportSize.width / 2, 0)
-        : viewportSize.center(Offset.zero);
-    final scenePoint = _transformationController.toScene(focalPoint);
-    final target = Matrix4.identity()
-      ..translateByDouble(focalPoint.dx, focalPoint.dy, 0, 1)
-      ..scaleByDouble(targetScale, targetScale, 1, 1)
-      ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
-    if (fitWidth) {
-      // Conserva la posizione di lettura senza lasciare spazio oltre le pagine.
-      final maxScroll = (_sheetSize.height * targetScale - viewportSize.height)
-          .clamp(0.0, double.infinity);
-      target.storage[13] = target.storage[13].clamp(-maxScroll, 0.0);
-    }
-    // Rimpicciolendo, la scheda può diventare più stretta della finestra: il
-    // punto focale da solo la lascerebbe sbilanciata su un lato.
-    target.storage[12] = clampSheetTranslationX(
-      target.storage[12],
-      viewportSize.width,
-      _sheetSize.width * targetScale,
-    );
-    _panAnimation =
-        Matrix4Tween(
-          begin: _transformationController.value,
-          end: target,
-        ).animate(
-          CurvedAnimation(
-            parent: _panAnimationController,
-            curve: Curves.easeOut,
-          ),
-        );
-    _panAnimationController.forward(from: 0);
+    FocusScope.of(context).unfocus();
+    setState(() => _pageIndex = pageIndex);
   }
 
   @override
@@ -269,200 +116,171 @@ class _SheetScreenState extends State<SheetScreen>
     },
     child: Scaffold(
       backgroundColor: SheetPalette.of(context).workspace,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: FutureBuilder<List<List<SheetFieldDef>>>(
-              future: _fields,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Card(
-                      margin: const EdgeInsets.all(32),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          'Impossibile caricare il layout della scheda.\n'
-                          '${snapshot.error}',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Material(
+          elevation: 3,
+          color: Theme.of(context).colorScheme.surface,
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: 'Pagina precedente',
+                  onPressed: _pageIndex > 0
+                      ? () => _changePage(_pageIndex - 1)
+                      : null,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      'Pagina ${_pageIndex + 1} di $sheetPageCount',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
-                  );
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final viewportSize = constraints.biggest;
-                    if (!_initializedScale) {
-                      _initializedScale = true;
-                      final scale = (constraints.maxWidth / sheetPageWidth)
-                          .clamp(sheetMinScale, 1.0);
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          // Su finestre più larghe della pagina la scheda
-                          // resterebbe appoggiata al bordo sinistro, con
-                          // tutto lo spazio vuoto a destra.
-                          _transformationController.value = Matrix4.identity()
-                            ..translateByDouble(
-                              sheetCenterOffset(
-                                constraints.maxWidth,
-                                sheetPageWidth * scale,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Pagina successiva',
+                  onPressed: _pageIndex < sheetPageCount - 1
+                      ? () => _changePage(_pageIndex + 1)
+                      : null,
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Lo Scaffold ha già riservato tastiera e navigazione. Quando
+            // resta poca altezza, lascia questo spazio alla pagina.
+            final compactLayout = constraints.maxHeight < 240;
+            final pagePadding = compactLayout
+                ? EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: constraints.maxHeight * .05,
+                  )
+                : const EdgeInsets.fromLTRB(12, 64, 12, 88);
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Positioned.fill(
+                  child: FutureBuilder<List<List<SheetFieldDef>>>(
+                    future: _fields,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Card(
+                            margin: const EdgeInsets.all(32),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Text(
+                                'Impossibile caricare il layout della scheda.\n'
+                                '${snapshot.error}',
+                                textAlign: TextAlign.center,
                               ),
-                              0,
-                              0,
-                              1,
-                            )
-                            ..scaleByDouble(scale, scale, 1, 1);
-                        }
-                      });
-                    }
-                    final bottomPadding = MediaQuery.paddingOf(context).bottom;
-                    final topPadding = MediaQuery.paddingOf(context).top;
-                    return Stack(
-                      fit: StackFit.expand,
+                            ),
+                          ),
+                        );
+                      }
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      return SafeArea(
+                        child: Padding(
+                          padding: pagePadding,
+                          child: Center(
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: SheetPage(
+                                key: ValueKey(_pageIndex),
+                                pageIndex: _pageIndex,
+                                fields: snapshot.data![_pageIndex],
+                                controller: _sheetController,
+                                // La pagina intera resta visibile anche quando la
+                                // tastiera riduce l'area disponibile.
+                                onFieldFocused: (_) {},
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: compactLayout ? 0 : 12,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        RepaintBoundary(
-                          child: TransformationWheelScroller(
-                            controller: _transformationController,
-                            viewportSize: viewportSize,
-                            contentSize: _sheetSize,
-                            child: InteractiveViewer(
-                              transformationController:
-                                  _transformationController,
-                              constrained: false,
-                              minScale: sheetMinScale,
-                              maxScale: sheetMaxScale,
-                              scaleFactor: double.infinity,
-                              boundaryMargin: const EdgeInsets.all(160),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  for (
-                                    var page = 0;
-                                    page < sheetPageCount;
-                                    page++
-                                  ) ...[
-                                    SheetPage(
-                                      pageIndex: page,
-                                      fields: snapshot.data![page],
-                                      controller: _sheetController,
-                                      onFieldFocused: _ensureVisible,
+                        FloatingActionButton.small(
+                          heroTag: 'back',
+                          onPressed: _exit,
+                          tooltip: 'Indietro',
+                          child: const Icon(Icons.arrow_back),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Material(
+                              color: Theme.of(context).colorScheme.surface,
+                              shape: const CircleBorder(),
+                              elevation: 2,
+                              child: const ThemeModeButton(),
+                            ),
+                            const SizedBox(width: 8),
+                            ValueListenableBuilder<bool>(
+                              valueListenable: _sheetController.lockedState,
+                              builder: (context, locked, _) =>
+                                  FloatingActionButton.small(
+                                    heroTag: 'lock',
+                                    onPressed: _toggleLock,
+                                    tooltip: locked
+                                        ? 'Sblocca scheda'
+                                        : 'Blocca scheda',
+                                    child: Icon(
+                                      locked ? Icons.lock : Icons.lock_open,
                                     ),
-                                    if (page < sheetPageCount - 1)
-                                      const SizedBox(height: sheetPageGap),
-                                  ],
-                                ],
-                              ),
+                                  ),
                             ),
-                          ),
-                        ),
-                        Positioned(
-                          left: 8,
-                          right: 148,
-                          bottom: bottomPadding + 4,
-                          height: 12,
-                          child: RepaintBoundary(
-                            child: TransformationScrollbar(
-                              axis: Axis.horizontal,
-                              controller: _transformationController,
-                              viewportExtent: viewportSize.width,
-                              contentExtent: _sheetSize.width,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: topPadding + 60,
-                          right: 4,
-                          bottom: bottomPadding + 54,
-                          width: 12,
-                          child: RepaintBoundary(
-                            child: TransformationScrollbar(
-                              axis: Axis.vertical,
-                              controller: _transformationController,
-                              viewportExtent: viewportSize.height,
-                              contentExtent: _sheetSize.height,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 18,
-                          bottom: bottomPadding + 16,
-                          child: RepaintBoundary(
-                            child: _ZoomControl(
-                              controller: _transformationController,
-                              onZoomOut: () => _zoomBy(.8, viewportSize),
-                              onZoomIn: () => _zoomBy(1.25, viewportSize),
-                              onFitWidth: () => _toggleFitWidth(viewportSize),
-                              canRestoreZoom: _scaleBeforeFitWidth != null,
-                            ),
-                          ),
+                          ],
                         ),
                       ],
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FloatingActionButton.small(
-                    heroTag: 'back',
-                    onPressed: _exit,
-                    tooltip: 'Indietro',
-                    child: const Icon(Icons.arrow_back),
+                    ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Material(
-                        color: Theme.of(context).colorScheme.surface,
-                        shape: const CircleBorder(),
-                        elevation: 2,
-                        child: const ThemeModeButton(),
-                      ),
-                      const SizedBox(width: 8),
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _sheetController.lockedState,
-                        builder: (context, locked, _) =>
-                            FloatingActionButton.small(
-                              heroTag: 'lock',
-                              onPressed: _toggleLock,
-                              tooltip: locked
-                                  ? 'Sblocca scheda'
-                                  : 'Blocca scheda',
-                              child: Icon(
-                                locked ? Icons.lock : Icons.lock_open,
-                              ),
-                            ),
-                      ),
-                    ],
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: compactLayout ? 240 : constraints.maxHeight,
+                  child: Offstage(
+                    offstage: compactLayout,
+                    child: const DiceRollerOverlay(),
                   ),
-                ],
-              ),
-            ),
-          ),
-          const Positioned.fill(child: DiceRollerOverlay()),
-        ],
+                ),
+              ],
+            );
+          },
+        ),
       ),
     ),
   );
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _pendingFieldContext = null;
-    _panAnimationController.dispose();
-    _transformationController.dispose();
     unawaited(_closeAndDisposeController());
     super.dispose();
   }
@@ -476,95 +294,4 @@ class _SheetScreenState extends State<SheetScreen>
       _sheetController.dispose();
     }
   }
-}
-
-class _ZoomControl extends StatelessWidget {
-  const _ZoomControl({
-    required this.controller,
-    required this.onZoomOut,
-    required this.onZoomIn,
-    required this.onFitWidth,
-    required this.canRestoreZoom,
-  });
-
-  final TransformationController controller;
-  final VoidCallback onZoomOut;
-  final VoidCallback onZoomIn;
-  final VoidCallback onFitWidth;
-  final bool canRestoreZoom;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    elevation: 3,
-    color: Theme.of(context).colorScheme.surface.withValues(alpha: .94),
-    borderRadius: BorderRadius.circular(18),
-    child: ValueListenableBuilder<Matrix4>(
-      valueListenable: controller,
-      builder: (context, matrix, _) {
-        final scale = matrix.getMaxScaleOnAxis();
-        return SizedBox(
-          height: 36,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(width: 6),
-              _ZoomButton(
-                tooltip: 'Riduci zoom',
-                icon: Icons.remove,
-                onPressed: scale > sheetMinScale + _scaleEpsilon
-                    ? onZoomOut
-                    : null,
-              ),
-              SizedBox(
-                width: 44,
-                child: Text(
-                  '${(scale * 100).round()}%',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ),
-              _ZoomButton(
-                tooltip: 'Aumenta zoom',
-                icon: Icons.add,
-                onPressed: scale < sheetMaxScale - _scaleEpsilon
-                    ? onZoomIn
-                    : null,
-              ),
-              const SizedBox(height: 18, child: VerticalDivider(width: 9)),
-              _ZoomButton(
-                tooltip: canRestoreZoom
-                    ? 'Ripristina lo zoom precedente'
-                    : 'Adatta alla larghezza della finestra',
-                icon: canRestoreZoom ? Icons.zoom_out_map : Icons.fit_screen,
-                onPressed: onFitWidth,
-              ),
-              const SizedBox(width: 6),
-            ],
-          ),
-        );
-      },
-    ),
-  );
-}
-
-class _ZoomButton extends StatelessWidget {
-  const _ZoomButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) => IconButton(
-    tooltip: tooltip,
-    onPressed: onPressed,
-    icon: Icon(icon, size: 18),
-    padding: EdgeInsets.zero,
-    constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-    visualDensity: VisualDensity.compact,
-  );
 }
