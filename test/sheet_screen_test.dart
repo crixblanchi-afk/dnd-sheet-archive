@@ -15,6 +15,85 @@ import 'package:sembast/sembast_memory.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  testWidgets('short keyboard viewports keep the active page visible', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    addTearDown(tester.view.resetViewInsets);
+    final database = await databaseFactoryMemory.openDatabase(
+      'sheet-screen-short-keyboard.db',
+    );
+    addTearDown(database.close);
+    final driveSync = GoogleDriveSyncService(
+      LocalArchiveSyncStore(database),
+      syncTracker: ArchiveSyncTracker.inMemory(),
+    );
+    final character = Character(
+      id: 'character',
+      name: 'Character',
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+      locked: false,
+    );
+    await tester.runAsync(SheetFieldDef.loadByPage);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SheetScreen(
+          character: character,
+          repository: _FakeRepository(),
+          driveSync: driveSync,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Apri lanciadadi'));
+    await tester.pumpAndSettle();
+    final name = find.byKey(const ValueKey('CharacterName'));
+    await tester.tapAt(tester.getCenter(name));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Arannis');
+    tester.view.viewInsets = FakeViewPadding(
+      bottom: 300 * tester.view.devicePixelRatio,
+    );
+
+    for (final width in [800.0, 320.0]) {
+      await tester.binding.setSurfaceSize(Size(width, 400));
+      await tester.pumpAndSettle();
+      final pageRect = tester.getRect(find.byType(SheetPage));
+      final fieldRect = tester.getRect(find.byType(TextField));
+      final navigationTop = tester
+          .getTopLeft(find.byTooltip('Pagina successiva'))
+          .dy;
+      expect(pageRect.width, greaterThan(0));
+      expect(pageRect.height, greaterThan(0));
+      expect(pageRect.top, greaterThanOrEqualTo(0));
+      expect(pageRect.bottom, lessThanOrEqualTo(navigationTop));
+      expect(fieldRect.width, greaterThan(0));
+      expect(fieldRect.height, greaterThan(0));
+      expect(fieldRect.top, greaterThanOrEqualTo(pageRect.top));
+      expect(fieldRect.bottom, lessThanOrEqualTo(pageRect.bottom));
+      expect(tester.testTextInput.isVisible, isTrue);
+      expect(find.byType(InteractiveViewer), findsNothing);
+      expect(find.byTooltip('Chiudi lanciadadi'), findsNothing);
+      expect(tester.takeException(), isNull);
+    }
+
+    // Returning to a roomy viewport restores the normal controls.
+    tester.view.resetViewInsets();
+    await tester.binding.setSurfaceSize(const Size(800, 600));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Chiudi lanciadadi'), findsOneWidget);
+    expect(character.fields['CharacterName'], 'Arannis');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    driveSync.dispose();
+  });
+
   for (final locked in [false, true]) {
     testWidgets(
       'paged navigation fits the whole sheet without zoom and preserves edits, locked=$locked',

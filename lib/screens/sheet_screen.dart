@@ -156,98 +156,125 @@ class _SheetScreenState extends State<SheetScreen> {
           ),
         ),
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: FutureBuilder<List<List<SheetFieldDef>>>(
-              future: _fields,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Card(
-                      margin: const EdgeInsets.all(32),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          'Impossibile caricare il layout della scheda.\n'
-                          '${snapshot.error}',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  );
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 64, 12, 88),
-                    child: Center(
-                      child: FittedBox(
-                        fit: BoxFit.contain,
-                        child: SheetPage(
-                          key: ValueKey(_pageIndex),
-                          pageIndex: _pageIndex,
-                          fields: snapshot.data![_pageIndex],
-                          controller: _sheetController,
-                          // La pagina intera resta visibile anche quando la
-                          // tastiera riduce l'area disponibile.
-                          onFieldFocused: (_) {},
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FloatingActionButton.small(
-                    heroTag: 'back',
-                    onPressed: _exit,
-                    tooltip: 'Indietro',
-                    child: const Icon(Icons.arrow_back),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Material(
-                        color: Theme.of(context).colorScheme.surface,
-                        shape: const CircleBorder(),
-                        elevation: 2,
-                        child: const ThemeModeButton(),
-                      ),
-                      const SizedBox(width: 8),
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _sheetController.lockedState,
-                        builder: (context, locked, _) =>
-                            FloatingActionButton.small(
-                              heroTag: 'lock',
-                              onPressed: _toggleLock,
-                              tooltip: locked
-                                  ? 'Sblocca scheda'
-                                  : 'Blocca scheda',
-                              child: Icon(
-                                locked ? Icons.lock : Icons.lock_open,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Lo Scaffold ha già riservato tastiera e navigazione. Quando
+            // resta poca altezza, lascia questo spazio alla pagina.
+            final compactLayout = constraints.maxHeight < 240;
+            final pagePadding = compactLayout
+                ? EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: constraints.maxHeight * .05,
+                  )
+                : const EdgeInsets.fromLTRB(12, 64, 12, 88);
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Positioned.fill(
+                  child: FutureBuilder<List<List<SheetFieldDef>>>(
+                    future: _fields,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Card(
+                            margin: const EdgeInsets.all(32),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Text(
+                                'Impossibile caricare il layout della scheda.\n'
+                                '${snapshot.error}',
+                                textAlign: TextAlign.center,
                               ),
                             ),
-                      ),
-                    ],
+                          ),
+                        );
+                      }
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      return SafeArea(
+                        child: Padding(
+                          padding: pagePadding,
+                          child: Center(
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: SheetPage(
+                                key: ValueKey(_pageIndex),
+                                pageIndex: _pageIndex,
+                                fields: snapshot.data![_pageIndex],
+                                controller: _sheetController,
+                                // La pagina intera resta visibile anche quando la
+                                // tastiera riduce l'area disponibile.
+                                onFieldFocused: (_) {},
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
-            ),
-          ),
-          const Positioned.fill(child: DiceRollerOverlay()),
-        ],
+                ),
+                SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: compactLayout ? 0 : 12,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FloatingActionButton.small(
+                          heroTag: 'back',
+                          onPressed: _exit,
+                          tooltip: 'Indietro',
+                          child: const Icon(Icons.arrow_back),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Material(
+                              color: Theme.of(context).colorScheme.surface,
+                              shape: const CircleBorder(),
+                              elevation: 2,
+                              child: const ThemeModeButton(),
+                            ),
+                            const SizedBox(width: 8),
+                            ValueListenableBuilder<bool>(
+                              valueListenable: _sheetController.lockedState,
+                              builder: (context, locked, _) =>
+                                  FloatingActionButton.small(
+                                    heroTag: 'lock',
+                                    onPressed: _toggleLock,
+                                    tooltip: locked
+                                        ? 'Sblocca scheda'
+                                        : 'Blocca scheda',
+                                    child: Icon(
+                                      locked ? Icons.lock : Icons.lock_open,
+                                    ),
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: compactLayout ? 240 : constraints.maxHeight,
+                  child: Offstage(
+                    offstage: compactLayout,
+                    child: const DiceRollerOverlay(),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     ),
   );
