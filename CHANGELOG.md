@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.1 — 2026-10-11
+
+- Ripristinata la scelta fra vista a pagine e vista a scorrimento dal menu
+  Visualizzazione scheda.
+- Pagine sfogliabili con swipe orizzontale, senza barra inferiore né zoom,
+  adattate all'intera area disponibile mantenendo le proporzioni del foglio.
+- Vista continua con pan, zoom, adattamento alla larghezza e scrollbar.
+- Modifiche, blocco e ultima pagina sfogliata conservati al cambio modalità.
+- Spostamento del campo sopra la tastiera corretto anche con zoom al 50% e al
+  200%; eliminati i salti verso campi precedenti dopo la perdita del focus.
+
+Build: **6**. Verifiche: **118 test**, analisi statica e build Web e Windows
+sulla pull request.
+
 ## 1.2.0 — 2026-10-11
 
 - Visualizzazione della scheda una pagina alla volta, con frecce precedente e
