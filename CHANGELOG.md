@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.0 — 2026-10-11
+
+- Visualizzazione della scheda una pagina alla volta, con frecce precedente e
+  successiva e indicatore del numero di pagina.
+- Fogli adattati automaticamente allo spazio disponibile, senza zoom né
+  scorrimento; modifiche e stato di blocco conservati al cambio pagina.
+- Comandi di navigazione disponibili anche sopra la tastiera aperta.
+- Margini proporzionali quando resta poca altezza, così la pagina e il campo
+  attivo rimangono visibili anche in una finestra bassa con la tastiera aperta.
+- Lanciadadi nascosto temporaneamente nelle viste compatte, conservando il suo
+  stato e ripristinandolo quando torna disponibile lo spazio necessario.
+
+Build: **5**. Verifiche: **114 test**, analisi statica e build Web e Windows
+sulla pull request.
+
 ## 1.1.0 — 2026-10-01
 
 - Esportazione dalla lista di una, più o tutte le schede in un PDF compilabile,
