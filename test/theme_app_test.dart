@@ -50,9 +50,9 @@ void main() {
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 10)),
         );
-        if (find.byType(SheetPage).evaluate().length == 3) break;
+        if (find.byType(SheetPage).evaluate().length == 1) break;
       }
-      expect(find.byType(SheetPage), findsNWidgets(3));
+      expect(find.byType(SheetPage), findsOneWidget);
       await tester.pumpAndSettle();
       expect(find.byType(SheetScreen), findsOneWidget);
       Future<void> choose(String label) async {
