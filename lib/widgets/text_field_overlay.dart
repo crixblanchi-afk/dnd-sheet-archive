@@ -15,15 +15,32 @@ const _minimumFieldFontSize = 1.0;
 const _textFitSafetyFactor = .8;
 
 /// Tutto ciò che, cambiando, obbliga a rimisurare il testo del campo.
+///
+/// La chiave è completa — geometria, stile di partenza e contesto di
+/// misura — quindi identifica il risultato a prescindere da quale casella
+/// l'abbia chiesto: due campi uguali con lo stesso testo misurano uguale.
 typedef _FitKey = ({
   String text,
   Color color,
+  double fontSize,
   double maxWidth,
   double maxHeight,
+  bool multiline,
+  TextAlign align,
   bool markdown,
   TextScaler textScaler,
   TextDirection textDirection,
 });
+
+/// Misure condivise da tutte le caselle, non solo da quella che le ha chieste.
+///
+/// Riaprire una pagina già vista o cambiare modalità di visualizzazione crea
+/// caselle nuove che misurano di nuovo lo stesso testo nella stessa geometria:
+/// con duecento campi su una pagina il primo fotogramma ne risente. La mappa è
+/// limitata perché digitando ogni lettera produce una chiave diversa; superato
+/// il tetto escono le più vecchie.
+final _sharedFittedStyles = <_FitKey, TextStyle>{};
+const _sharedFittedStylesLimit = 512;
 
 class TextFieldOverlay extends StatefulWidget {
   const TextFieldOverlay({
@@ -106,20 +123,23 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
   /// La ricerca della dimensione costa fino a undici layout di `TextPainter`,
   /// e la scheda tiene vive centinaia di caselle insieme: senza cache ogni
   /// ricostruzione dell'albero le rimisurerebbe tutte.
-  TextStyle _fittedStyle(_FitKey key, TextStyle baseStyle, TextAlign align) {
+  TextStyle _fittedStyle(_FitKey key, TextStyle baseStyle) {
     final cached = _fitStyle;
     if (cached != null && _fitKey == key) return cached;
-    final style = _fittedTextStyle(
+    final style = _sharedFittedStyles[key] ??= _fittedTextStyle(
       text: key.text,
       baseStyle: baseStyle,
       maxWidth: key.maxWidth,
       maxHeight: key.maxHeight,
-      multiline: widget.field.multiline,
-      textAlign: align,
+      multiline: key.multiline,
+      textAlign: key.align,
       textDirection: key.textDirection,
       textScaler: key.textScaler,
       markdown: key.markdown,
     );
+    while (_sharedFittedStyles.length > _sharedFittedStylesLimit) {
+      _sharedFittedStyles.remove(_sharedFittedStyles.keys.first);
+    }
     _fitKey = key;
     _fitStyle = style;
     return style;
@@ -204,19 +224,18 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
               valueListenable: widget.sheetController.lockedState,
               builder: (context, locked, _) => LayoutBuilder(
                 builder: (context, constraints) {
-                  final fittedStyle = _fittedStyle(
-                    (
-                      text: _value,
-                      color: baseTextStyle.color!,
-                      maxWidth: constraints.maxWidth - 2,
-                      maxHeight: constraints.maxHeight,
-                      markdown: !_editing,
-                      textScaler: MediaQuery.textScalerOf(context),
-                      textDirection: Directionality.of(context),
-                    ),
-                    baseTextStyle,
-                    alignment,
-                  );
+                  final fittedStyle = _fittedStyle((
+                    text: _value,
+                    color: baseTextStyle.color!,
+                    fontSize: baseTextStyle.fontSize!,
+                    maxWidth: constraints.maxWidth - 2,
+                    maxHeight: constraints.maxHeight,
+                    multiline: field.multiline,
+                    align: alignment,
+                    markdown: !_editing,
+                    textScaler: MediaQuery.textScalerOf(context),
+                    textDirection: Directionality.of(context),
+                  ), baseTextStyle);
                   return _editing
                       ? TextField(
                           controller: _textController,

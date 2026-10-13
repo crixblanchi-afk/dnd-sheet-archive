@@ -1,5 +1,28 @@
 # Changelog
 
+## Non rilasciato
+
+- Tema scuro con l'artwork della scheda precalcolato invece di filtrato a
+  ogni fotogramma: via i due `ColorFiltered` annidati che imponevano due
+  `saveLayer` a piena pagina — sei, con le tre pagine della vista a
+  scorrimento. Ritratto e simbolo conservano i colori originali.
+- Carta scura più calda e grassetto distinguibile dal testo normale, in linea
+  con l'artwork precalcolato.
+- Zoom sotto il 100% letto correttamente: la scala viene applicata anche
+  all'asse Z, che `InteractiveViewer`, le scrollbar e il vincolo orizzontale
+  leggono come massimo dei tre. Prima, rimpicciolendo, la scheda si appoggiava
+  al bordo sinistro e il trascinamento le si opponeva.
+- Scrollbar della scheda ridisegnate invece che ricostruite, e comandi di zoom
+  che non si ricostruiscono più a ogni fotogramma di trascinamento.
+- Adattamento alla larghezza che non ricostruisce le tre pagine con tutti i
+  loro campi solo per cambiare l'icona di un pulsante.
+- Misure del testo condivise fra le caselle: tornare su una pagina già vista o
+  cambiare modalità non rimisura di nuovo tutti i campi.
+- Ritratto e simbolo non vengono più ridecodificati a ogni ritorno sulla
+  pagina.
+
+Ripresa da #10, senza la rimozione del menu Aspetto dalla scheda.
+
 ## 1.3.0 — 2026-10-13
 
 - Immagini conservate una sola volta per contenuto, fuori dalla scheda, e

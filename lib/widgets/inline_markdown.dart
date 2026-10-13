@@ -7,6 +7,12 @@ import 'package:flutter/material.dart';
 TextSpan buildInlineMarkdownSpan(String source, TextStyle baseStyle) {
   final children = <InlineSpan>[];
   var cursor = 0;
+  // Sulla carta scura il grassetto si distingue per peso e per luce: il solo
+  // `bold` si confonde con il testo normale già chiaro.
+  final dark =
+      baseStyle.color != null &&
+      ThemeData.estimateBrightnessForColor(baseStyle.color!) ==
+          Brightness.light;
 
   while (cursor < source.length) {
     final match = _nextMarkdownMatch(source, cursor);
@@ -22,7 +28,10 @@ TextSpan buildInlineMarkdownSpan(String source, TextStyle baseStyle) {
       TextSpan(
         text: match.text,
         style: TextStyle(
-          fontWeight: match.bold ? FontWeight.bold : null,
+          fontWeight: match.bold
+              ? (dark ? FontWeight.w800 : FontWeight.bold)
+              : null,
+          color: match.bold && dark ? const Color(0xffe5d9c6) : null,
           fontStyle: match.italic ? FontStyle.italic : null,
         ),
       ),

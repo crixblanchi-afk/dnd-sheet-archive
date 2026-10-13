@@ -451,10 +451,13 @@ void main() {
       }
 
       // Una modifica esterna durante l'animazione (come un pinch) deve vincere.
+      // `InteractiveViewer` scala la matrice su tutti e tre gli assi, quindi
+      // un pinch simulato deve fare lo stesso: scalando solo X e Y il massimo
+      // sugli assi resterebbe quello di Z e la modifica passerebbe inosservata.
       await tester.tap(fit);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
-      controller.value = controller.value.clone()..scaleByDouble(.9, .9, 1, 1);
+      controller.value = controller.value.clone()..scaleByDouble(.9, .9, .9, 1);
       final manualScale = controller.value.getMaxScaleOnAxis();
       await finishZoom();
       expect(fit, findsOneWidget);

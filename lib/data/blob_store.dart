@@ -18,6 +18,19 @@ class BlobStore {
 
   final Database database;
 
+  /// Gli ultimi blob letti, con la loro identità.
+  ///
+  /// `MemoryImage` confronta i byte per identità: restituendo una lista nuova
+  /// a ogni lettura, tornare su una pagina già vista manderebbe a vuoto la
+  /// cache delle immagini di Flutter e costringerebbe a ridecodificare il
+  /// ritratto da capo. Il contenuto è immutabile per costruzione — la chiave è
+  /// il suo hash — quindi riusare l'istanza è sempre corretto.
+  /// Legata all'istanza: il repository ne tiene una sola per tutta la vita
+  /// dell'app, mentre una cache statica si porterebbe dietro i blob di un
+  /// archivio diverso — nei test, di un database diverso.
+  final _decoded = <String, Uint8List>{};
+  static const _decodedLimit = 8;
+
   static final _blobs = stringMapStoreFactory.store('blobs');
   static final _characters = stringMapStoreFactory.store('characters');
   static final _versions = stringMapStoreFactory.store('versions');
@@ -25,8 +38,17 @@ class BlobStore {
   static const _migrationKey = 'image_blob_migration';
   static const _migrationVersion = 1;
 
-  Future<Uint8List?> read(String reference) async =>
-      _decode(await _blobs.record(reference).get(database));
+  Future<Uint8List?> read(String reference) async {
+    final cached = _decoded[reference];
+    if (cached != null) return cached;
+    final bytes = _decode(await _blobs.record(reference).get(database));
+    if (bytes == null) return null;
+    _decoded[reference] = bytes;
+    while (_decoded.length > _decodedLimit) {
+      _decoded.remove(_decoded.keys.first);
+    }
+    return bytes;
+  }
 
   /// Salva l'immagine, se non c'è già, e restituisce il suo riferimento.
   Future<String> write(Uint8List bytes) async {
@@ -87,6 +109,7 @@ class BlobStore {
     for (final record in await _blobs.find(client)) {
       if (!live.contains(record.key)) {
         await _blobs.record(record.key).delete(client);
+        _decoded.remove(record.key);
       }
     }
   }

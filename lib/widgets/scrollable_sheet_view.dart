@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../controllers/sheet_controller.dart';
@@ -29,12 +30,22 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final TransformationController _transformationController;
   late final AnimationController _panAnimationController;
+
+  /// Solo la scala, perché i comandi di zoom non si ricostruiscano a ogni
+  /// fotogramma di trascinamento: la matrice cambia di continuo, questo no.
+  final _scale = ValueNotifier<double>(1);
   final _viewportKey = GlobalKey();
   Animation<Matrix4>? _panAnimation;
   BuildContext? _pendingFieldContext;
   bool _revealingField = false;
   bool _initializedScale = false;
-  double? _scaleBeforeFitWidth;
+
+  /// Lo zoom da cui è partito l'adattamento alla larghezza, se è attivo.
+  ///
+  /// Anche questo è un notificatore e non uno `setState`: cambia solo l'icona
+  /// di un pulsante, mentre ricostruire la vista significa ricostruire le tre
+  /// pagine con tutti i loro campi.
+  final _scaleBeforeFitWidth = ValueNotifier<double?>(null);
   double _lastScale = 1;
   bool _applyingZoomAnimation = false;
 
@@ -136,15 +147,13 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
     _zoomTo(currentScale * factor, viewportSize);
   }
 
-  void _clearFitWidth() {
-    if (_scaleBeforeFitWidth == null) return;
-    setState(() => _scaleBeforeFitWidth = null);
-  }
+  void _clearFitWidth() => _scaleBeforeFitWidth.value = null;
 
   void _handleScaleChange() {
     final scale = _transformationController.value.getMaxScaleOnAxis();
     final changed = (scale - _lastScale).abs() > .000001;
     _lastScale = scale;
+    _scale.value = scale;
     // Pan e animazioni dell'app conservano lo zoom da ripristinare.
     // Pinch e Ctrl+rotellina modificano direttamente il controller.
     if (changed && !_applyingZoomAnimation) {
@@ -154,12 +163,10 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
   }
 
   void _toggleFitWidth(Size viewportSize) {
-    final previousScale = _scaleBeforeFitWidth;
-    setState(() {
-      _scaleBeforeFitWidth = previousScale == null
-          ? _transformationController.value.getMaxScaleOnAxis()
-          : null;
-    });
+    final previousScale = _scaleBeforeFitWidth.value;
+    _scaleBeforeFitWidth.value = previousScale == null
+        ? _transformationController.value.getMaxScaleOnAxis()
+        : null;
     _zoomTo(
       previousScale ?? viewportSize.width / sheetPageWidth,
       viewportSize,
@@ -177,9 +184,13 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
         ? Offset(viewportSize.width / 2, 0)
         : viewportSize.center(Offset.zero);
     final scenePoint = _transformationController.toScene(focalPoint);
+    // La scala va applicata anche a Z: `getMaxScaleOnAxis()` restituisce il
+    // massimo dei tre assi, quindi lasciando Z a 1 ogni zoom sotto il 100%
+    // veniva letto come 100% da `InteractiveViewer`, dalle scrollbar e dal
+    // vincolo orizzontale, che finiva per contrastare il trascinamento.
     final target = Matrix4.identity()
       ..translateByDouble(focalPoint.dx, focalPoint.dy, 0, 1)
-      ..scaleByDouble(targetScale, targetScale, 1, 1)
+      ..scaleByDouble(targetScale, targetScale, targetScale, 1)
       ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
     if (fitWidth) {
       // Conserva la posizione di lettura senza lasciare spazio oltre le pagine.
@@ -236,7 +247,7 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
                 0,
                 1,
               )
-              ..scaleByDouble(scale, scale, 1, 1);
+              ..scaleByDouble(scale, scale, scale, 1);
           }
         });
       }
@@ -309,11 +320,11 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
             bottom: bottomPadding + 16,
             child: RepaintBoundary(
               child: _ZoomControl(
-                controller: _transformationController,
+                scale: _scale,
                 onZoomOut: () => _zoomBy(.8, viewportSize),
                 onZoomIn: () => _zoomBy(1.25, viewportSize),
                 onFitWidth: () => _toggleFitWidth(viewportSize),
-                canRestoreZoom: _scaleBeforeFitWidth != null,
+                scaleBeforeFitWidth: _scaleBeforeFitWidth,
               ),
             ),
           ),
@@ -328,34 +339,37 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
     _pendingFieldContext = null;
     _panAnimationController.dispose();
     _transformationController.dispose();
+    _scale.dispose();
+    _scaleBeforeFitWidth.dispose();
     super.dispose();
   }
 }
 
 class _ZoomControl extends StatelessWidget {
   const _ZoomControl({
-    required this.controller,
+    required this.scale,
     required this.onZoomOut,
     required this.onZoomIn,
     required this.onFitWidth,
-    required this.canRestoreZoom,
+    required this.scaleBeforeFitWidth,
   });
 
-  final TransformationController controller;
+  final ValueListenable<double> scale;
   final VoidCallback onZoomOut;
   final VoidCallback onZoomIn;
   final VoidCallback onFitWidth;
-  final bool canRestoreZoom;
+  final ValueListenable<double?> scaleBeforeFitWidth;
 
   @override
   Widget build(BuildContext context) => Material(
     elevation: 3,
     color: Theme.of(context).colorScheme.surface.withValues(alpha: .94),
     borderRadius: BorderRadius.circular(18),
-    child: ValueListenableBuilder<Matrix4>(
-      valueListenable: controller,
-      builder: (context, matrix, _) {
-        final scale = matrix.getMaxScaleOnAxis();
+    child: ListenableBuilder(
+      listenable: Listenable.merge([scale, scaleBeforeFitWidth]),
+      builder: (context, _) {
+        final scale = this.scale.value;
+        final canRestoreZoom = scaleBeforeFitWidth.value != null;
         return SizedBox(
           height: 36,
           child: Row(

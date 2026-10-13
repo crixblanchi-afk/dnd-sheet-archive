@@ -149,7 +149,7 @@ class _TransformationWheelScrollerState
     final scenePoint = widget.controller.toScene(focalPoint);
     final target = Matrix4.identity()
       ..translateByDouble(focalPoint.dx, focalPoint.dy, 0, 1)
-      ..scaleByDouble(targetScale, targetScale, 1, 1)
+      ..scaleByDouble(targetScale, targetScale, targetScale, 1)
       ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
     target.storage[12] = clampSheetTranslationX(
       target.storage[12],
@@ -228,103 +228,58 @@ class _TransformationScrollbarState extends State<TransformationScrollbar> {
       final trackExtent = widget.axis == Axis.horizontal
           ? constraints.maxWidth
           : constraints.maxHeight;
-      return ValueListenableBuilder<Matrix4>(
-        valueListenable: widget.controller,
-        builder: (context, matrix, _) {
-          final metrics = _metrics(matrix, trackExtent);
-          return MouseRegion(
-            cursor: widget.axis == Axis.horizontal
-                ? SystemMouseCursors.resizeLeftRight
-                : SystemMouseCursors.resizeUpDown,
-            child: Listener(
-              behavior: HitTestBehavior.opaque,
-              onPointerDown: metrics.scrollable
-                  ? (event) => _startDrag(_positionOf(event), metrics)
-                  : null,
-              onPointerMove: metrics.scrollable
-                  ? (event) => _updateDrag(_positionOf(event), metrics)
-                  : null,
-              onPointerUp: (_) => _thumbGrabOffset = null,
-              onPointerCancel: (_) => _thumbGrabOffset = null,
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: widget.axis == Axis.vertical ? 4 : double.infinity,
-                      height: widget.axis == Axis.horizontal
-                          ? 4
-                          : double.infinity,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white24
-                            : Colors.black26,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  if (widget.axis == Axis.horizontal)
-                    Positioned(
-                      left: metrics.thumbPosition,
-                      top: 2,
-                      width: metrics.thumbExtent,
-                      bottom: 2,
-                      child: _thumb(context, metrics.scrollable),
-                    )
-                  else
-                    Positioned(
-                      left: 2,
-                      top: metrics.thumbPosition,
-                      right: 2,
-                      height: metrics.thumbExtent,
-                      child: _thumb(context, metrics.scrollable),
-                    ),
-                ],
-              ),
+      final theme = Theme.of(context);
+      return MouseRegion(
+        cursor: widget.axis == Axis.horizontal
+            ? SystemMouseCursors.resizeLeftRight
+            : SystemMouseCursors.resizeUpDown,
+        child: Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: (event) => _withMetrics(trackExtent, (metrics) {
+            if (metrics.scrollable) {
+              _startDrag(_positionOf(event), metrics);
+            }
+          }),
+          onPointerMove: (event) => _withMetrics(trackExtent, (metrics) {
+            if (metrics.scrollable) {
+              _updateDrag(_positionOf(event), metrics);
+            }
+          }),
+          onPointerUp: (_) => _thumbGrabOffset = null,
+          onPointerCancel: (_) => _thumbGrabOffset = null,
+          // Disegnata invece che ricostruita: la barra segue la matrice, che
+          // cambia a ogni fotogramma di trascinamento, e ricostruire il
+          // sottoalbero significava rifare build e layout sessanta volte al
+          // secondo per spostare un rettangolo.
+          child: CustomPaint(
+            size: Size.infinite,
+            painter: _ScrollbarPainter(
+              repaint: widget.controller,
+              controller: widget.controller,
+              axis: widget.axis,
+              viewportExtent: widget.viewportExtent,
+              contentExtent: widget.contentExtent,
+              trackColor: theme.brightness == Brightness.dark
+                  ? Colors.white24
+                  : Colors.black26,
+              thumbColor: theme.colorScheme.primary,
             ),
-          );
-        },
+          ),
+        ),
       );
     },
   );
 
-  Widget _thumb(BuildContext context, bool enabled) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: Theme.of(
-        context,
-      ).colorScheme.primary.withValues(alpha: enabled ? .78 : .28),
-      borderRadius: BorderRadius.circular(5),
-    ),
-  );
-
-  _ScrollbarMetrics _metrics(Matrix4 matrix, double trackExtent) {
-    final scale = matrix.getMaxScaleOnAxis();
-    final scaledContentExtent = widget.contentExtent * scale;
-    final maxScrollOffset = math.max(
-      0.0,
-      scaledContentExtent - widget.viewportExtent,
-    );
-    final translation =
-        matrix.storage[widget.axis == Axis.horizontal ? 12 : 13];
-    final scrollOffset = (-translation).clamp(0.0, maxScrollOffset);
-    final visibleFraction = scaledContentExtent <= 0
-        ? 1.0
-        : (widget.viewportExtent / scaledContentExtent).clamp(0.0, 1.0);
-    final thumbExtent = math.min(
-      trackExtent,
-      math.max(28.0, trackExtent * visibleFraction),
-    );
-    final thumbTravel = math.max(0.0, trackExtent - thumbExtent);
-    final thumbPosition = maxScrollOffset == 0
-        ? 0.0
-        : thumbTravel * scrollOffset / maxScrollOffset;
-    return _ScrollbarMetrics(
-      maxScrollOffset: maxScrollOffset,
-      thumbExtent: thumbExtent,
-      thumbPosition: thumbPosition,
-      thumbTravel: thumbTravel,
-    );
-  }
+  void _withMetrics(double trackExtent, void Function(_ScrollbarMetrics) run) =>
+      run(
+        _scrollbarMetrics(
+          matrix: widget.controller.value,
+          axis: widget.axis,
+          trackExtent: trackExtent,
+          viewportExtent: widget.viewportExtent,
+          contentExtent: widget.contentExtent,
+        ),
+      );
 
   double _positionOf(PointerEvent event) => widget.axis == Axis.horizontal
       ? event.localPosition.dx
@@ -361,6 +316,110 @@ class _TransformationScrollbarState extends State<TransformationScrollbar> {
     matrix.storage[widget.axis == Axis.horizontal ? 12 : 13] = -offset;
     widget.controller.value = matrix;
   }
+}
+
+/// Posizione e lunghezza del cursore della barra per una data matrice.
+_ScrollbarMetrics _scrollbarMetrics({
+  required Matrix4 matrix,
+  required Axis axis,
+  required double trackExtent,
+  required double viewportExtent,
+  required double contentExtent,
+}) {
+  final scale = matrix.getMaxScaleOnAxis();
+  final scaledContentExtent = contentExtent * scale;
+  final maxScrollOffset = math.max(0.0, scaledContentExtent - viewportExtent);
+  final translation = matrix.storage[axis == Axis.horizontal ? 12 : 13];
+  final scrollOffset = (-translation).clamp(0.0, maxScrollOffset);
+  final visibleFraction = scaledContentExtent <= 0
+      ? 1.0
+      : (viewportExtent / scaledContentExtent).clamp(0.0, 1.0);
+  final thumbExtent = math.min(
+    trackExtent,
+    math.max(28.0, trackExtent * visibleFraction),
+  );
+  final thumbTravel = math.max(0.0, trackExtent - thumbExtent);
+  final thumbPosition = maxScrollOffset == 0
+      ? 0.0
+      : thumbTravel * scrollOffset / maxScrollOffset;
+  return _ScrollbarMetrics(
+    maxScrollOffset: maxScrollOffset,
+    thumbExtent: thumbExtent,
+    thumbPosition: thumbPosition,
+    thumbTravel: thumbTravel,
+  );
+}
+
+class _ScrollbarPainter extends CustomPainter {
+  const _ScrollbarPainter({
+    required super.repaint,
+    required this.controller,
+    required this.axis,
+    required this.viewportExtent,
+    required this.contentExtent,
+    required this.trackColor,
+    required this.thumbColor,
+  });
+
+  static const _trackThickness = 4.0;
+  static const _thumbInset = 2.0;
+
+  final TransformationController controller;
+  final Axis axis;
+  final double viewportExtent;
+  final double contentExtent;
+  final Color trackColor;
+  final Color thumbColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final horizontal = axis == Axis.horizontal;
+    final thickness = horizontal ? size.height : size.width;
+    final metrics = _scrollbarMetrics(
+      matrix: controller.value,
+      axis: axis,
+      trackExtent: horizontal ? size.width : size.height,
+      viewportExtent: viewportExtent,
+      contentExtent: contentExtent,
+    );
+
+    final trackOffset = (thickness - _trackThickness) / 2;
+    final track = horizontal
+        ? Rect.fromLTWH(0, trackOffset, size.width, _trackThickness)
+        : Rect.fromLTWH(trackOffset, 0, _trackThickness, size.height);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(track, const Radius.circular(2)),
+      Paint()..color = trackColor,
+    );
+
+    final thumbThickness = thickness - _thumbInset * 2;
+    final thumb = horizontal
+        ? Rect.fromLTWH(
+            metrics.thumbPosition,
+            _thumbInset,
+            metrics.thumbExtent,
+            thumbThickness,
+          )
+        : Rect.fromLTWH(
+            _thumbInset,
+            metrics.thumbPosition,
+            thumbThickness,
+            metrics.thumbExtent,
+          );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(thumb, const Radius.circular(5)),
+      Paint()
+        ..color = thumbColor.withValues(alpha: metrics.scrollable ? .78 : .28),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ScrollbarPainter oldDelegate) =>
+      axis != oldDelegate.axis ||
+      viewportExtent != oldDelegate.viewportExtent ||
+      contentExtent != oldDelegate.contentExtent ||
+      trackColor != oldDelegate.trackColor ||
+      thumbColor != oldDelegate.thumbColor;
 }
 
 class _ScrollbarMetrics {
