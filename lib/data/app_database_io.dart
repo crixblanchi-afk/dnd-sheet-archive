@@ -43,13 +43,20 @@ Future<Database> openDesktopDatabase({
   DatabaseFactory? factory,
 }) async {
   await directory.create(recursive: true);
-  await _lockArchive(directory);
-  final path = p.join(directory.path, _databaseFileName);
-  await _moveLegacyArchive(
-    File(p.join(legacyDirectory.path, _databaseFileName)),
-    File(path),
-  );
-  return (factory ?? databaseFactoryIo).openDatabase(path);
+  final lockPath = await _lockArchive(directory);
+  try {
+    final path = p.join(directory.path, _databaseFileName);
+    await _moveLegacyArchive(
+      File(p.join(legacyDirectory.path, _databaseFileName)),
+      File(path),
+    );
+    return await (factory ?? databaseFactoryIo).openDatabase(path);
+  } catch (_) {
+    // Un'apertura fallita non deve lasciare il lock a questo processo:
+    // «Riprova» lo scambierebbe per un'altra istanza dell'app.
+    await _releaseLock(lockPath);
+    rethrow;
+  }
 }
 
 /// I lock tenuti da questo processo, per percorso.
@@ -58,7 +65,8 @@ Future<Database> openDesktopDatabase({
 /// processo li otterrebbe di nuovo senza errori, quindi va riconosciuta qui.
 final _heldLocks = <String, RandomAccessFile>{};
 
-Future<void> _lockArchive(Directory directory) async {
+/// Prende il lock dell'archivio e restituisce il percorso del file di lock.
+Future<String> _lockArchive(Directory directory) async {
   final path = p.join(directory.path, _lockFileName);
   if (_heldLocks.containsKey(path)) throw const ArchiveAlreadyOpenException();
   final file = await File(path).open(mode: FileMode.append);
@@ -69,15 +77,21 @@ Future<void> _lockArchive(Directory directory) async {
     throw const ArchiveAlreadyOpenException();
   }
   _heldLocks[path] = file;
+  return path;
+}
+
+Future<void> _releaseLock(String path) async {
+  final file = _heldLocks.remove(path);
+  if (file == null) return;
+  await file.unlock();
+  await file.close();
 }
 
 @visibleForTesting
 Future<void> releaseDesktopArchiveLocks() async {
-  for (final file in _heldLocks.values) {
-    await file.unlock();
-    await file.close();
+  for (final path in _heldLocks.keys.toList()) {
+    await _releaseLock(path);
   }
-  _heldLocks.clear();
 }
 
 Future<void> _moveLegacyArchive(File legacy, File target) async {

@@ -84,11 +84,13 @@ dispositivo resta la più recente anche se l'orologio locale è indietro. Le
 schede salvate da versioni precedenti, senza orologi per campo, si uniscono
 come prima, sull'intera scheda, finché non vengono modificate.
 
-Drive non permette scritture condizionate, quindi prima di caricare il sync
-controlla che la versione del backup sia ancora quella scaricata: se un altro
-dispositivo l'ha cambiata nel frattempo, scarica di nuovo e unisce. Un backup
-che contiene già tutto non viene ricaricato. Se due dispositivi al primo sync
-creano un backup a testa, vengono uniti in uno solo.
+Drive non permette scritture condizionate, quindi il sync non sovrascrive mai
+un backup: scarica e unisce tutti quelli presenti, carica il risultato come
+file nuovo e poi cancella quelli che ha unito. Due dispositivi che
+sincronizzano nello stesso momento lasciano due file, che il sync successivo
+riunisce senza perdere niente. Un backup aggiornato sul posto da una versione
+precedente dell'app dopo il download non viene cancellato. Un backup che
+contiene già tutto non viene ricaricato.
 
 Il sync automatico riceve anche le modifiche fatte altrove, non solo invia le
 proprie: gira ogni cinque minuti, quando l'app torna in primo piano e quando si

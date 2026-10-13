@@ -61,12 +61,49 @@ void main() {
     fail('Il sync non si è concluso.');
   }
 
-  test('un backup caricato da un altro dispositivo durante il sync non '
-      'viene sovrascritto', () async {
+  /// Gli id delle schede presenti in tutti i backup su Drive.
+  Set<String> remoteCharacterIds() => {
+    for (final file in drive.files.values)
+      for (final character in file.content['characters'] as List)
+        (character as Map)['id'] as String,
+  };
+
+  test('due dispositivi che caricano insieme non si sovrascrivono', () async {
     final local = await repository.createCharacter('Minsc');
     drive.put('backup', _archive([_character('a', 'Jaheira')]));
     // Mentre questo dispositivo prepara il proprio backup, un altro carica
     // il suo, che contiene una scheda in più.
+    drive.beforeUpload = () {
+      drive.beforeUpload = null;
+      drive.put(
+        'other',
+        _archive([_character('a', 'Jaheira'), _character('b', 'Khalid')]),
+      );
+    };
+
+    final result = await build().sync();
+
+    // Nessun backup è stato riscritto: quello dell'altro dispositivo resta,
+    // accanto al nuovo, e insieme contengono tutto.
+    expect(drive.files.keys, containsAll(['other', 'new-1']));
+    expect(drive.files.containsKey('backup'), isFalse);
+    expect(remoteCharacterIds(), {local.id, 'a', 'b'});
+    expect(result.characters, 2);
+    expect(tracker.hasPendingChanges, isFalse);
+
+    // Il giro successivo li riunisce in uno solo.
+    await service!.sync();
+    expect(drive.files, hasLength(1));
+    expect(remoteCharacterIds(), {local.id, 'a', 'b'});
+    expect(await repository.getCharacter('b'), isNotNull);
+  });
+
+  test('un backup aggiornato sul posto da una versione precedente non viene '
+      'cancellato', () async {
+    final local = await repository.createCharacter('Minsc');
+    drive.put('backup', _archive([_character('a', 'Jaheira')]));
+    // Le versioni precedenti dell'app aggiornano il file esistente: succede
+    // dopo che questo sync l'ha scaricato, prima che lo cancelli.
     drive.beforeVersionCheck = () {
       drive.beforeVersionCheck = null;
       drive.put(
@@ -75,34 +112,14 @@ void main() {
       );
     };
 
-    final result = await build().sync();
+    await build().sync();
 
-    expect(drive.downloads, 2);
-    expect(drive.uploads, 1);
-    final uploaded = drive.content('backup')['characters'] as List;
-    expect(
-      uploaded.map((character) => (character as Map)['id']),
-      unorderedEquals([local.id, 'a', 'b']),
-    );
-    expect(result.characters, 3);
-    expect(tracker.hasPendingChanges, isFalse);
-  });
+    expect(drive.files.keys, containsAll(['backup', 'new-1']));
+    expect(remoteCharacterIds(), {local.id, 'a', 'b'});
 
-  test('se il backup continua a cambiare il sync si ferma senza '
-      'sovrascriverlo', () async {
-    await repository.createCharacter('Minsc');
-    drive.put('backup', _archive([_character('a', 'Jaheira')]));
-    var round = 0;
-    drive.beforeVersionCheck = () =>
-        drive.put('backup', _archive([_character('a', 'Jaheira ${round++}')]));
-
-    final sync = build();
-    await expectLater(sync.sync(), throwsStateError);
-
-    expect(drive.uploads, 0);
-    expect(sync.state, GoogleDriveSyncState.error);
-    expect(sync.errorMessage, contains('altro dispositivo'));
-    expect(tracker.hasPendingChanges, isTrue);
+    await service!.sync();
+    expect(drive.files, hasLength(1));
+    expect(remoteCharacterIds(), {local.id, 'a', 'b'});
   });
 
   test('due backup creati insieme vengono uniti in uno solo', () async {
@@ -112,9 +129,8 @@ void main() {
 
     await build().sync();
 
-    expect(drive.files.keys, ['second']);
-    final uploaded = drive.content('second')['characters'] as List;
-    expect(uploaded, hasLength(3));
+    expect(drive.files.keys, ['new-1']);
+    expect(drive.content('new-1')['characters'] as List, hasLength(3));
     expect(await repository.getCharacter('a'), isNotNull);
     expect(await repository.getCharacter('b'), isNotNull);
   });
@@ -132,8 +148,11 @@ void main() {
     expect(await sync.syncInBackground(), isTrue);
     expect(drive.downloads, 1);
 
+    // Un altro dispositivo carica il proprio backup e cancella quello che ha
+    // unito.
+    drive.files.clear();
     drive.put(
-      'backup',
+      'other',
       _archive([_character('a', 'Jaheira'), _character('b', 'Khalid')]),
     );
     expect(await sync.syncInBackground(), isTrue);
@@ -161,7 +180,8 @@ void main() {
 
     expect(order, ['save']);
     expect(drive.uploads, uploadsBefore + 1);
-    final uploaded = drive.content('new-1')['characters'] as List;
+    expect(drive.files, hasLength(1));
+    final uploaded = drive.files.values.single.content['characters'] as List;
     expect(((uploaded.single as Map)['fields'] as Map)['HP'], '31');
     expect(tracker.hasPendingChanges, isFalse);
   });
@@ -189,6 +209,7 @@ class _FakeDrive {
   int uploads = 0;
   int downloads = 0;
   void Function()? beforeVersionCheck;
+  void Function()? beforeUpload;
 
   void put(String id, Map<String, Object?> content) {
     files.remove(id);
@@ -200,6 +221,7 @@ class _FakeDrive {
   Future<http.Response> handle(http.Request request) async {
     final segments = request.url.pathSegments;
     if (segments.first == 'upload') {
+      beforeUpload?.call();
       uploads++;
       final encoded = RegExp(
         r'Content-Transfer-Encoding: base64\r\n\r\n([A-Za-z0-9+/=]+)',

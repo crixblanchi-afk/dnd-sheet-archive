@@ -86,6 +86,30 @@ void main() {
     );
   });
 
+  test('un\'apertura fallita non lascia il lock a «Riprova»', () async {
+    final legacy = await databaseFactoryIo.openDatabase(
+      p.join(documents.path, 'dnd_sheet_archive.db'),
+    );
+    await _characters.record('minsc').put(legacy, {'name': 'Minsc'});
+    await legacy.close();
+    // Una directory al posto dell'archivio fa fallire lo spostamento.
+    final blocker = Directory(p.join(support.path, 'dnd_sheet_archive.db'));
+    await File(p.join(blocker.path, 'occupato')).create(recursive: true);
+
+    await expectLater(
+      openDesktopDatabase(directory: support, legacyDirectory: documents),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    await blocker.delete(recursive: true);
+    final database = await openDesktopDatabase(
+      directory: support,
+      legacyDirectory: documents,
+    );
+    addTearDown(database.close);
+    expect(await _characters.record('minsc').get(database), isNotNull);
+  });
+
   test('un record danneggiato non blocca l\'elenco né il sync', () async {
     final database = await databaseFactoryMemory.openDatabase(
       'damaged-record.db',

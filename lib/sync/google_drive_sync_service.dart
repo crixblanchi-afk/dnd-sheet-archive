@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' show AppExitResponse;
 
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -119,16 +118,12 @@ class GoogleDriveSyncService extends ChangeNotifier
   Future<void>? _runningSync;
   bool _disposed = false;
 
-  /// La versione del backup su Drive dopo l'ultimo sync riuscito.
+  /// I backup su Drive, con le loro versioni, dopo l'ultimo sync riuscito.
   ///
-  /// Il sync in background la confronta con quella attuale per sapere, con
+  /// Il sync in background li confronta con quelli attuali per sapere, con
   /// una sola richiesta leggera, se un altro dispositivo ha caricato qualcosa.
-  String? _lastSeenRemoteVersion;
+  String? _lastSeenRemoteFiles;
   final List<Future<void> Function()> _exitTasks = [];
-
-  /// Quante volte riprovare quando un altro dispositivo carica il backup
-  /// mentre questo sta preparando il proprio.
-  static const _maxUploadAttempts = 3;
 
   @override
   void notifyListeners() {
@@ -433,119 +428,127 @@ class GoogleDriveSyncService extends ChangeNotifier
     }
   }
 
+  /// Scarica e unisce tutti i backup su Drive, poi carica il risultato come
+  /// file nuovo e cancella quelli che ha unito.
+  ///
+  /// Drive non offre scritture condizionate: sovrascrivere un file esistente,
+  /// anche dopo averne ricontrollato la versione, lascerebbe sempre una
+  /// finestra in cui due dispositivi scrivono uno sopra l'altro e le modifiche
+  /// del primo spariscono. Così invece nessun backup viene mai sovrascritto:
+  /// due sync concorrenti producono due file, e il merge — commutativo e
+  /// idempotente — li riunisce al giro successivo. Cancellare un file già
+  /// unito è sicuro, perché il suo contenuto è dentro quello appena caricato.
   Future<DriveSyncSummary> _syncWithClient(
     http.Client client,
     Object token, {
     required bool onlyIfChanged,
   }) async {
     final api = drive.DriveApi(client);
-    for (var attempt = 1; ; attempt++) {
-      final syncingRevision = _syncTracker.revision;
-      final remoteFiles = await _findRemoteFiles(api);
-      final primary = remoteFiles.firstOrNull;
-      if (onlyIfChanged &&
-          !_syncTracker.hasPendingChanges &&
-          remoteFiles.length == 1 &&
-          primary!.version != null &&
-          primary.version == _lastSeenRemoteVersion) {
-        _checkActive(token);
-        return _completeSync(token, syncingRevision, await _localStore.read());
-      }
-
-      // Due dispositivi al primo sync possono creare un backup a testa: si
-      // uniscono tutti, e quelli in più spariscono dopo il caricamento.
-      ArchiveSyncData? remote;
-      for (final file in remoteFiles) {
-        final data = await _download(api, file.id!);
-        remote = remote == null ? data : ArchiveSyncData.merge(remote, data);
-      }
+    final syncingRevision = _syncTracker.revision;
+    final remoteFiles = await _findRemoteFiles(api);
+    final remoteSignature = _signatureOf(remoteFiles);
+    if (onlyIfChanged &&
+        !_syncTracker.hasPendingChanges &&
+        remoteFiles.isNotEmpty &&
+        remoteSignature == _lastSeenRemoteFiles) {
       _checkActive(token);
-      final merged = remote == null
-          ? await _localStore.read()
-          : await _localStore.mergeAndReplace(
-              remote,
-              beforeReplace: () => _checkActive(token),
-            );
-      // Se il backup contiene già tutto, ricaricarlo sprecherebbe banda e
-      // cambierebbe la versione, facendo scaricare inutilmente il backup agli
-      // altri dispositivi.
-      if (remote != null &&
-          remoteFiles.length == 1 &&
-          ArchiveSyncData.sameContent(merged, remote)) {
-        _checkActive(token);
-        _lastSeenRemoteVersion = primary!.version;
-        return _completeSync(token, syncingRevision, merged);
-      }
+      return _completeSync(token, syncingRevision, await _localStore.read());
+    }
 
-      // Serializzare l'archivio è il passaggio più caro del sync — fino al
-      // tetto dei 20 MB, immagini comprese — e bloccherebbe la UI per
-      // secondi: va in un isolate, come già fa l'export PDF.
-      final bytes = await compute(
-        _encodeArchive,
-        merged,
-        debugLabel: 'drive-backup-encode',
+    ArchiveSyncData? remote;
+    for (final file in remoteFiles) {
+      final data = await _download(api, file.id!);
+      remote = remote == null ? data : ArchiveSyncData.merge(remote, data);
+    }
+    _checkActive(token);
+    final merged = remote == null
+        ? await _localStore.read()
+        : await _localStore.mergeAndReplace(
+            remote,
+            beforeReplace: () => _checkActive(token),
+          );
+    // Se l'unico backup contiene già tutto, ricaricarlo sprecherebbe banda e
+    // farebbe scaricare inutilmente il backup agli altri dispositivi.
+    if (remote != null &&
+        remoteFiles.length == 1 &&
+        ArchiveSyncData.sameContent(merged, remote)) {
+      _checkActive(token);
+      _lastSeenRemoteFiles = remoteSignature;
+      return _completeSync(token, syncingRevision, merged);
+    }
+
+    // Serializzare l'archivio è il passaggio più caro del sync — fino al
+    // tetto dei 20 MB, immagini comprese — e bloccherebbe la UI per secondi:
+    // va in un isolate, come già fa l'export PDF.
+    final bytes = await compute(
+      _encodeArchive,
+      merged,
+      debugLabel: 'drive-backup-encode',
+    );
+    if (bytes.length > maxBackupBytes) {
+      throw FormatException(
+        'Il backup supera il limite di '
+        '${maxBackupBytes ~/ (1024 * 1024)} MB. '
+        'Riduci le immagini o il numero di schede prima di riprovare. '
+        'I dati locali e il backup su Drive restano conservati.',
       );
-      if (bytes.length > maxBackupBytes) {
-        throw FormatException(
-          'Il backup supera il limite di '
-          '${maxBackupBytes ~/ (1024 * 1024)} MB. '
-          'Riduci le immagini o il numero di schede prima di riprovare. '
-          'I dati locali e il backup su Drive restano conservati.',
-        );
-      }
-      // Il timeout non annulla la richiesta sottostante, e su desktop il
-      // client HTTP è condiviso, quindi nemmeno la sua chiusura la interrompe:
-      // senza questo controllo un tentativo abbandonato scriverebbe il proprio
-      // payload sopra quello, più recente, già caricato dal tentativo che l'ha
-      // sostituito, facendo sparire da Drive modifiche già marcate come
-      // inviate.
-      _checkActive(token);
-      // Drive non offre una scrittura condizionata: se un altro dispositivo
-      // ha caricato il proprio backup dopo che questo è stato scaricato,
-      // sovrascriverlo cancellerebbe le sue modifiche. Si ricomincia dal
-      // download, che le unisce a quelle locali.
-      if (primary != null && !await _isUnchanged(api, primary)) {
-        _checkActive(token);
-        if (attempt < _maxUploadAttempts) continue;
-        throw StateError(
-          'Un altro dispositivo sta sincronizzando le schede. Riprova tra '
-          'poco.',
-        );
-      }
-      _checkActive(token);
-      final media = drive.Media(
+    }
+    // Un tentativo abbandonato dopo il timeout non deve più caricare niente:
+    // non sovrascriverebbe nulla, ma cancellerebbe backup che nel frattempo un
+    // tentativo più recente potrebbe non aver ancora unito.
+    _checkActive(token);
+    final uploaded = await api.files.create(
+      drive.File()
+        ..name = _fileName
+        ..mimeType = _mimeType
+        ..parents = const ['appDataFolder'],
+      uploadMedia: drive.Media(
         Stream<List<int>>.value(bytes),
         bytes.length,
         contentType: _mimeType,
-      );
-      final uploaded = primary == null
-          ? await api.files.create(
-              drive.File()
-                ..name = _fileName
-                ..mimeType = _mimeType
-                ..parents = const ['appDataFolder'],
-              uploadMedia: media,
-              $fields: 'id,version',
-            )
-          : await api.files.update(
-              drive.File()..mimeType = _mimeType,
-              primary.id!,
-              uploadMedia: media,
-              $fields: 'id,version',
-            );
-      if (identical(_activeSync, token)) {
-        _lastSeenRemoteVersion = uploaded.version;
-        for (final extra in remoteFiles.skip(1)) {
-          try {
-            await api.files.delete(extra.id!);
-          } catch (_) {
-            // Resta un doppione, che il prossimo sync unirà di nuovo.
-          }
-        }
+      ),
+      $fields: 'id,version',
+    );
+    var allMergedRemoved = true;
+    if (identical(_activeSync, token)) {
+      for (final file in remoteFiles) {
+        allMergedRemoved &= await _deleteMerged(api, file);
       }
-      return _completeSync(token, syncingRevision, merged);
+    }
+    if (identical(_activeSync, token)) {
+      // Se qualche backup è rimasto, il prossimo giro lo scarica e lo unisce.
+      _lastSeenRemoteFiles = allMergedRemoved ? _signatureOf([uploaded]) : null;
+    }
+    return _completeSync(token, syncingRevision, merged);
+  }
+
+  /// Cancella un backup già unito a quello appena caricato.
+  ///
+  /// Le versioni precedenti dell'app aggiornano invece il backup sul posto:
+  /// se nel frattempo il file è cambiato contiene qualcosa che questo sync non
+  /// ha unito, e resta lì per il prossimo. Restituisce `true` se il file non
+  /// c'è più.
+  Future<bool> _deleteMerged(drive.DriveApi api, drive.File file) async {
+    try {
+      final current = await api.files.get(file.id!, $fields: 'version');
+      if (current is! drive.File || current.version != file.version) {
+        return false;
+      }
+      await api.files.delete(file.id!);
+      return true;
+    } on drive.DetailedApiRequestError catch (error) {
+      // Già cancellato da un altro dispositivo che l'aveva unito a sua volta.
+      return error.status == 404;
+    } catch (_) {
+      // Resta un doppione, che il prossimo sync unirà di nuovo.
+      return false;
     }
   }
+
+  static String _signatureOf(Iterable<drive.File> files) =>
+      (files.map((file) => '${file.id}:${file.version}').toList()..sort()).join(
+        ',',
+      );
 
   /// Chiude un sync riuscito, se nel frattempo non è stato abbandonato.
   Future<DriveSyncSummary> _completeSync(
@@ -571,12 +574,6 @@ class GoogleDriveSyncService extends ChangeNotifier
     );
   }
 
-  /// Vero se il backup su Drive è ancora quello elencato in [file].
-  Future<bool> _isUnchanged(drive.DriveApi api, drive.File file) async {
-    final current = await api.files.get(file.id!, $fields: 'version');
-    return current is drive.File && current.version == file.version;
-  }
-
   bool _isAuthorizationFailure(drive.DetailedApiRequestError error) =>
       error.status == 401 ||
       error.errors.any(
@@ -597,7 +594,7 @@ class GoogleDriveSyncService extends ChangeNotifier
       spaces: 'appDataFolder',
       q: "name = '$_fileName' and trashed = false",
       orderBy: 'modifiedTime desc',
-      pageSize: 10,
+      pageSize: 100,
       $fields: 'files(id,name,modifiedTime,version)',
     );
     return result.files ?? const [];
@@ -628,7 +625,7 @@ class GoogleDriveSyncService extends ChangeNotifier
   Future<void> signOut() async {
     await _initialization;
     // Un altro account ha un altro backup: il prossimo sync lo scarica.
-    _lastSeenRemoteVersion = null;
+    _lastSeenRemoteFiles = null;
     if (_isDesktop) {
       await _desktopAuth.signOut();
       _state = GoogleDriveSyncState.idle;

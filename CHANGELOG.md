@@ -8,10 +8,10 @@
   modifiche invece di perdere quelle di chi ha salvato per primo. Gli orologi
   non tornano mai indietro rispetto all'ultima modifica ricevuta, così un
   dispositivo con l'orologio indietro non perde le proprie.
-- Il sync non sovrascrive più un backup caricato da un altro dispositivo nel
-  frattempo: prima di caricare ricontrolla la versione su Drive e, se è
-  cambiata, scarica e unisce di nuovo. Due backup creati insieme al primo sync
-  vengono uniti in uno.
+- Il sync non sovrascrive più il backup su Drive: carica un file nuovo e
+  cancella soltanto quelli che ha già unito. Due dispositivi che sincronizzano
+  insieme lasciano due file, riuniti al giro successivo, invece di cancellare
+  l'uno le modifiche dell'altro.
 - Il sync automatico riceve le modifiche fatte altrove anche senza modifiche
   locali: ogni cinque minuti, al ritorno in primo piano e all'apertura di una
   scheda, con una sola richiesta leggera quando non è cambiato niente. Un
