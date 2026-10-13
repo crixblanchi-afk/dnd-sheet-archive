@@ -55,9 +55,10 @@ void main() {
   });
 
   test('la raccolta elimina i blob che nessuno cita più', () async {
-    final live = await blobs.write(_bytes(1));
-    final inVersion = await blobs.write(_bytes(2));
-    final orphan = await blobs.write(_bytes(3));
+    final old = BlobStore(database, now: () => DateTime.utc(2025));
+    final live = await old.write(_bytes(1));
+    final inVersion = await old.write(_bytes(2));
+    final orphan = await old.write(_bytes(3));
     await _characters.record('alive').put(database, {
       'fields': {'CharacterAppearanceImage': live},
     });
@@ -72,6 +73,36 @@ void main() {
     // mostra: la cronologia non deve svuotarsi da sola.
     expect(await blobs.read(inVersion), isNotNull);
     expect(await blobs.read(orphan), isNull);
+  });
+
+  test(
+    'un\'immagine appena scritta sopravvive finché la scheda non la cita',
+    () async {
+      var now = DateTime.utc(2026, 1, 1);
+      final store = BlobStore(database, now: () => now);
+      final fresh = await store.write(_bytes(4));
+
+      // Un sync che cade fra la scelta dell'immagine e l'autosalvataggio della
+      // scheda non deve toglierla.
+      await store.collectGarbage(database);
+      expect(await _blobs.record(fresh).get(database), isNotNull);
+
+      now = now.add(BlobStore.orphanGracePeriod + const Duration(minutes: 1));
+      await store.collectGarbage(database);
+      expect(await _blobs.record(fresh).get(database), isNull);
+    },
+  );
+
+  test('riscegliere un\'immagine orfana ne rinnova la tregua', () async {
+    var now = DateTime.utc(2026, 1, 1);
+    final store = BlobStore(database, now: () => now);
+    final reference = await store.write(_bytes(5));
+
+    now = now.add(BlobStore.orphanGracePeriod * 2);
+    expect(await store.write(_bytes(5)), reference);
+    await store.collectGarbage(database);
+
+    expect(await _blobs.record(reference).get(database), isNotNull);
   });
 
   test('la migrazione sposta le immagini dai campi ai blob', () async {

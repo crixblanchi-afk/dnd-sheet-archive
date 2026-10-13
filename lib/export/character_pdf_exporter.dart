@@ -148,6 +148,9 @@ Future<Uint8List> _buildPdf(_ExportData data) async {
         ),
       ),
   ];
+  // Una sola copia per immagine anche quando più schede la mostrano: il PDF
+  // la referenzia da ogni pagina invece di incorporarla ogni volta.
+  final images = <String, PdfImage>{};
   for (var index = 0; index < data.characters.length; index++) {
     final character = data.characters[index];
     for (var pageIndex = 0; pageIndex < sheetPageCount; pageIndex++) {
@@ -168,7 +171,10 @@ Future<Uint8List> _buildPdf(_ExportData data) async {
         final value = character.fields[imageField.name];
         final bytes = value is String ? data.images[value] : null;
         if (bytes != null) {
-          final image = PdfImage.file(document, bytes: bytes);
+          final image = images.putIfAbsent(
+            value! as String,
+            () => PdfImage.file(document, bytes: bytes),
+          );
           final scale = math.min(
             imageField.width / image.width,
             imageField.height / image.height,

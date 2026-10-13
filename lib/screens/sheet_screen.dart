@@ -37,6 +37,7 @@ class SheetScreen extends StatefulWidget {
 class _SheetScreenState extends State<SheetScreen> {
   late final SheetController _sheetController;
   late final Future<List<List<SheetFieldDef>>> _fields;
+  late final VoidCallback _removeExitTask;
   bool _allowPop = false;
   bool _exiting = false;
   int _pageIndex = 0;
@@ -51,6 +52,14 @@ class _SheetScreenState extends State<SheetScreen> {
       character: widget.character,
     );
     _fields = SheetFieldDef.loadByPage();
+    // Chiudere la finestra su desktop non passa dal pulsante indietro: la
+    // sessione va salvata prima che il processo termini.
+    _removeExitTask = widget.driveSync.addExitTask(
+      () => _sheetController.finishEditingSession('session'),
+    );
+    // Chi apre una scheda vuole vederla aggiornata con le modifiche fatte su
+    // un altro dispositivo, senza aspettare il prossimo giro del sync.
+    unawaited(widget.driveSync.syncInBackground());
   }
 
   Future<void> _exit() async {
@@ -82,7 +91,7 @@ class _SheetScreenState extends State<SheetScreen> {
     }
     // Le modifiche sono già al sicuro nell'archivio locale: il viaggio di rete
     // verso Drive non deve trattenere la navigazione.
-    unawaited(widget.driveSync.syncPendingChanges());
+    unawaited(widget.driveSync.syncInBackground());
     if (!mounted) return;
     setState(() => _allowPop = true);
     Navigator.of(context).pop();
@@ -291,6 +300,7 @@ class _SheetScreenState extends State<SheetScreen> {
 
   @override
   void dispose() {
+    _removeExitTask();
     _pageController.dispose();
     unawaited(_closeAndDisposeController());
     super.dispose();

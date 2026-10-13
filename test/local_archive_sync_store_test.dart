@@ -148,7 +148,11 @@ void main() {
 
   test('un\'immagine che nessuno cita più lascia l\'archivio', () async {
     final image = Uint8List.fromList(List.generate(48, (index) => index * 5));
-    final reference = await BlobStore(database).write(image);
+    // Scritta da tempo: fuori dalla tregua concessa alle immagini nuove.
+    final reference = await BlobStore(
+      database,
+      now: () => DateTime.utc(2025),
+    ).write(image);
     await _characters
         .record('illustrated')
         .put(

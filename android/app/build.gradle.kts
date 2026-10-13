@@ -15,6 +15,17 @@ val hasReleaseSigning = listOf(
     releaseKeyAlias,
     releaseKeyPassword,
 ).all { !it.isNullOrBlank() }
+val buildsRelease = gradle.startParameter.taskNames.any {
+    it.contains("Release", ignoreCase = true)
+}
+// Un secret mancante o rinominato non deve produrre in silenzio un APK firmato
+// con la chiave di debug: chi ha già installato l'app non potrebbe aggiornarla.
+if (System.getenv("CI") == "true" && buildsRelease && !hasReleaseSigning) {
+    throw GradleException(
+        "Firma release mancante: imposta ANDROID_KEYSTORE_PATH, " +
+            "ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS e ANDROID_KEY_PASSWORD.",
+    )
+}
 
 android {
     namespace = "com.example.dnd_sheet_archive"

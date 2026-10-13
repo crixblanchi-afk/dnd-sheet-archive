@@ -55,11 +55,13 @@ void main() {
     'Drive download, merge and upload preserve local and remote data',
     () async {
       final character = await repository.createCharacter('Minsc');
-      character.fields['STR'] = '18';
-      await repository.saveCharacter(character);
+      // Drive ha la scheda appena creata, con una modifica fatta altrove...
       final remoteCharacter = character.copy()
         ..updatedAt = character.updatedAt.add(const Duration(minutes: 1))
         ..fields['AC'] = '20';
+      // ...e questo dispositivo ne ha modificato un altro campo.
+      character.fields['STR'] = '18';
+      await repository.saveCharacter(character);
       final remote = ArchiveSyncData(
         generatedAt: DateTime.now().toUtc(),
         characters: [remoteCharacter],
@@ -155,7 +157,9 @@ void main() {
     );
     await sync.sync();
     await sync.sync();
-    expect(uploads, 2);
+    // Il secondo sync trova su Drive esattamente l'archivio locale: lo
+    // scarica, e non c'è niente da ricaricare.
+    expect(uploads, 1);
     expect(downloads, 1);
     expect(sync.state, GoogleDriveSyncState.success);
   });

@@ -125,6 +125,31 @@ void main() {
     },
   );
 
+  test('un ritratto condiviso da più schede è incorporato una volta', () async {
+    final image = (await rootBundle.load(
+      'assets/sheet/page-3.png',
+    )).buffer.asUint8List();
+    Future<int> pdfSize(int count, {bool withImage = true}) async {
+      final characters = [
+        for (var index = 0; index < count; index++)
+          _character('id-$index', 'Scheda $index')
+            ..fields['CharacterAppearanceImage'] = withImage
+                ? 'blob:ritratto'
+                : '',
+      ];
+      final bytes = await CharacterPdfExporter(
+        readImage: (_) async => image,
+      ).buildPdf(characters);
+      return bytes.length;
+    }
+
+    final pagesOnly =
+        await pdfSize(3, withImage: false) - await pdfSize(1, withImage: false);
+    final withImage = await pdfSize(3) - await pdfSize(1);
+    // Due schede in più aggiungono campi e pagine, non altre due immagini.
+    expect(withImage - pagesOnly, lessThan(1024));
+  });
+
   test('filenames are safe for desktop paths and preserve accented names', () {
     String filename(String name) =>
         CharacterPdfExporter.filenameFor([_character('id', name)]);

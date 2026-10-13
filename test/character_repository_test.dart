@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:dnd_sheet_archive/data/blob_store.dart';
 import 'package:dnd_sheet_archive/data/sembast_character_repository.dart';
 import 'package:dnd_sheet_archive/models/snapshot_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,6 +54,11 @@ void main() {
   });
 
   test('le immagini stanno nei blob e le versioni le tengono vive', () async {
+    var now = DateTime.utc(2026, 1, 1);
+    final repository = SembastCharacterRepository(
+      await databaseFactoryMemory.openDatabase('blob-lifetime.db'),
+      now: () => now,
+    );
     final portrait = Uint8List.fromList(List.generate(32, (index) => index));
     final replacement = Uint8List.fromList(
       List.generate(32, (index) => 255 - index),
@@ -75,6 +81,9 @@ void main() {
     expect(await repository.readImage(first), portrait);
     expect(await repository.readImage(second), replacement);
 
+    // Le immagini appena scritte godono di una tregua: la raccolta le
+    // considera solo dopo.
+    now = now.add(BlobStore.orphanGracePeriod * 2);
     await repository.deleteCharacter(character.id);
     expect(await repository.readImage(first), isNull);
     expect(await repository.readImage(second), isNull);

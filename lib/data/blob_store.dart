@@ -14,9 +14,22 @@ import '../models/image_payload.dart';
 /// una stessa scheda condividono un solo blob e il record del personaggio torna
 /// a pesare quanto il suo testo.
 class BlobStore {
-  BlobStore(this.database);
+  BlobStore(this.database, {DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   final Database database;
+  final DateTime Function() _now;
+
+  /// Per quanto un'immagine appena scritta sopravvive alla raccolta anche se
+  /// nessuna scheda la cita ancora.
+  ///
+  /// L'immagine scelta dall'utente viene salvata subito, ma la scheda che la
+  /// cita solo con l'autosalvataggio successivo: senza questa tregua un sync
+  /// che cade in mezzo la cancellerebbe, lasciando la scheda con un
+  /// riferimento a vuoto. Un giorno copre con larghezza anche i salvataggi
+  /// che falliscono e vengono ritentati; un'immagine abbandonata, scelta e
+  /// poi tolta prima del salvataggio, se ne va alla prima raccolta dopo.
+  static const orphanGracePeriod = Duration(days: 1);
 
   /// Gli ultimi blob letti, con la loro identità.
   ///
@@ -53,10 +66,18 @@ class BlobStore {
   /// Salva l'immagine, se non c'è già, e restituisce il suo riferimento.
   Future<String> write(Uint8List bytes) async {
     final reference = blobReferenceFor(bytes);
+    final storedAt = _now().toUtc().toIso8601String();
     await database.transaction((transaction) async {
-      if (await _blobs.record(reference).get(transaction) != null) return;
-      await _blobs.record(reference).put(transaction, {
+      final record = _blobs.record(reference);
+      if (await record.get(transaction) != null) {
+        // Già presente, magari orfana da tempo: la tregua riparte da ora,
+        // altrimenti la raccolta potrebbe toglierla prima del salvataggio.
+        await record.update(transaction, {'storedAt': storedAt});
+        return;
+      }
+      await record.put(transaction, {
         'data': base64Encode(bytes),
+        'storedAt': storedAt,
       });
     });
     return reference;
@@ -106,7 +127,13 @@ class BlobStore {
         }
       }
     }
+    final graceStart = _now().toUtc().subtract(orphanGracePeriod);
     for (final record in await _blobs.find(client)) {
+      final storedAtValue = record.value['storedAt'];
+      final storedAt = storedAtValue is String
+          ? DateTime.tryParse(storedAtValue)
+          : null;
+      if (storedAt != null && storedAt.isAfter(graceStart)) continue;
       if (!live.contains(record.key)) {
         await _blobs.record(record.key).delete(client);
         _decoded.remove(record.key);

@@ -1,6 +1,9 @@
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
+
 import 'character.dart';
+import 'character_merge.dart';
 import 'character_version.dart';
 import 'image_payload.dart';
 import 'snapshot_policy.dart';
@@ -130,12 +133,14 @@ class ArchiveSyncData {
       }
     }
 
+    // Le copie della stessa scheda si uniscono campo per campo: vince la
+    // modifica più recente di ogni elemento, non l'ultima scheda salvata.
     final characters = <String, Character>{};
     for (final character in [...local.characters, ...remote.characters]) {
       final current = characters[character.id];
-      if (current == null || _preferCharacter(character, current)) {
-        characters[character.id] = character.copy();
-      }
+      characters[character.id] = current == null
+          ? character.copy()
+          : mergeCharacters(current, character);
     }
 
     for (final entry in Map<String, DateTime>.of(deletions).entries) {
@@ -202,19 +207,6 @@ class ArchiveSyncData {
     );
   }
 
-  /// A parità di timestamp serve un vincitore deterministico su entrambi i
-  /// dispositivi, altrimenti il merge non converge: decide il confronto del
-  /// JSON normalizzato, che dall'archivio dei blob in poi contiene i soli
-  /// riferimenti alle immagini e non le immagini stesse.
-  static bool _preferCharacter(Character candidate, Character current) {
-    final timestampOrder = candidate.updatedAt.compareTo(current.updatedAt);
-    if (timestampOrder != 0) return timestampOrder > 0;
-    return _stableJson(
-          candidate.toJson(),
-        ).compareTo(_stableJson(current.toJson())) >
-        0;
-  }
-
   static bool _preferVersion(
     CharacterVersion candidate,
     CharacterVersion current,
@@ -230,6 +222,32 @@ class ArchiveSyncData {
           candidate.toJson(),
         ).compareTo(_stableJson(current.toJson())) >
         0;
+  }
+
+  /// Vero se i due archivi contengono gli stessi dati, a prescindere da
+  /// quando sono stati generati e dall'ordine dei record.
+  ///
+  /// Dice al sync se il merge ha portato qualcosa di nuovo rispetto al backup
+  /// su Drive: in caso contrario non serve ricaricarlo.
+  static bool sameContent(ArchiveSyncData a, ArchiveSyncData b) {
+    const equality = DeepCollectionEquality();
+    Map<String, Object?> byId(Iterable<Map<String, Object?>> records) => {
+      for (final record in records) record['id']! as String: record,
+    };
+    String iso(DateTime date) => date.toUtc().toIso8601String();
+    return equality.equals(
+          byId(a.characters.map((character) => character.toJson())),
+          byId(b.characters.map((character) => character.toJson())),
+        ) &&
+        equality.equals(
+          byId(a.versions.map((version) => version.toJson())),
+          byId(b.versions.map((version) => version.toJson())),
+        ) &&
+        equality.equals(
+          a.deletions.map((id, date) => MapEntry(id, iso(date))),
+          b.deletions.map((id, date) => MapEntry(id, iso(date))),
+        ) &&
+        equality.equals(a.blobs, b.blobs);
   }
 
   static String _stableJson(Map<String, Object?> value) {
