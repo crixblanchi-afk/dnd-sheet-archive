@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 1.3.1 — 2026-10-13
 
 - Tema scuro con l'artwork della scheda precalcolato invece di filtrato a
   ogni fotogramma: via i due `ColorFiltered` annidati che imponevano due
@@ -21,7 +21,9 @@
 - Ritratto e simbolo non vengono più ridecodificati a ogni ritorno sulla
   pagina.
 
-Ripresa da #10, senza la rimozione del menu Aspetto dalla scheda.
+Build: **8**. Verifiche: **145 test**, analisi statica e build Web e Windows
+sulla pull request; anteprime delle tre pagine scure controllate prima del
+rilascio. I pacchetti di release vengono creati da GitHub Actions.
 
 ## 1.3.0 — 2026-10-13
 
