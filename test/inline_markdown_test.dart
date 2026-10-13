@@ -5,6 +5,19 @@ import 'package:flutter_test/flutter_test.dart';
 const _baseStyle = TextStyle(fontFamily: 'RobotoSlab', fontSize: 10);
 
 void main() {
+  test('nel tema scuro il grassetto spicca sul testo normale', () {
+    final span = buildInlineMarkdownSpan(
+      'Testo **importante**',
+      const TextStyle(color: Color(0xffd4c9b8), fontFamily: 'RobotoSlab'),
+    );
+
+    final spans = span.children!.cast<TextSpan>();
+    expect(spans.last.style!.fontWeight, FontWeight.w800);
+    expect(spans.last.style!.color, const Color(0xffe5d9c6));
+    // Il testo normale non viene ricolorato: eredita lo stile della casella.
+    expect(spans.first.style, isNull);
+  });
+
   test('il testo senza delimitatori resta un unico frammento', () {
     final span = buildInlineMarkdownSpan('Solo testo', _baseStyle);
 

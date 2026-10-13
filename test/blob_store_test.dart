@@ -38,6 +38,18 @@ void main() {
     expect(await blobs.read(other), symbol);
   });
 
+  test('rileggere un blob restituisce la stessa istanza', () async {
+    final reference = await blobs.write(_bytes(7));
+
+    final first = await blobs.read(reference);
+    final second = await blobs.read(reference);
+
+    // `MemoryImage` confronta i byte per identità: byte nuovi a ogni lettura
+    // farebbero ridecodificare il ritratto a ogni ritorno sulla pagina.
+    expect(identical(first, second), isTrue);
+    expect(first, _bytes(7));
+  });
+
   test('un riferimento sconosciuto non restituisce byte', () async {
     expect(await blobs.read(blobReferenceFor(_bytes(3))), isNull);
   });

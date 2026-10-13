@@ -55,7 +55,12 @@ Su desktop e Android si sceglie dove salvare; sul Web parte il download.
 Il menu **Aspetto**, disponibile nell'elenco e nella scheda, permette di scegliere
 **Chiaro**, **Scuro** o **Sistema**. La scelta viene ricordata sul dispositivo.
 Il tema scuro adatta anche la carta, le cornici, le etichette, i campi e gli
-indicatori della scheda: ritratto e simbolo mantengono i colori originali.
+indicatori della scheda: ritratto e simbolo mantengono i colori originali. La
+versione scura dell'artwork è un asset a parte, generato in anticipo da
+`scripts/generate_dark_artwork.py` (serve Pillow, NumPy e PyMuPDF): filtrarla a
+ogni fotogramma costava due passaggi fuori schermo per pagina. Se cambiano la
+palette scura o le pagine di partenza, i PNG vanno rigenerati con quello
+script.
 
 ## Sincronizzazione Google Drive
 

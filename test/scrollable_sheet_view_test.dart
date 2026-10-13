@@ -73,7 +73,8 @@ void main() {
           0,
           1,
         )
-        ..scaleByDouble(scale, scale, 1, 1);
+        // Uniforme su tutti gli assi, come fa `InteractiveViewer`.
+        ..scaleByDouble(scale, scale, scale, 1);
       await tester.pumpAndSettle();
       await tester.tapAt(
         tester.getCenter(find.byKey(const ValueKey('TestField'))),
@@ -94,6 +95,34 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
+
+  testWidgets('sotto il 100% lo zoom resta leggibile su tutti gli assi', (
+    tester,
+  ) async {
+    final transform = await openView(tester);
+
+    await tester.tap(find.byTooltip('Riduci zoom'));
+    await tester.pumpAndSettle();
+
+    final scale = transform.value.storage[0];
+    expect(scale, lessThan(1));
+    // `getMaxScaleOnAxis()` prende il massimo dei tre assi: lasciando Z a 1,
+    // ogni zoom sotto il 100% veniva letto come 100% da InteractiveViewer,
+    // dalle scrollbar e dal vincolo orizzontale.
+    expect(transform.value.getMaxScaleOnAxis(), closeTo(scale, .000001));
+    expect(find.text('${(scale * 100).round()}%'), findsOneWidget);
+
+    // Più stretta del viewport, la scheda resta centrata: con la scala letta
+    // male finiva appoggiata al bordo sinistro e il trascinamento orizzontale
+    // le si opponeva.
+    final centered = sheetCenterOffset(612, sheetPageWidth * scale);
+    expect(transform.value.storage[12], closeTo(centered, .01));
+    await tester.dragFrom(const Offset(306, 400), const Offset(-80, 0));
+    await tester.pumpAndSettle();
+    expect(transform.value.storage[12], closeTo(centered, .01));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets('metric changes do not reveal a field after focus is lost', (
     tester,

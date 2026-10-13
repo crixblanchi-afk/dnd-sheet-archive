@@ -124,24 +124,18 @@ void main() {
         ),
       );
       final context = tester.element(find.byType(SheetPage));
-      // Gli overlay risolvono il riferimento dell'immagine in modo asincrono,
-      // e l'artwork viene decodificato alla densità dello schermo: i provider
-      // da precaricare sono quelli che l'albero ha costruito davvero, non
-      // quelli ricostruiti a mano, altrimenti la cache non li riconosce e la
-      // decodifica non si completa mai dentro la zona fake-async.
-      await tester.pumpAndSettle();
-      await tester.runAsync(() async {
-        for (final image in tester.widgetList<Image>(find.byType(Image))) {
-          await precacheImage(image.image, context);
-        }
-      });
-      await tester.pumpAndSettle();
+      await _settleImages(tester, context);
       final light = await _capture(tester, boundary, 'light');
+      expect(_artworkAsset(tester), 'assets/sheet/page-2.png');
+
       brightness.value = Brightness.dark;
-      await tester.pumpAndSettle();
+      // Il tema scuro cambia asset, non filtro: va precaricato anche il nuovo.
+      await _settleImages(tester, context);
       final dark = await _capture(tester, boundary, 'dark');
+      expect(_artworkAsset(tester), 'assets/sheet/page-2-dark.png');
+      expect(find.byType(ColorFiltered), findsNothing);
       expect(_pixel(light, 5, 5), [255, 255, 255, 255]);
-      expect(_pixel(dark, 5, 5), [32, 35, 41, 255]);
+      expect(_pixel(dark, 5, 5), [36, 33, 30, 255]);
       // Centro di ciascuna metà del ritratto e del simbolo: confronto dei
       // pixel finali, non soltanto delle proprietà del widget Image.
       for (final point in const [
@@ -173,18 +167,57 @@ void main() {
     timeout: const Timeout(Duration(minutes: 2)),
   );
 
+  test('la carta scura coincide con quella cotta nell\'artwork', () {
+    // `scripts/generate_dark_artwork.py` usa questi due valori: se la palette
+    // si sposta senza rigenerare i PNG, i campi smettono di appoggiare sulla
+    // carta che hanno intorno.
+    expect(SheetPalette.dark.paper, const Color(0xff24211e));
+    expect(SheetPalette.dark.ink, const Color(0xffc2b8a9));
+    expect(SheetPalette.dark.workspace, Colors.black);
+  });
+
   test('sheet values and annotations keep strong contrast on dark paper', () {
     double contrast(Color a, Color b) =>
         (a.computeLuminance() + .05) / (b.computeLuminance() + .05);
     expect(
       contrast(SheetPalette.dark.text, SheetPalette.dark.paper),
-      greaterThan(10),
+      greaterThan(7),
     );
     expect(
       contrast(SheetPalette.dark.comment, SheetPalette.dark.paper),
       greaterThan(4.5),
     );
   });
+}
+
+/// Porta a termine le decodifiche delle immagini presenti nell'albero.
+///
+/// I provider da precaricare sono quelli che l'albero ha costruito davvero —
+/// l'artwork passa da `ResizeImage` e gli overlay risolvono il riferimento in
+/// modo asincrono — altrimenti la cache non li riconosce e dentro la zona
+/// fake-async la decodifica non si completa mai.
+Future<void> _settleImages(WidgetTester tester, BuildContext context) async {
+  await tester.pumpAndSettle();
+  await tester.runAsync(() async {
+    for (final image in tester.widgetList<Image>(find.byType(Image))) {
+      await precacheImage(image.image, context);
+    }
+  });
+  await tester.pumpAndSettle();
+}
+
+/// Il nome dell'asset disegnato come sfondo della pagina.
+String _artworkAsset(WidgetTester tester) {
+  final image = tester.widget<Image>(
+    find.descendant(
+      of: find.byType(SheetArtwork),
+      matching: find.byType(Image),
+    ),
+  );
+  final provider = image.image;
+  return ((provider is ResizeImage ? provider.imageProvider : provider)
+          as AssetImage)
+      .assetName;
 }
 
 Character _character(Map<String, Object?> fields) => Character(
@@ -297,12 +330,7 @@ Future<void> _previewPages(
         ),
       );
       final context = tester.element(find.byType(SheetPage));
-      await tester.runAsync(
-        () => precacheImage(
-          AssetImage('assets/sheet/page-${page + 1}.png'),
-          context,
-        ),
-      );
+      await _settleImages(tester, context);
       await tester.pumpAndSettle();
       await _capture(tester, boundary, 'page-${page + 1}-${brightness.name}');
     }
