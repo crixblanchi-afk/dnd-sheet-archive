@@ -1,6 +1,6 @@
 # Changelog
 
-## Non ancora rilasciato
+## 1.4.0 — 2026-10-14
 
 - Modifica contemporanea più resiliente: le copie di una scheda si uniscono
   campo per campo, con un orologio per ogni campo, commento, nome e blocco.
@@ -39,6 +39,11 @@
 - Digitazione più leggera nei campi lunghi: l'adattamento del carattere parte
   dalla dimensione trovata per il testo precedente e di solito si chiude con un
   solo layout invece di dodici.
+
+Build: **9**. Verifiche: **169 test** e analisi statica. I pacchetti Android,
+Linux x86_64 e ARM64, Windows e Web vengono creati da GitHub Actions.
+Restano da verificare su dispositivi reali il sync contemporaneo, la chiusura
+della finestra desktop e la fluidità durante l'apertura della tastiera Android.
 
 ## 1.3.1 — 2026-10-13
 
