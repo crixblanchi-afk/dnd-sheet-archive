@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -7,24 +6,43 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../models/character.dart';
+import '../models/image_payload.dart';
 import '../models/sheet_field.dart';
 import '../models/sheet_layout.dart';
+import 'export_progress.dart';
 import 'pdf_file_saver.dart';
 
 typedef PdfFileSaver = Future<bool> Function(Uint8List bytes, String filename);
 
+/// Risolve il valore di un campo immagine nei byte da incorporare.
+typedef SheetImageReader = Future<Uint8List?> Function(Object? value);
+
+/// Schede già composte sulle schede totali.
+typedef ExportProgress = void Function(int done, int total);
+
 class CharacterPdfExporter {
-  CharacterPdfExporter({PdfFileSaver? saveFile})
-    : _saveFile = saveFile ?? savePdfFile;
+  CharacterPdfExporter({PdfFileSaver? saveFile, SheetImageReader? readImage})
+    : _saveFile = saveFile ?? savePdfFile,
+      _readImage = readImage ?? _readInlineImage;
 
   final PdfFileSaver _saveFile;
+  final SheetImageReader _readImage;
 
-  Future<bool> exportCharacters(List<Character> characters) async {
-    final bytes = await buildPdf(characters);
+  static Future<Uint8List?> _readInlineImage(Object? value) async =>
+      decodeInlineImage(value);
+
+  Future<bool> exportCharacters(
+    List<Character> characters, {
+    ExportProgress? onProgress,
+  }) async {
+    final bytes = await buildPdf(characters, onProgress: onProgress);
     return _saveFile(bytes, filenameFor(characters));
   }
 
-  Future<Uint8List> buildPdf(List<Character> characters) async {
+  Future<Uint8List> buildPdf(
+    List<Character> characters, {
+    ExportProgress? onProgress,
+  }) async {
     if (characters.isEmpty) {
       throw ArgumentError.value(
         characters,
@@ -40,11 +58,33 @@ class CharacterPdfExporter {
       backgrounds.add(await rootBundle.load('assets/sheet/page-$page.png'));
     }
     final font = await rootBundle.load('assets/fonts/RobotoSlab-Regular.ttf');
-    return compute(
-      _buildPdf,
-      _ExportData(copies, fields, backgrounds, font),
-      debugLabel: 'character-pdf-export',
+    // Le immagini stanno nell'archivio dei blob, che l'isolate non può
+    // interrogare: vengono risolte qui, una volta per contenuto anche quando
+    // più schede mostrano la stessa.
+    final images = <String, Uint8List>{};
+    for (final character in copies) {
+      for (final field in sheetImageFields) {
+        final value = character.fields[field.name];
+        if (value is! String || value.isEmpty || images.containsKey(value)) {
+          continue;
+        }
+        final bytes = await _readImage(value);
+        if (bytes != null) images[value] = bytes;
+      }
+    }
+
+    final progress = openExportProgress(
+      onProgress == null ? null : (done) => onProgress(done, copies.length),
     );
+    try {
+      return await compute(
+        _buildPdf,
+        _ExportData(copies, fields, backgrounds, font, images, progress.token),
+        debugLabel: 'character-pdf-export',
+      );
+    } finally {
+      progress.close();
+    }
   }
 
   static String filenameFor(List<Character> characters) {
@@ -66,12 +106,24 @@ class CharacterPdfExporter {
 }
 
 class _ExportData {
-  const _ExportData(this.characters, this.fields, this.backgrounds, this.font);
+  const _ExportData(
+    this.characters,
+    this.fields,
+    this.backgrounds,
+    this.font,
+    this.images,
+    this.progressToken,
+  );
 
   final List<Character> characters;
   final List<List<SheetFieldDef>> fields;
   final List<ByteData> backgrounds;
   final ByteData font;
+
+  /// Valore del campo immagine -> byte dell'immagine.
+  final Map<String, Uint8List> images;
+
+  final Object? progressToken;
 }
 
 Future<Uint8List> _buildPdf(_ExportData data) async {
@@ -114,8 +166,9 @@ Future<Uint8List> _buildPdf(_ExportData data) async {
         (field) => field.page == pageIndex,
       )) {
         final value = character.fields[imageField.name];
-        if (value is String && value.isNotEmpty) {
-          final image = PdfImage.file(document, bytes: base64Decode(value));
+        final bytes = value is String ? data.images[value] : null;
+        if (bytes != null) {
+          final image = PdfImage.file(document, bytes: bytes);
           final scale = math.min(
             imageField.width / image.width,
             imageField.height / image.height,
@@ -263,6 +316,7 @@ Future<Uint8List> _buildPdf(_ExportData data) async {
         }
       }
     }
+    reportExportProgress(data.progressToken, index + 1);
   }
   return document.save();
 }

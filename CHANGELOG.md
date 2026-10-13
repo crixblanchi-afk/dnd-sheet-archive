@@ -1,5 +1,27 @@
 # Changelog
 
+## Non rilasciato
+
+- Immagini conservate una sola volta per contenuto, fuori dalla scheda, e
+  condivise fra le sue versioni e il backup: una scheda illustrata non pesa più
+  dieci volte la propria immagine. Ricodifica in JPEG quando non ci sono
+  trasparenze da preservare.
+- Backup Drive nel formato 2, con le immagini in un elenco a parte; i backup
+  nel formato 1 vengono convertiti al primo sync e le schede già salvate
+  migrano al primo avvio.
+- Serializzazione e lettura del backup spostate in un isolate: il sync non
+  blocca più l'interfaccia mentre prepara fino a 20 MB di archivio.
+- Il sync aggiorna soltanto i record cambiati invece di riscrivere l'intero
+  archivio locale, riducendo la finestra in cui un'interruzione poteva lasciarlo
+  incompleto.
+- Token di refresh Google su desktop nel portachiavi del sistema, con riserva
+  su file ristretta al proprietario e migrazione automatica.
+- Archivio escluso dal backup automatico di Android, conservato nel
+  trasferimento diretto verso un nuovo dispositivo.
+- Avanzamento per scheda durante l'esportazione PDF di più personaggi.
+- Digitare il nome non ricostruisce più tutti i campi della pagina, e
+  l'artwork della scheda viene decodificato alla densità dello schermo.
+
 ## 1.2.1 — 2026-10-11
 
 - Ripristinata la scelta fra vista a pagine e vista a scorrimento dal menu

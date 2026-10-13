@@ -4,8 +4,9 @@ import 'dart:io';
 
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
+import 'desktop_credential_store.dart';
 
 class DesktopGoogleAuthCanceled implements Exception {
   const DesktopGoogleAuthCanceled();
@@ -26,20 +27,24 @@ class DesktopGoogleAuth {
     Future<void> Function(String)? openBrowser,
     Future<Directory> Function() supportDirectory =
         getApplicationSupportDirectory,
+    DesktopCredentialStore? credentialStore,
   }) : clientSecret = clientSecret.isNotEmpty
            ? clientSecret
            : Platform.environment['GOOGLE_DESKTOP_CLIENT_SECRET'] ?? '',
-       _supportDirectory = supportDirectory,
+       _store =
+           credentialStore ??
+           SystemDesktopCredentialStore(
+             keyring: const KeyringCredentialStore(),
+             file: FileCredentialStore(supportDirectory),
+           ),
        _browserOpener = openBrowser;
-
-  static const _credentialsFileName = 'google_drive_credentials.json';
 
   final String clientId;
   final String clientSecret;
   final List<String> scopes;
   final Duration consentTimeout;
   final Future<void> Function(String)? _browserOpener;
-  final Future<Directory> Function() _supportDirectory;
+  final DesktopCredentialStore _store;
   auth.AutoRefreshingAuthClient? _client;
   http.Client? _restoredBaseClient;
   StreamSubscription<auth.AccessCredentials>? _credentialUpdates;
@@ -52,7 +57,7 @@ class DesktopGoogleAuth {
   bool get isConnected => _client != null;
   bool get _isSupportedDesktop => Platform.isLinux || Platform.isWindows;
 
-  /// Ricrea il client dalle credenziali salvate su disco, senza interazione.
+  /// Ricrea il client dalle credenziali salvate, senza interazione.
   ///
   /// Se le credenziali salvate sono illeggibili o non coprono più gli scope
   /// richiesti vengono scartate: servirà un nuovo consenso interattivo.
@@ -73,9 +78,9 @@ class DesktopGoogleAuth {
   Future<void> _restore() async {
     if (_client != null || !_isSupportedDesktop || !isConfigured) return;
     try {
-      final file = await _credentialsFile();
-      if (!file.existsSync()) return;
-      final decoded = jsonDecode(await file.readAsString());
+      final stored = await _store.read();
+      if (stored == null) return;
+      final decoded = jsonDecode(stored);
       final credentials = auth.AccessCredentials.fromJson(
         (decoded as Map).cast<String, dynamic>(),
       );
@@ -203,47 +208,23 @@ class DesktopGoogleAuth {
     );
   }
 
-  Future<File> _credentialsFile() async {
-    final directory = await _supportDirectory();
-    return File(p.join(directory.path, _credentialsFileName));
-  }
-
   Future<void> _saveCredentials(auth.AccessCredentials credentials) async {
     if (credentials.refreshToken == null) return;
     try {
-      final file = await _credentialsFile();
-      await file.parent.create(recursive: true);
-      // Il refresh token dà pieno accesso all'appDataFolder: va tenuto
-      // leggibile soltanto dall'utente. Restringere prima la directory chiude
-      // la finestra in cui il file appena scritto è ancora leggibile da tutti
-      // secondo la umask. Su Windows la ACL per utente di %APPDATA% copre già
-      // lo stesso scopo.
-      await _restrictToOwner(file.parent.path, '700');
-      await file.writeAsString(jsonEncode(credentials.toJson()), flush: true);
-      await _restrictToOwner(file.path, '600');
+      await _store.write(jsonEncode(credentials.toJson()));
     } catch (_) {
-      // Un token che non si riesce a proteggere non va lasciato sul disco:
-      // senza persistenza il sync resta comunque attivo in questa sessione.
+      // Un token che non si riesce a mettere al sicuro non va lasciato in
+      // giro: senza persistenza il sync resta comunque attivo in questa
+      // sessione.
       await _deleteStoredCredentials();
-    }
-  }
-
-  Future<void> _restrictToOwner(String path, String mode) async {
-    if (!Platform.isLinux && !Platform.isMacOS) return;
-    final result = await Process.run('chmod', [mode, path]);
-    if (result.exitCode != 0) {
-      throw DesktopGoogleAuthException(
-        'Impossibile restringere i permessi di $path (${result.stderr}).',
-      );
     }
   }
 
   Future<void> _deleteStoredCredentials() async {
     try {
-      final file = await _credentialsFile();
-      if (file.existsSync()) await file.delete();
+      await _store.delete();
     } catch (_) {
-      // Un file orfano verrà scartato dal prossimo restore().
+      // Credenziali orfane verranno scartate dal prossimo restore().
     }
   }
 

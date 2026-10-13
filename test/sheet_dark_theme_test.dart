@@ -124,12 +124,16 @@ void main() {
         ),
       );
       final context = tester.element(find.byType(SheetPage));
+      // Gli overlay risolvono il riferimento dell'immagine in modo asincrono,
+      // e l'artwork viene decodificato alla densità dello schermo: i provider
+      // da precaricare sono quelli che l'albero ha costruito davvero, non
+      // quelli ricostruiti a mano, altrimenti la cache non li riconosce e la
+      // decodifica non si completa mai dentro la zona fake-async.
+      await tester.pumpAndSettle();
       await tester.runAsync(() async {
-        await precacheImage(
-          const AssetImage('assets/sheet/page-2.png'),
-          context,
-        );
-        await precacheImage(MemoryImage(bytes), context);
+        for (final image in tester.widgetList<Image>(find.byType(Image))) {
+          await precacheImage(image.image, context);
+        }
       });
       await tester.pumpAndSettle();
       final light = await _capture(tester, boundary, 'light');

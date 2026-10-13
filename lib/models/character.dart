@@ -1,3 +1,6 @@
+/// I due campi che mostrano il nome del personaggio, uno per pagina.
+const characterNameFields = ['CharacterName', 'CharacterName 2'];
+
 class Character {
   Character({
     required this.id,
@@ -22,7 +25,7 @@ class Character {
 
   void rename(String value) {
     name = value;
-    for (final field in const ['CharacterName', 'CharacterName 2']) {
+    for (final field in characterNameFields) {
       if (value.isEmpty) {
         fields.remove(field);
       } else {

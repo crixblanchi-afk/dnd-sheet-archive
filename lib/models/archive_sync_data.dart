@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'character.dart';
 import 'character_version.dart';
+import 'image_payload.dart';
 import 'snapshot_policy.dart';
 
 class ArchiveSyncData {
@@ -10,11 +11,19 @@ class ArchiveSyncData {
     Iterable<Character> characters = const [],
     Iterable<CharacterVersion> versions = const [],
     Map<String, DateTime> deletions = const {},
+    Map<String, String> blobs = const {},
   }) : characters = List.of(characters),
        versions = List.of(versions),
-       deletions = Map.of(deletions);
+       deletions = Map.of(deletions),
+       blobs = Map.of(blobs);
 
-  static const schemaVersion = 1;
+  /// Versione 2: le immagini stanno in `blobs`, indirizzate per contenuto, e i
+  /// campi ne tengono il riferimento. Nella 1 ogni campo portava la propria
+  /// copia in base64, anche quando dieci versioni mostravano la stessa foto.
+  static const schemaVersion = 2;
+
+  /// Formati che questa versione dell'app sa ancora leggere da Drive.
+  static const supportedSchemaVersions = {1, 2};
 
   /// Per quanto una cancellazione resta nel backup come lapide.
   ///
@@ -29,6 +38,9 @@ class ArchiveSyncData {
   final List<CharacterVersion> versions;
   final Map<String, DateTime> deletions;
 
+  /// Riferimento dell'immagine -> payload base64.
+  final Map<String, String> blobs;
+
   Map<String, Object?> toJson() => {
     'schemaVersion': schemaVersion,
     'generatedAt': generatedAt.toUtc().toIso8601String(),
@@ -38,10 +50,11 @@ class ArchiveSyncData {
       for (final entry in deletions.entries)
         entry.key: entry.value.toUtc().toIso8601String(),
     },
+    'blobs': blobs,
   };
 
   factory ArchiveSyncData.fromJson(Map<String, Object?> json) {
-    if (json['schemaVersion'] != schemaVersion) {
+    if (!supportedSchemaVersions.contains(json['schemaVersion'])) {
       throw const FormatException('Versione del backup Drive non supportata.');
     }
     final generatedAtValue = json['generatedAt'];
@@ -59,6 +72,19 @@ class ArchiveSyncData {
         versionsValue is! List ||
         deletionsValue is! Map) {
       throw const FormatException('Contenuto del backup Drive non valido.');
+    }
+    // Un backup nel formato 1 non ha `blobs`: le immagini sono ancora dentro
+    // i campi e vengono spostate dal merge.
+    final blobsValue = json['blobs'] ?? const <String, Object?>{};
+    if (blobsValue is! Map) {
+      throw const FormatException('Immagini del backup Drive non valide.');
+    }
+    final blobs = <String, String>{};
+    for (final entry in blobsValue.entries) {
+      if (entry.key is! String || entry.value is! String) {
+        throw const FormatException('Immagine nel backup non valida.');
+      }
+      blobs[entry.key as String] = entry.value as String;
     }
 
     final characters = <Character>[];
@@ -86,6 +112,7 @@ class ArchiveSyncData {
       characters: characters,
       versions: versions,
       deletions: deletions,
+      blobs: blobs,
     );
   }
 
@@ -147,14 +174,38 @@ class ArchiveSyncData {
       ..sort((a, b) => a.id.compareTo(b.id));
     final sortedVersions = retainedVersions
       ..sort((a, b) => a.id.compareTo(b.id));
+
+    final blobs = <String, String>{...local.blobs, ...remote.blobs};
+    // Un backup nel formato 1, o una scheda salvata prima della migrazione,
+    // porta ancora l'immagine dentro il campo: qui prende la forma comune.
+    for (final character in sortedCharacters) {
+      extractInlineImages(character.fields, blobs);
+    }
+    for (final version in sortedVersions) {
+      extractInlineImages(version.fields, blobs);
+    }
+    // Le immagini delle schede eliminate e delle versioni potate non hanno
+    // più nessuno che le citi: tenerle gonfierebbe il backup per sempre.
+    final referenced = <String>{
+      for (final character in sortedCharacters)
+        ...blobReferencesIn(character.fields),
+      for (final version in sortedVersions) ...blobReferencesIn(version.fields),
+    };
+    blobs.removeWhere((reference, _) => !referenced.contains(reference));
+
     return ArchiveSyncData(
       generatedAt: mergedAt,
       characters: sortedCharacters,
       versions: sortedVersions,
       deletions: deletions,
+      blobs: blobs,
     );
   }
 
+  /// A parità di timestamp serve un vincitore deterministico su entrambi i
+  /// dispositivi, altrimenti il merge non converge: decide il confronto del
+  /// JSON normalizzato, che dall'archivio dei blob in poi contiene i soli
+  /// riferimenti alle immagini e non le immagini stesse.
   static bool _preferCharacter(Character candidate, Character current) {
     final timestampOrder = candidate.updatedAt.compareTo(current.updatedAt);
     if (timestampOrder != 0) return timestampOrder > 0;

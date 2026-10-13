@@ -31,31 +31,20 @@ class CharacterListScreen extends StatefulWidget {
 }
 
 class _CharacterListScreenState extends State<CharacterListScreen> {
-  CharacterRepository get repository => widget.repository;
-  late final _pdfExporter = widget.pdfExporter ?? CharacterPdfExporter();
-  bool _exporting = false;
+  static final _updatedAtFormat = DateFormat('dd/MM/yyyy, HH:mm');
 
-  // Ogni notifica del servizio Drive ricostruisce la schermata: creare lo
-  // stream in `build` farebbe disiscrivere e rieseguire la query sembast a
-  // ogni giro.
+  CharacterRepository get repository => widget.repository;
+  late final _pdfExporter =
+      widget.pdfExporter ??
+      CharacterPdfExporter(readImage: repository.readImage);
+  bool _exporting = false;
+  int _exported = 0;
+  int _exportTotal = 0;
+
+  // Creare lo stream in `build` farebbe disiscrivere e rieseguire la query
+  // sembast a ogni ricostruzione della schermata.
   late final Stream<List<CharacterSummary>> _characters = repository
       .watchCharacters();
-
-  @override
-  void initState() {
-    super.initState();
-    widget.driveSync.addListener(_syncStateChanged);
-  }
-
-  @override
-  void dispose() {
-    widget.driveSync.removeListener(_syncStateChanged);
-    super.dispose();
-  }
-
-  void _syncStateChanged() {
-    if (mounted) setState(() {});
-  }
 
   Future<String?> _askName(
     BuildContext context, {
@@ -165,7 +154,11 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
 
   Future<void> _export([List<String>? ids]) async {
     if (_exporting) return;
-    setState(() => _exporting = true);
+    setState(() {
+      _exporting = true;
+      _exported = 0;
+      _exportTotal = 0;
+    });
     try {
       if (ids == null) {
         final summaries = await repository.watchCharacters().first;
@@ -190,7 +183,13 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
         }
         characters.add(character);
       }
-      final saved = await _pdfExporter.exportCharacters(characters);
+      setState(() => _exportTotal = characters.length);
+      final saved = await _pdfExporter.exportCharacters(
+        characters,
+        onProgress: (done, total) {
+          if (mounted) setState(() => _exported = done);
+        },
+      );
       if (saved && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -211,17 +210,36 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _exporting = false);
+      if (mounted) {
+        setState(() {
+          _exporting = false;
+          _exported = 0;
+          _exportTotal = 0;
+        });
+      }
     }
   }
 
   Widget _exportAction() => _exporting
-      ? const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
+      ? Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Center(
-            child: SizedBox.square(
-              dimension: 20,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
+            child: Tooltip(
+              message: _exportTotal > 1
+                  ? 'Esportazione in corso: $_exported di $_exportTotal schede'
+                  : 'Esportazione in corso',
+              child: SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  // Su una sola scheda, o sul Web dove `compute` gira sul
+                  // thread della UI, non arriva nessun avanzamento: meglio
+                  // l'indeterminato di una barra ferma a zero.
+                  value: _exportTotal > 1 && _exported > 0
+                      ? _exported / _exportTotal
+                      : null,
+                ),
+              ),
             ),
           ),
         )
@@ -284,7 +302,15 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
     }
   }
 
-  Widget _driveAction() {
+  // Il servizio Drive notifica a ogni cambio di stato e a ogni modifica in
+  // sospeso: ascoltarlo dalla schermata ricostruiva anche la lista, con la sua
+  // query sembast. Qui dentro si ridisegna solo l'icona.
+  Widget _driveAction() => ListenableBuilder(
+    listenable: widget.driveSync,
+    builder: (context, _) => _driveButton(),
+  );
+
+  Widget _driveButton() {
     if (widget.driveSync.state == GoogleDriveSyncState.syncing) {
       return const Padding(
         padding: EdgeInsets.symmetric(horizontal: 18),
@@ -370,7 +396,8 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
               ),
               title: Text(item.name),
               subtitle: Text(
-                'Modificato il ${DateFormat('dd/MM/yyyy, HH:mm').format(item.updatedAt.toLocal())}',
+                'Modificato il '
+                '${_updatedAtFormat.format(item.updatedAt.toLocal())}',
               ),
               onTap: () async {
                 final character = await repository.getCharacter(item.id);

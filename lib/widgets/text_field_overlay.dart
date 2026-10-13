@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 
 import '../controllers/sheet_controller.dart';
+import '../models/character.dart';
 import '../models/sheet_field.dart';
 import '../theme/sheet_palette.dart';
 import 'comment_dialog.dart';
@@ -51,11 +52,36 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
   _FitKey? _fitKey;
   TextStyle? _fitStyle;
 
+  /// I due campi nome seguono il nome del personaggio invece di aspettare una
+  /// notifica dell'intero controller, che ricostruirebbe tutta la pagina.
+  bool get _followsName => characterNameFields.contains(widget.field.name);
+
   @override
   void initState() {
     super.initState();
     _value =
         widget.sheetController.valueFor(widget.field.name)?.toString() ?? '';
+    if (_followsName) {
+      widget.sheetController.nameState.addListener(_handleNameChanged);
+    }
+  }
+
+  void _handleNameChanged() {
+    if (!mounted) return;
+    final value = widget.sheetController.nameState.value;
+    if (_value == value) return;
+    setState(() => _value = value);
+    _synchronizeEditor(value);
+  }
+
+  void _synchronizeEditor(String value) {
+    final controller = _textController;
+    if (controller != null && controller.text != value) {
+      controller.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
+    }
   }
 
   @override
@@ -65,13 +91,7 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
         widget.sheetController.valueFor(widget.field.name)?.toString() ?? '';
     if (_value != value) {
       _value = value;
-      final controller = _textController;
-      if (controller != null && controller.text != value) {
-        controller.value = TextEditingValue(
-          text: value,
-          selection: TextSelection.collapsed(offset: value.length),
-        );
-      }
+      _synchronizeEditor(value);
     }
     // La geometria e lo stile di base arrivano dalla definizione del campo:
     // se cambia, la misura in cache non vale più.
@@ -242,6 +262,9 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
 
   @override
   void dispose() {
+    if (_followsName) {
+      widget.sheetController.nameState.removeListener(_handleNameChanged);
+    }
     _removeGlobalPointerRoute();
     _focusNode
       ?..removeListener(_handleFocus)

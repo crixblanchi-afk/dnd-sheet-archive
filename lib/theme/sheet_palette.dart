@@ -1,4 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
+import '../models/sheet_layout.dart';
 
 /// Colori del documento, separati dai controlli Material e dalle fotografie.
 class SheetPalette {
@@ -82,10 +86,21 @@ class SheetArtwork extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
+    // L'artwork è grande 1700x2200 per una pagina di 612x792 punti: a piena
+    // risoluzione sono 15 MB di bitmap per pagina, e la vista a scorrimento le
+    // tiene tutte e tre insieme. Decodificarlo alla densità dello schermo, con
+    // un fattore 2 di margine per lo zoom, dimezza la memoria sui display 1x
+    // senza togliere un pixel a ciò che si vede; il limite superiore è l'asset
+    // stesso, oltre il quale non c'è più dettaglio da estrarre.
+    final cacheWidth = math.min(
+      sheetArtworkPixelWidth,
+      (sheetPageWidth * MediaQuery.devicePixelRatioOf(context) * 2).round(),
+    );
     final image = Image.asset(
       'assets/sheet/page-${pageIndex + 1}.png',
       fit: BoxFit.fill,
       filterQuality: FilterQuality.medium,
+      cacheWidth: cacheWidth,
     );
     return ColoredBox(
       color: palette.paper,

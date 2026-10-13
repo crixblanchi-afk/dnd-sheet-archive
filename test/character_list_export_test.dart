@@ -44,10 +44,15 @@ class _Exporter extends CharacterPdfExporter {
   bool result = true;
   bool fail = false;
   Completer<bool>? pending;
+  ExportProgress? reportProgress;
 
   @override
-  Future<bool> exportCharacters(List<Character> characters) async {
+  Future<bool> exportCharacters(
+    List<Character> characters, {
+    ExportProgress? onProgress,
+  }) async {
     calls.add(characters);
+    reportProgress = onProgress;
     if (fail) throw StateError('disk full');
     return pending?.future ?? result;
   }

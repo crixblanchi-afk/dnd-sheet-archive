@@ -27,10 +27,14 @@ La seconda pagina ospita due riquadri per immagini: il ritratto del personaggio
 e il simbolo in “Allies & Organizations”. Si riempiono con un tocco e si
 svuotano con una pressione prolungata.
 
-Le immagini vengono salvate dentro la scheda, quindi finiscono anche nelle sue
-versioni e nel backup Drive. Per questo ognuna viene ridotta al proprio riquadro
-al doppio della risoluzione, quanto basta a disegnarla nitida senza gonfiare il
-backup; viene rifiutato soltanto un file sorgente oltre i 32 MB.
+Le immagini non vengono salvate dentro la scheda: l'archivio le tiene a parte,
+indirizzate per contenuto, e la scheda ne conserva soltanto il riferimento. Una
+stessa immagine occupa quindi un posto solo, per quante versioni della scheda la
+mostrino. Ognuna viene ridotta al proprio riquadro al doppio della risoluzione —
+quanto basta a disegnarla nitida — e ricodificata in JPEG, tranne quando ha
+trasparenze da conservare, come il fondo ritagliato di un simbolo: in quel caso
+resta PNG. Viene rifiutato soltanto un file sorgente oltre i 32 MB. Un'immagine
+che nessuna scheda e nessuna versione cita più lascia l'archivio da sola.
 
 Il backup completo su Drive ha un limite di 20 MB, uguale per caricamento e
 download. Se l'archivio lo supera, il caricamento viene interrotto con un
@@ -56,7 +60,11 @@ indicatori della scheda: ritratto e simbolo mantengono i colori originali.
 ## Sincronizzazione Google Drive
 
 Il sync usa un file JSON nello spazio privato `appDataFolder` e richiede
-soltanto lo scope OAuth `drive.appdata`. Le schede e le versioni vengono unite
+soltanto lo scope OAuth `drive.appdata`. Il backup è nel formato 2, che porta le
+immagini in un elenco a parte invece di ripeterle dentro ogni scheda e ogni
+versione; i backup nel formato 1 vengono letti e convertiti al primo sync. Una
+versione dell'app che non conosce il formato 2 si fermerà con un messaggio senza
+toccare i dati, quindi i dispositivi vanno aggiornati tutti. Le schede e le versioni vengono unite
 per UUID; per i conflitti sui personaggi prevale `updatedAt` più recente. Le
 cancellazioni vengono sincronizzate e non fanno ricomparire dati provenienti da
 un dispositivo non aggiornato; la traccia di una cancellazione resta nel backup
@@ -67,6 +75,12 @@ locali ancora da salvare. Il salvataggio applica solo i campi modificati nella
 sessione: se lo stesso campo viene cambiato anche da remoto, prevale la
 modifica locale esplicita. Un personaggio eliminato da remoto non viene
 ricreato da un editor rimasto aperto.
+
+Su desktop il token di refresh viene affidato al portachiavi del sistema —
+libsecret su Linux, Credential Manager su Windows. Dove non c'è un servizio di
+portachiavi raggiungibile resta la riserva su file, nella cartella di supporto
+dell'app, leggibile soltanto dal proprietario; un token lasciato lì da una
+versione precedente viene spostato nel portachiavi al primo avvio utile.
 
 Su Linux e Windows il consenso Google scade dopo due minuti se non viene
 completato nel browser. Il tentativo viene chiuso e si può riprovare dal menu
@@ -150,6 +164,23 @@ Per le build di distribuzione va passato il `--dart-define` appropriato a
 `flutter build web`, `flutter build apk/appbundle` o `flutter build linux`.
 Client ID e client secret devono restare nella configurazione locale e non
 vanno inseriti nel repository.
+
+Le build Linux richiedono anche le intestazioni del portachiavi:
+`libsecret-1-dev` e `libjson-glib-dev` (oltre a `libgtk-3-dev`, `clang`,
+`cmake`, `ninja-build`, `pkg-config`, `liblzma-dev`).
+
+Il client secret dei client OAuth "Desktop" non è un segreto: il flusso usa
+PKCE e Google lo tratta come pubblico, ma chi lo estrae dalla AppImage può
+costruire un'applicazione che, ottenuto il consenso dell'utente, legge lo
+stesso `appDataFolder` — che è isolato per client ID, non per applicazione. Il
+consenso resta un passaggio esplicito con il nome dell'app in chiaro, quindi
+non è una porta aperta, ma vale ricordarlo prima di riusare quelle credenziali
+per qualcosa di diverso da questo archivio.
+
+Su Android l'archivio è escluso dal backup automatico di sistema
+(`android/app/src/main/res/xml/`): le schede lasciano il dispositivo soltanto
+dal menu Drive. Il trasferimento diretto verso un nuovo telefono, che l'utente
+avvia di persona, le porta invece con sé.
 
 ## Release automatiche
 

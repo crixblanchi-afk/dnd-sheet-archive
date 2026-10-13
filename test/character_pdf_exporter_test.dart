@@ -81,6 +81,50 @@ void main() {
     await expectLater(exporter.exportCharacters([]), throwsArgumentError);
   });
 
+  test(
+    'le immagini arrivano dal risolutore e l\'avanzamento è per scheda',
+    () async {
+      final image = (await rootBundle.load(
+        'assets/sheet/page-2.png',
+      )).buffer.asUint8List();
+      final characters = [
+        _character('first', 'Arannis'),
+        _character('second', 'Thorin'),
+        _character('third', 'Minsc'),
+      ];
+      for (final character in characters) {
+        character.fields['CharacterAppearanceImage'] = 'blob:ritratto';
+      }
+      final requested = <Object?>[];
+      final progress = <int>[];
+      final exporter = CharacterPdfExporter(
+        saveFile: (bytes, _) async {
+          expect(bytes.length, greaterThan(100000));
+          return true;
+        },
+        readImage: (value) async {
+          requested.add(value);
+          return value == 'blob:ritratto' ? image : null;
+        },
+      );
+
+      expect(
+        await exporter.exportCharacters(
+          characters,
+          onProgress: (done, total) {
+            expect(total, 3);
+            progress.add(done);
+          },
+        ),
+        isTrue,
+      );
+
+      // Tre schede con lo stesso ritratto: il blob viene risolto una volta sola.
+      expect(requested, ['blob:ritratto']);
+      expect(progress, [1, 2, 3]);
+    },
+  );
+
   test('filenames are safe for desktop paths and preserve accented names', () {
     String filename(String name) =>
         CharacterPdfExporter.filenameFor([_character('id', name)]);

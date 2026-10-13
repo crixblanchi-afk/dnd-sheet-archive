@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dnd_sheet_archive/data/sembast_character_repository.dart';
 import 'package:dnd_sheet_archive/models/snapshot_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +50,34 @@ void main() {
     await repository.deleteCharacter(character.id);
     expect(await repository.getCharacter(character.id), isNull);
     expect(await repository.listVersions(character.id), isEmpty);
+  });
+
+  test('le immagini stanno nei blob e le versioni le tengono vive', () async {
+    final portrait = Uint8List.fromList(List.generate(32, (index) => index));
+    final replacement = Uint8List.fromList(
+      List.generate(32, (index) => 255 - index),
+    );
+    final character = await repository.createCharacter('Minsc');
+    final first = await repository.storeImage(portrait);
+    character.fields['CharacterAppearanceImage'] = first;
+    await repository.saveCharacter(character);
+    await repository.createSnapshot(character, 'session');
+
+    // Il campo non contiene l'immagine ma il suo riferimento.
+    expect(first, startsWith('blob:'));
+    expect(await repository.readImage(first), portrait);
+
+    final second = await repository.storeImage(replacement);
+    character.fields['CharacterAppearanceImage'] = second;
+    await repository.saveCharacter(character);
+
+    // La versione mostra ancora il primo ritratto: non va raccolto.
+    expect(await repository.readImage(first), portrait);
+    expect(await repository.readImage(second), replacement);
+
+    await repository.deleteCharacter(character.id);
+    expect(await repository.readImage(first), isNull);
+    expect(await repository.readImage(second), isNull);
   });
 
   test('automatic snapshots are coalesced daily and capped', () async {

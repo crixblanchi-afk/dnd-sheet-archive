@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -359,7 +360,14 @@ class GoogleDriveSyncService extends ChangeNotifier
             remote,
             beforeReplace: () => _checkActive(token),
           );
-    final bytes = utf8.encode(jsonEncode(merged.toJson()));
+    // Serializzare l'archivio è il passaggio più caro del sync — fino al
+    // tetto dei 20 MB, immagini comprese — e bloccherebbe la UI per secondi:
+    // va in un isolate, come già fa l'export PDF.
+    final bytes = await compute(
+      _encodeArchive,
+      merged,
+      debugLabel: 'drive-backup-encode',
+    );
     if (bytes.length > maxBackupBytes) {
       throw FormatException(
         'Il backup supera il limite di ${maxBackupBytes ~/ (1024 * 1024)} MB. '
@@ -447,23 +455,18 @@ class GoogleDriveSyncService extends ChangeNotifier
     if (response is! drive.Media) {
       throw const FormatException('Drive non ha restituito il backup.');
     }
-    final bytes = <int>[];
+    final builder = BytesBuilder(copy: false);
     await for (final chunk in response.stream) {
-      if (bytes.length + chunk.length > maxBackupBytes) {
+      if (builder.length + chunk.length > maxBackupBytes) {
         throw const FormatException('Il backup Drive è troppo grande.');
       }
-      bytes.addAll(chunk);
+      builder.add(chunk);
     }
-    final decoded = jsonDecode(utf8.decode(bytes));
-    if (decoded is! Map) {
-      throw const FormatException(
-        'Il backup Drive non contiene un oggetto JSON.',
-      );
-    }
-    return ArchiveSyncData.fromJson({
-      for (final entry in decoded.entries)
-        if (entry.key is String) entry.key as String: entry.value,
-    });
+    return compute(
+      _decodeArchive,
+      builder.takeBytes(),
+      debugLabel: 'drive-backup-decode',
+    );
   }
 
   Future<void> signOut() async {
@@ -528,6 +531,22 @@ class GoogleDriveSyncService extends ChangeNotifier
     _desktopAuth.dispose();
     super.dispose();
   }
+}
+
+Uint8List _encodeArchive(ArchiveSyncData data) =>
+    utf8.encode(jsonEncode(data.toJson()));
+
+ArchiveSyncData _decodeArchive(Uint8List bytes) {
+  final decoded = jsonDecode(utf8.decode(bytes));
+  if (decoded is! Map) {
+    throw const FormatException(
+      'Il backup Drive non contiene un oggetto JSON.',
+    );
+  }
+  return ArchiveSyncData.fromJson({
+    for (final entry in decoded.entries)
+      if (entry.key is String) entry.key as String: entry.value,
+  });
 }
 
 class _AuthorizedClient extends http.BaseClient {

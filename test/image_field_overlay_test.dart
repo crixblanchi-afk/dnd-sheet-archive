@@ -59,6 +59,34 @@ void main() {
     });
   });
 
+  testWidgets('un ritratto opaco diventa un JPEG molto più leggero', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      final source = await _encodedImage(1600, 1200);
+
+      final fitted = await fitImageToBox(source, _portraitBox);
+
+      // SOI: un JPEG, non il PNG che dart:ui produrrebbe.
+      expect(fitted.take(3), const [0xff, 0xd8, 0xff]);
+      // Il confronto è con il PNG degli stessi pixel ridotti, non con la
+      // sorgente: è lì che si vede quanto pesava ogni copia nel backup.
+      expect(fitted.length, lessThan(await _pngSize(fitted) ~/ 2));
+    });
+  });
+
+  testWidgets('un simbolo con trasparenze resta PNG', (tester) async {
+    await tester.runAsync(() async {
+      final source = await _encodedImage(1600, 1200, transparent: true);
+
+      final fitted = await fitImageToBox(source, _symbolBox);
+
+      // Un JPEG appiattirebbe il fondo trasparente del simbolo.
+      expect(fitted.take(8), const [137, 80, 78, 71, 13, 10, 26, 10]);
+      expect(fitted.length, lessThan(source.length));
+    });
+  });
+
   testWidgets('dei byte non decodificabili sollevano un errore', (
     tester,
   ) async {
@@ -73,11 +101,23 @@ void main() {
 
 /// PNG con un gradiente, così il peso del file dipende davvero dal numero di
 /// pixel invece di comprimersi a nulla come farebbe una tinta piatta.
-Future<Uint8List> _encodedImage(int width, int height) async {
+///
+/// Con `transparent` il gradiente copre solo metà dell'immagine e il resto
+/// resta trasparente, come il fondo di un simbolo ritagliato.
+Future<Uint8List> _encodedImage(
+  int width,
+  int height, {
+  bool transparent = false,
+}) async {
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
   canvas.drawRect(
-    Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    Rect.fromLTWH(
+      0,
+      0,
+      width.toDouble(),
+      transparent ? height / 2 : height.toDouble(),
+    ),
     Paint()
       ..shader = ui.Gradient.linear(
         Offset.zero,
@@ -104,4 +144,13 @@ Future<Size> _decodedSize(Uint8List bytes) async {
   frame.image.dispose();
   codec.dispose();
   return size;
+}
+
+Future<int> _pngSize(Uint8List bytes) async {
+  final codec = await ui.instantiateImageCodec(bytes);
+  final frame = await codec.getNextFrame();
+  final png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+  frame.image.dispose();
+  codec.dispose();
+  return png!.lengthInBytes;
 }

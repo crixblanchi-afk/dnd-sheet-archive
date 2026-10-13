@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dnd_sheet_archive/data/local_archive_sync_store.dart';
 import 'package:dnd_sheet_archive/data/sembast_character_repository.dart';
 import 'package:dnd_sheet_archive/models/archive_sync_data.dart';
 import 'package:dnd_sheet_archive/models/character.dart';
 import 'package:dnd_sheet_archive/models/character_version.dart';
+import 'package:dnd_sheet_archive/models/image_payload.dart';
 import 'package:dnd_sheet_archive/models/snapshot_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sembast/sembast_memory.dart';
@@ -283,6 +287,107 @@ void main() {
 
     expect(restored.updatedAt, DateTime.utc(2026, 1, 4));
   });
+  test('il formato scritto è il 2 e il precedente resta leggibile', () {
+    final character = _character(
+      id: 'legacy',
+      name: 'Legacy',
+      updatedAt: DateTime.utc(2026),
+    );
+    final json = ArchiveSyncData(
+      generatedAt: DateTime.utc(2026),
+      characters: [character],
+    ).toJson();
+
+    expect(json['schemaVersion'], 2);
+    expect(json['blobs'], isEmpty);
+
+    // Un backup scritto prima dei blob non ha il campo e non va rifiutato.
+    final legacy = Map<String, Object?>.of(json)
+      ..['schemaVersion'] = 1
+      ..remove('blobs');
+    expect(ArchiveSyncData.fromJson(legacy).blobs, isEmpty);
+
+    expect(
+      () => ArchiveSyncData.fromJson(
+        Map<String, Object?>.of(json)..['schemaVersion'] = 3,
+      ),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
+  test('il merge tiene una sola copia di ogni immagine', () {
+    const reference = 'blob:abc';
+    final local = _illustrated('shared', DateTime.utc(2026, 1, 1), reference);
+    final remote = _illustrated('shared', DateTime.utc(2026, 1, 2), reference);
+
+    final merged = ArchiveSyncData.merge(
+      ArchiveSyncData(
+        generatedAt: DateTime.utc(2026),
+        characters: [local],
+        versions: [_version(local, 'local-version')],
+        blobs: const {reference: 'payload'},
+      ),
+      ArchiveSyncData(
+        generatedAt: DateTime.utc(2026),
+        characters: [remote],
+        versions: [_version(remote, 'remote-version')],
+        blobs: const {reference: 'payload'},
+      ),
+      generatedAt: DateTime.utc(2026, 1, 3),
+    );
+
+    // Due dispositivi, una scheda e due versioni che mostrano la stessa
+    // immagine: nel backup ne resta un solo payload.
+    expect(merged.blobs, const {reference: 'payload'});
+  });
+
+  test('il merge sposta nei blob le immagini ancora dentro i campi', () {
+    final inline = base64Encode(Uint8List.fromList([1, 2, 3, 4, 5]));
+    final character = _illustrated('legacy', DateTime.utc(2026), inline);
+
+    final merged = ArchiveSyncData.merge(
+      ArchiveSyncData(generatedAt: DateTime.utc(2026)),
+      ArchiveSyncData(
+        generatedAt: DateTime.utc(2026),
+        characters: [character],
+        versions: [_version(character, 'legacy-version')],
+      ),
+      generatedAt: DateTime.utc(2026, 1, 3),
+    );
+
+    final reference = blobReferenceFor(base64Decode(inline));
+    expect(
+      merged.characters.single.fields['CharacterAppearanceImage'],
+      reference,
+    );
+    expect(
+      merged.versions.single.fields['CharacterAppearanceImage'],
+      reference,
+    );
+    expect(merged.blobs, {reference: inline});
+  });
+
+  test('un\'immagine che nessuno cita più non resta nel backup', () {
+    const orphan = 'blob:orphan';
+    const live = 'blob:live';
+    final kept = _illustrated('kept', DateTime.utc(2026), live);
+    final deleted = _illustrated('deleted', DateTime.utc(2026, 1, 1), orphan);
+
+    final merged = ArchiveSyncData.merge(
+      ArchiveSyncData(
+        generatedAt: DateTime.utc(2026),
+        characters: [kept, deleted],
+        blobs: const {live: 'a', orphan: 'b'},
+      ),
+      ArchiveSyncData(
+        generatedAt: DateTime.utc(2026),
+        deletions: {'deleted': DateTime.utc(2026, 1, 2)},
+      ),
+      generatedAt: DateTime.utc(2026, 1, 3),
+    );
+
+    expect(merged.blobs, const {live: 'a'});
+  });
 }
 
 Character _character({
@@ -310,3 +415,8 @@ CharacterVersion _version(
   createdAt: createdAt ?? DateTime.utc(2026),
   updatedAt: updatedAt,
 );
+
+/// Una scheda che mostra un'immagine, come riferimento o come base64 inline.
+Character _illustrated(String id, DateTime updatedAt, String image) =>
+    _character(id: id, name: id, updatedAt: updatedAt)
+      ..fields['CharacterAppearanceImage'] = image;

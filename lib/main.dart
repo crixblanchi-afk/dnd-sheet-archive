@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'data/app_database.dart';
+import 'data/blob_store.dart';
 import 'data/local_archive_sync_store.dart';
 import 'data/sembast_character_repository.dart';
 import 'screens/character_list_screen.dart';
@@ -21,6 +22,12 @@ void main() {
 Future<_AppServices> _openServices() async {
   final database = await openAppDatabase();
   final syncTracker = await ArchiveSyncTracker.open(database);
+  // Le schede salvate prima dell'archivio dei blob portano ancora le immagini
+  // dentro i campi: spostarle deduplica l'archivio locale, e il backup va
+  // riscritto perché Drive riceva la stessa forma.
+  if (await BlobStore(database).migrateInlineImages()) {
+    await syncTracker.markChanged();
+  }
   return _AppServices(
     themePreferences: await ThemePreferences.open(database),
     repository: SembastCharacterRepository(database, syncTracker: syncTracker),

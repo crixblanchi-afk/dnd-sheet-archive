@@ -1,11 +1,15 @@
+import 'dart:typed_data';
+
 import 'package:sembast/sembast.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/character.dart';
 import '../models/character_edits.dart';
 import '../models/character_version.dart';
+import '../models/image_payload.dart';
 import '../models/snapshot_policy.dart';
 import '../sync/archive_sync_tracker.dart';
+import 'blob_store.dart';
 import 'character_repository.dart';
 
 class SembastCharacterRepository extends CharacterRepository {
@@ -25,6 +29,15 @@ class SembastCharacterRepository extends CharacterRepository {
   final _characters = stringMapStoreFactory.store('characters');
   final _versions = stringMapStoreFactory.store('versions');
   final _tombstones = stringMapStoreFactory.store('sync_tombstones');
+  late final BlobStore blobStore = BlobStore(database);
+
+  @override
+  Future<Uint8List?> readImage(Object? value) async => isBlobReference(value)
+      ? blobStore.read(value! as String)
+      : decodeInlineImage(value);
+
+  @override
+  Future<String> storeImage(Uint8List bytes) => blobStore.write(bytes);
 
   @override
   Stream<List<CharacterSummary>> watchCharacters() => _characters
@@ -76,10 +89,14 @@ class SembastCharacterRepository extends CharacterRepository {
   Future<void> saveCharacter(Character character) async {
     character.updatedAt = _now().toUtc();
     await database.transaction((transaction) async {
+      final previous = await _characters.record(character.id).get(transaction);
       await _characters
           .record(character.id)
           .put(transaction, character.toJson());
       await _tombstones.record(character.id).delete(transaction);
+      if (_droppedImages(previous, character.fields)) {
+        await blobStore.collectGarbage(transaction);
+      }
     });
     await syncTracker.markChanged();
   }
@@ -103,6 +120,9 @@ class SembastCharacterRepository extends CharacterRepository {
         current: Character.fromJson(json),
       )..updatedAt = _now().toUtc();
       await _characters.record(saved.id).put(transaction, saved.toJson());
+      if (_droppedImages(json, saved.fields)) {
+        await blobStore.collectGarbage(transaction);
+      }
     });
     await syncTracker.markChanged();
     return saved;
@@ -128,6 +148,7 @@ class SembastCharacterRepository extends CharacterRepository {
       await _tombstones.record(id).put(transaction, {
         'deletedAt': _now().toUtc().toIso8601String(),
       });
+      await blobStore.collectGarbage(transaction);
     });
     await syncTracker.markChanged();
   }
@@ -216,9 +237,29 @@ class SembastCharacterRepository extends CharacterRepository {
         sortOrders: [SortOrder('createdAt', false)],
       ),
     );
+    var pruned = false;
     for (final record in records.skip(maxSnapshotsPerCharacter)) {
       await _versions.record(record.key).delete(client);
+      pruned = true;
     }
+    if (pruned) await blobStore.collectGarbage(client);
+  }
+
+  /// Vero se il salvataggio ha smesso di citare un'immagine citata prima.
+  ///
+  /// Un'immagine sostituita può restare viva in una versione, quindi la
+  /// raccolta vera la decide `BlobStore`: qui serve solo sapere se vale la
+  /// pena interrogarlo, per non farlo a ogni battuta di tasto.
+  bool _droppedImages(
+    Map<String, Object?>? previous,
+    Map<String, Object?> current,
+  ) {
+    final fields = previous?['fields'];
+    if (fields is! Map) return false;
+    final live = blobReferencesIn(current).toSet();
+    return blobReferencesIn(
+      objectMapFromJson(fields),
+    ).any((reference) => !live.contains(reference));
   }
 
   @override

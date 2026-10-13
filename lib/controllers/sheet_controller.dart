@@ -38,6 +38,13 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
   final Duration sessionCap;
   late final ValueNotifier<bool> lockedState;
   final ValueNotifier<bool> dirtyState = ValueNotifier(false);
+
+  /// Il nome, che i due campi nome della scheda seguono direttamente.
+  ///
+  /// Notificare l'intero controller a ogni lettera ricostruiva tutti gli
+  /// overlay della pagina — più di duecento sulla terza — per tenere allineati
+  /// due campi.
+  late final ValueNotifier<String> nameState = ValueNotifier(character.name);
   final Map<String, ValueNotifier<bool>> _commentStates = {};
   late Character _persisted;
   late final StreamSubscription<Character?> _characterSubscription;
@@ -65,10 +72,10 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
 
   void setText(String name, String value) {
     if (locked) return;
-    if (name == 'CharacterName' || name == 'CharacterName 2') {
+    if (characterNameFields.contains(name)) {
       character.rename(value);
+      nameState.value = character.name;
       _changed();
-      notifyListeners();
       return;
     }
     if (value.isEmpty) {
@@ -282,6 +289,7 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
         !mapEquals(character.fields, current.fields) ||
         !mapEquals(character.comments, current.comments);
     character.name = current.name;
+    nameState.value = current.name;
     character.updatedAt = current.updatedAt;
     character.locked = current.locked;
     character.fields
@@ -316,6 +324,7 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     lockedState.dispose();
     dirtyState.dispose();
+    nameState.dispose();
     for (final state in _commentStates.values) {
       state.dispose();
     }

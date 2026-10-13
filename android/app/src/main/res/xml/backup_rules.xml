@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 11 e precedenti: regole di Auto Backup.
+
+  L'archivio sembast vive in `app_flutter/` (è la directory che
+  `getApplicationDocumentsDirectory()` restituisce su Android) e contiene le
+  schede complete, i commenti e le immagini. Il backup di sistema lo
+  copierebbe su un Drive che l'utente non ha scelto e che non compare da
+  nessuna parte nell'app: la sincronizzazione del cloud resta una decisione
+  esplicita, presa dal menu Drive.
+-->
+<full-backup-content>
+    <exclude domain="root" path="app_flutter" />
+</full-backup-content>

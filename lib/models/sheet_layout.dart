@@ -7,6 +7,10 @@ const sheetPageCount = 3;
 const sheetPageWidth = 612.0;
 const sheetPageHeight = 792.0;
 
+/// Larghezza in pixel delle immagini in `assets/sheet/`: è il massimo
+/// dettaglio disponibile, oltre il quale decodificare non aggiunge nulla.
+const sheetArtworkPixelWidth = 1700;
+
 /// Spazio fra una pagina e la successiva nella colonna scorrevole.
 const sheetPageGap = 12.0;
 
