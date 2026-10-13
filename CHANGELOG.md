@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 1.3.0 — 2026-10-13
 
 - Immagini conservate una sola volta per contenuto, fuori dalla scheda, e
   condivise fra le sue versioni e il backup: una scheda illustrata non pesa più
@@ -21,6 +21,16 @@
 - Avanzamento per scheda durante l'esportazione PDF di più personaggi.
 - Digitare il nome non ricostruisce più tutti i campi della pagina, e
   l'artwork della scheda viene decodificato alla densità dello schermo.
+- Workflow di release con action fissate al commit; rimosso il workflow di
+  diagnostica che firmava con la chiave di release.
+
+Attenzione: il formato 2 del backup non è leggibile dalle versioni precedenti,
+che si fermano con un messaggio senza toccare i dati. Vanno aggiornati tutti i
+dispositivi che condividono lo stesso archivio Drive.
+
+Build: **7**. Verifiche: **141 test**, analisi statica e build Linux, Web e
+Android verificate in locale; i pacchetti di release vengono creati da GitHub
+Actions.
 
 ## 1.2.1 — 2026-10-11
 
