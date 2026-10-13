@@ -12,7 +12,7 @@ class _RecordingSyncService extends GoogleDriveSyncService {
   int syncRequests = 0;
 
   @override
-  Future<bool> syncPendingChanges({bool interactive = false}) async {
+  Future<bool> syncInBackground() async {
     syncRequests++;
     return true;
   }
@@ -77,6 +77,11 @@ void main() {
       service.didChangeAppLifecycleState(AppLifecycleState.inactive);
       async.flushMicrotasks();
       expect(service.syncRequests, startupRequests + 1);
+
+      // Al ritorno in primo piano arrivano le modifiche fatte altrove.
+      service.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      async.flushMicrotasks();
+      expect(service.syncRequests, startupRequests + 2);
 
       service.dispose();
     });

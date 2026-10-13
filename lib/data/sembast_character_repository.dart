@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/character.dart';
 import '../models/character_edits.dart';
+import '../models/character_merge.dart';
 import '../models/character_version.dart';
 import '../models/image_payload.dart';
 import '../models/snapshot_policy.dart';
@@ -29,7 +30,7 @@ class SembastCharacterRepository extends CharacterRepository {
   final _characters = stringMapStoreFactory.store('characters');
   final _versions = stringMapStoreFactory.store('versions');
   final _tombstones = stringMapStoreFactory.store('sync_tombstones');
-  late final BlobStore blobStore = BlobStore(database);
+  late final BlobStore blobStore = BlobStore(database, now: _now);
 
   @override
   Future<Uint8List?> readImage(Object? value) async => isBlobReference(value)
@@ -44,9 +45,10 @@ class SembastCharacterRepository extends CharacterRepository {
       .query(finder: Finder(sortOrders: [SortOrder('updatedAt', false)]))
       .onSnapshots(database)
       .map(
-        (records) => records
-            .map((record) => CharacterSummary.fromJson(record.value))
-            .toList(growable: false),
+        (records) => [
+          for (final record in records)
+            ?CharacterSummary.tryFromJson(record.value),
+        ],
       );
 
   @override
@@ -75,6 +77,7 @@ class SembastCharacterRepository extends CharacterRepository {
       fields: {'CharacterName': name.trim()},
     );
     character.rename(character.name);
+    stampCharacterChanges(before: null, after: character, now: now);
     await database.transaction((transaction) async {
       await _characters
           .record(character.id)
@@ -87,9 +90,13 @@ class SembastCharacterRepository extends CharacterRepository {
 
   @override
   Future<void> saveCharacter(Character character) async {
-    character.updatedAt = _now().toUtc();
     await database.transaction((transaction) async {
       final previous = await _characters.record(character.id).get(transaction);
+      stampCharacterChanges(
+        before: previous == null ? null : Character.tryFromJson(previous),
+        after: character,
+        now: _now(),
+      );
       await _characters
           .record(character.id)
           .put(transaction, character.toJson());
@@ -114,11 +121,13 @@ class SembastCharacterRepository extends CharacterRepository {
           'Il personaggio è stato eliminato su un altro dispositivo.',
         );
       }
+      final current = Character.fromJson(json);
       saved = applyCharacterEdits(
         base: base,
         edited: character,
-        current: Character.fromJson(json),
-      )..updatedAt = _now().toUtc();
+        current: current,
+      );
+      stampCharacterChanges(before: current, after: saved, now: _now());
       await _characters.record(saved.id).put(transaction, saved.toJson());
       if (_droppedImages(json, saved.fields)) {
         await blobStore.collectGarbage(transaction);
@@ -282,16 +291,14 @@ class SembastCharacterRepository extends CharacterRepository {
         createdAt: _now().toUtc(),
       );
       await _versions.record(backup.id).put(transaction, backup.toJson());
-      final restored = Character(
-        id: live.id,
-        name: version.name,
-        createdAt: live.createdAt,
-        updatedAt: _now().toUtc(),
-        locked: version.locked,
-        fields: Map.of(version.fields),
-        comments: Map.of(version.comments),
-      );
-      restored.rename(restored.name);
+      final restored = live.copy()
+        ..locked = version.locked
+        ..fields.clear()
+        ..fields.addAll(version.fields)
+        ..comments.clear()
+        ..comments.addAll(version.comments);
+      restored.rename(version.name);
+      stampCharacterChanges(before: live, after: restored, now: _now());
       await _characters.record(characterId).put(transaction, restored.toJson());
       await _pruneSnapshots(transaction, characterId);
     });

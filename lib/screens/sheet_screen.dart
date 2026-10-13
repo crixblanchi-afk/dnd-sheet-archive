@@ -37,11 +37,44 @@ class SheetScreen extends StatefulWidget {
 class _SheetScreenState extends State<SheetScreen> {
   late final SheetController _sheetController;
   late final Future<List<List<SheetFieldDef>>> _fields;
+  late final VoidCallback _removeExitTask;
   bool _allowPop = false;
   bool _exiting = false;
   int _pageIndex = 0;
   _SheetViewMode _viewMode = _SheetViewMode.pages;
   PageController _pageController = PageController();
+
+  /// Le pagine della vista a pagine, costruite una volta per indice.
+  ///
+  /// Tutto lo schermo sta sotto un `LayoutBuilder`, che riparte a ogni
+  /// variazione del viewport — l'animazione della tastiera, il
+  /// ridimensionamento della finestra — e il `PageView` richiama il proprio
+  /// builder ogni volta: riconsegnare la stessa istanza evita di ricostruire
+  /// tutti i campi della pagina a ogni fotogramma.
+  final _pagedPages = <int, Widget>{};
+  List<List<SheetFieldDef>>? _pagedFields;
+
+  Widget _pagedPage(List<List<SheetFieldDef>> fields, int page) {
+    if (!identical(_pagedFields, fields)) {
+      _pagedFields = fields;
+      _pagedPages.clear();
+    }
+    return _pagedPages[page] ??= _KeepAlivePage(
+      child: Semantics(
+        label: 'Pagina ${page + 1} di $sheetPageCount',
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SheetPage(
+            key: ValueKey(page),
+            pageIndex: page,
+            fields: fields[page],
+            controller: _sheetController,
+            onFieldFocused: (_) {},
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -51,6 +84,25 @@ class _SheetScreenState extends State<SheetScreen> {
       character: widget.character,
     );
     _fields = SheetFieldDef.loadByPage();
+    // Chiudere la finestra su desktop non passa dal pulsante indietro: la
+    // sessione va salvata prima che il processo termini.
+    _removeExitTask = widget.driveSync.addExitTask(
+      () => _sheetController.finishEditingSession('session'),
+    );
+    // Chi apre una scheda vuole vederla aggiornata con le modifiche fatte su
+    // un altro dispositivo, senza aspettare il prossimo giro del sync.
+    unawaited(widget.driveSync.syncInBackground());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Le pagine non ancora viste vanno decodificate prima dello swipe che le
+    // porta in vista, altrimenti compaiono bianche per qualche fotogramma.
+    // Gira di nuovo se cambiano tema o densità dello schermo, cioè l'artwork.
+    for (var page = 0; page < sheetPageCount; page++) {
+      unawaited(precacheImage(SheetArtwork.imageFor(context, page), context));
+    }
   }
 
   Future<void> _exit() async {
@@ -82,7 +134,7 @@ class _SheetScreenState extends State<SheetScreen> {
     }
     // Le modifiche sono già al sicuro nell'archivio locale: il viaggio di rete
     // verso Drive non deve trattenere la navigazione.
-    unawaited(widget.driveSync.syncPendingChanges());
+    unawaited(widget.driveSync.syncInBackground());
     if (!mounted) return;
     setState(() => _allowPop = true);
     Navigator.of(context).pop();
@@ -205,21 +257,13 @@ class _SheetScreenState extends State<SheetScreen> {
                         ),
                         child: PageView.builder(
                           controller: _pageController,
+                          // La pagina accanto viene preparata a gesto fermo,
+                          // non a metà dello swipe che la porta in vista.
+                          allowImplicitScrolling: true,
                           itemCount: sheetPageCount,
                           onPageChanged: _changePage,
-                          itemBuilder: (context, page) => Semantics(
-                            label: 'Pagina ${page + 1} di $sheetPageCount',
-                            child: FittedBox(
-                              fit: BoxFit.contain,
-                              child: SheetPage(
-                                key: ValueKey(page),
-                                pageIndex: page,
-                                fields: snapshot.data![page],
-                                controller: _sheetController,
-                                onFieldFocused: (_) {},
-                              ),
-                            ),
-                          ),
+                          itemBuilder: (context, page) =>
+                              _pagedPage(snapshot.data!, page),
                         ),
                       );
                     },
@@ -291,6 +335,7 @@ class _SheetScreenState extends State<SheetScreen> {
 
   @override
   void dispose() {
+    _removeExitTask();
     _pageController.dispose();
     unawaited(_closeAndDisposeController());
     super.dispose();
@@ -304,5 +349,31 @@ class _SheetScreenState extends State<SheetScreen> {
     } finally {
       _sheetController.dispose();
     }
+  }
+}
+
+/// Una pagina della vista a pagine che resta viva quando esce di vista.
+///
+/// Sono tre in tutto, e la vista a scorrimento le tiene già vive insieme:
+/// ricostruirle a ogni swipe significava creare più di duecento campi nel
+/// fotogramma in cui il gesto comincia.
+class _KeepAlivePage extends StatefulWidget {
+  const _KeepAlivePage({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<_KeepAlivePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

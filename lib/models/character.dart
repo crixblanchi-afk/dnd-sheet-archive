@@ -10,8 +10,12 @@ class Character {
     required this.locked,
     Map<String, Object?>? fields,
     Map<String, String>? comments,
+    Map<String, DateTime>? clocks,
+    DateTime? clockFloor,
   }) : fields = fields ?? <String, Object?>{},
-       comments = comments ?? <String, String>{};
+       comments = comments ?? <String, String>{},
+       clocks = clocks ?? <String, DateTime>{},
+       clockFloor = clockFloor ?? updatedAt;
 
   final String id;
   String name;
@@ -20,6 +24,21 @@ class Character {
   bool locked;
   final Map<String, Object?> fields;
   final Map<String, String> comments;
+
+  /// Quando è cambiato per l'ultima volta ogni elemento della scheda.
+  ///
+  /// Le chiavi sono quelle di `characterClockKeys`. Servono al merge con Drive
+  /// per decidere campo per campo invece che sull'intera scheda: due
+  /// dispositivi che modificano campi diversi conservano entrambe le modifiche.
+  /// Una chiave assente vale `clockFloor`.
+  final Map<String, DateTime> clocks;
+
+  /// L'orologio di ogni elemento senza una voce in `clocks`.
+  ///
+  /// Le schede salvate prima degli orologi per campo non hanno né l'uno né
+  /// l'altro: per loro vale `updatedAt`, che riproduce il vecchio merge
+  /// sull'intera scheda.
+  DateTime clockFloor;
 
   Character copy() => Character.fromJson(toJson());
 
@@ -42,17 +61,48 @@ class Character {
     'locked': locked,
     'fields': fields,
     'comments': comments,
+    'clocks': {
+      for (final entry in clocks.entries)
+        entry.key: entry.value.toUtc().toIso8601String(),
+    },
+    'clockFloor': clockFloor.toUtc().toIso8601String(),
   };
 
-  factory Character.fromJson(Map<String, Object?> json) => Character(
-    id: json['id']! as String,
-    name: json['name']! as String,
-    createdAt: DateTime.parse(json['createdAt']! as String),
-    updatedAt: DateTime.parse(json['updatedAt']! as String),
-    locked: json['locked'] as bool? ?? false,
-    fields: objectMapFromJson(json['fields']),
-    comments: stringMapFromJson(json['comments']),
-  );
+  factory Character.fromJson(Map<String, Object?> json) {
+    final clockFloor = json['clockFloor'];
+    return Character(
+      id: json['id']! as String,
+      name: json['name']! as String,
+      createdAt: DateTime.parse(json['createdAt']! as String),
+      updatedAt: DateTime.parse(json['updatedAt']! as String),
+      locked: json['locked'] as bool? ?? false,
+      fields: objectMapFromJson(json['fields']),
+      comments: stringMapFromJson(json['comments']),
+      clocks: _dateMapFromJson(json['clocks']),
+      clockFloor: clockFloor is String ? DateTime.tryParse(clockFloor) : null,
+    );
+  }
+
+  /// La scheda, o `null` se il record è danneggiato.
+  ///
+  /// Un solo record illeggibile non deve rendere inutilizzabili l'elenco o il
+  /// sync di tutti gli altri.
+  static Character? tryFromJson(Map<String, Object?> json) {
+    try {
+      return Character.fromJson(json);
+    } on Object {
+      return null;
+    }
+  }
+}
+
+Map<String, DateTime> _dateMapFromJson(Object? value) {
+  if (value is! Map) return <String, DateTime>{};
+  return {
+    for (final entry in value.entries)
+      if (entry.key is String && entry.value is String)
+        entry.key as String: ?DateTime.tryParse(entry.value as String),
+  };
 }
 
 Map<String, Object?> objectMapFromJson(Object? value) {
@@ -92,4 +142,12 @@ class CharacterSummary {
         updatedAt: DateTime.parse(json['updatedAt']! as String),
         locked: json['locked'] as bool? ?? false,
       );
+
+  static CharacterSummary? tryFromJson(Map<String, Object?> json) {
+    try {
+      return CharacterSummary.fromJson(json);
+    } on Object {
+      return null;
+    }
+  }
 }

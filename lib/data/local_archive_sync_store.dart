@@ -108,12 +108,16 @@ class LocalArchiveSyncStore {
       final deletedAt = value is String ? DateTime.tryParse(value) : null;
       if (deletedAt != null) deletions[record.key] = deletedAt;
     }
-    final characters = characterRecords
-        .map((record) => Character.fromJson(record.value))
-        .toList(growable: false);
-    final versions = versionRecords
-        .map((record) => CharacterVersion.fromJson(record.value))
-        .toList(growable: false);
+    // Un record danneggiato resta dov'è, intatto, ma non blocca il sync di
+    // tutti gli altri: fuori dal merge, non viene né caricato né cancellato.
+    final characters = [
+      for (final record in characterRecords)
+        ?Character.tryFromJson(record.value),
+    ];
+    final versions = [
+      for (final record in versionRecords)
+        ?CharacterVersion.tryFromJson(record.value),
+    ];
     return ArchiveSyncData(
       generatedAt: DateTime.now().toUtc(),
       characters: characters,

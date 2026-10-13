@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -51,6 +52,7 @@ class GoogleDriveSyncService extends ChangeNotifier
     this.automaticSyncInterval = const Duration(minutes: 5),
     this.maxBackupBytes = 20 * 1024 * 1024,
     this.syncTimeout = const Duration(minutes: 2),
+    this.exitTimeout = const Duration(seconds: 10),
     DesktopGoogleAuth? desktopAuth,
   }) : assert(maxBackupBytes > 0),
        _providedDesktopAuth = desktopAuth,
@@ -60,10 +62,11 @@ class GoogleDriveSyncService extends ChangeNotifier
     _initialization = _initialize();
     _automaticSyncTimer = Timer.periodic(
       automaticSyncInterval,
-      (_) => unawaited(syncPendingChanges()),
+      (_) => unawaited(syncInBackground()),
     );
-    // Modifiche rimaste in sospeso dalla sessione precedente.
-    _initialization.whenComplete(() => unawaited(syncPendingChanges()));
+    // Modifiche rimaste in sospeso dalla sessione precedente, e quelle fatte
+    // altrove mentre l'app era chiusa.
+    _initialization.whenComplete(() => unawaited(syncInBackground()));
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -88,6 +91,10 @@ class GoogleDriveSyncService extends ChangeNotifier
   /// Lo stesso tetto vale per upload e download, inclusi i byte UTF-8.
   final int maxBackupBytes;
   final Duration syncTimeout;
+
+  /// Quanto la chiusura dell'app desktop aspetta ciascuno dei lavori in
+  /// sospeso — i salvataggi delle schede aperte, poi il sync.
+  final Duration exitTimeout;
   final DesktopGoogleAuth? _providedDesktopAuth;
   late final GoogleSignIn _signIn = GoogleSignIn.instance;
   late final DesktopGoogleAuth _desktopAuth =
@@ -108,7 +115,15 @@ class GoogleDriveSyncService extends ChangeNotifier
   DateTime? _lastSyncAt;
   String? _errorMessage;
   Object? _activeSync;
+  Future<void>? _runningSync;
   bool _disposed = false;
+
+  /// I backup su Drive, con le loro versioni, dopo l'ultimo sync riuscito.
+  ///
+  /// Il sync in background li confronta con quelli attuali per sapere, con
+  /// una sola richiesta leggera, se un altro dispositivo ha caricato qualcosa.
+  String? _lastSeenRemoteFiles;
+  final List<Future<void> Function()> _exitTasks = [];
 
   @override
   void notifyListeners() {
@@ -206,30 +221,88 @@ class GoogleDriveSyncService extends ChangeNotifier
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // L'app sta per finire in background, dove Android congela i timer:
-    // ultima occasione per spedire le modifiche in sospeso.
+    // ultima occasione per spedire le modifiche in sospeso. Al ritorno, quel
+    // che è cambiato altrove nel frattempo.
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
-      unawaited(syncPendingChanges());
+      unawaited(syncInBackground());
+    } else if (state == AppLifecycleState.resumed) {
+      // Su desktop si torna in primo piano a ogni cambio di finestra: basta un
+      // controllo al minuto.
+      final lastSyncAt = _lastSyncAt;
+      if (lastSyncAt == null ||
+          DateTime.now().toUtc().difference(lastSyncAt) >
+              const Duration(minutes: 1)) {
+        unawaited(syncInBackground());
+      }
     }
   }
 
-  Future<bool> syncPendingChanges({bool interactive = false}) async {
+  /// Registra un lavoro da completare prima che l'app desktop si chiuda, come
+  /// il salvataggio di una scheda aperta; restituisce la funzione che lo
+  /// toglie.
+  ///
+  /// Vive qui perché deve precedere l'ultimo sync: i lavori girano in ordine
+  /// di registrazione, poi il sync spedisce quel che hanno salvato.
+  VoidCallback addExitTask(Future<void> Function() task) {
+    _exitTasks.add(task);
+    return () => _exitTasks.remove(task);
+  }
+
+  /// Chiudere la finestra su desktop termina il processo: senza aspettare,
+  /// l'autosalvataggio di una scheda aperta e il sync delle ultime modifiche
+  /// andrebbero persi.
+  @override
+  Future<AppExitResponse> didRequestAppExit() async {
+    for (final task in List.of(_exitTasks)) {
+      try {
+        await task().timeout(exitTimeout);
+      } catch (_) {
+        // L'uscita non va bloccata: quel che resta in sospeso partirà al
+        // prossimo avvio.
+      }
+    }
+    try {
+      await _flushToDrive().timeout(exitTimeout);
+    } catch (_) {
+      // Come sopra: le modifiche restano in sospeso nell'archivio locale.
+    }
+    return AppExitResponse.exit;
+  }
+
+  Future<void> _flushToDrive() async {
+    final running = _runningSync;
+    if (running != null) await running;
+    if (hasPendingChanges) await syncInBackground();
+  }
+
+  /// Sincronizza senza chiedere nulla all'utente, se c'è un account collegato.
+  ///
+  /// Gira anche senza modifiche locali, per ricevere quelle fatte su un altro
+  /// dispositivo: se la versione del backup su Drive è quella dell'ultimo
+  /// sync, si ferma dopo una sola richiesta leggera.
+  Future<bool> syncInBackground() async {
     if (_disposed ||
-        !hasPendingChanges ||
         _state == GoogleDriveSyncState.syncing ||
         !isConfigured ||
-        (!interactive && !isConnected)) {
+        !isConnected) {
       return false;
     }
     try {
-      await sync(interactive: interactive);
+      await _sync(interactive: false, onlyIfChanged: true);
       return true;
     } catch (_) {
       return false;
     }
   }
 
-  Future<DriveSyncSummary> sync({bool interactive = true}) async {
+  Future<DriveSyncSummary> sync({bool interactive = true}) =>
+      _sync(interactive: interactive, onlyIfChanged: false);
+
+  Future<DriveSyncSummary> _sync({
+    required bool interactive,
+    required bool onlyIfChanged,
+  }) async {
     await _initialization;
     if (_disposed) throw StateError('Il servizio Drive è stato chiuso.');
     if (!isConfigured) {
@@ -249,6 +322,8 @@ class GoogleDriveSyncService extends ChangeNotifier
     notifyListeners();
     final token = Object();
     _activeSync = token;
+    final running = Completer<void>();
+    _runningSync = running.future;
     try {
       if (_isDesktop) {
         try {
@@ -256,7 +331,11 @@ class GoogleDriveSyncService extends ChangeNotifier
             throw const GoogleDriveSignInRequired();
           }
           final client = await _desktopAuth.authenticatedClient();
-          return await _syncWithClient(client, token).timeout(syncTimeout);
+          return await _syncWithClient(
+            client,
+            token,
+            onlyIfChanged: onlyIfChanged,
+          ).timeout(syncTimeout);
         } on drive.DetailedApiRequestError catch (error) {
           if (_isAuthorizationFailure(error)) {
             await _desktopAuth.signOut();
@@ -306,7 +385,11 @@ class GoogleDriveSyncService extends ChangeNotifier
       final client = _AuthorizedClient(http.Client(), headers);
       try {
         try {
-          return await _syncWithClient(client, token).timeout(syncTimeout);
+          return await _syncWithClient(
+            client,
+            token,
+            onlyIfChanged: onlyIfChanged,
+          ).timeout(syncTimeout);
         } on drive.DetailedApiRequestError catch (error) {
           if (_isAuthorizationFailure(error)) {
             final accessToken = _accessToken;
@@ -340,19 +423,43 @@ class GoogleDriveSyncService extends ChangeNotifier
       rethrow;
     } finally {
       if (identical(_activeSync, token)) _activeSync = null;
+      if (identical(_runningSync, running.future)) _runningSync = null;
+      running.complete();
     }
   }
 
+  /// Scarica e unisce tutti i backup su Drive, poi carica il risultato come
+  /// file nuovo e cancella quelli che ha unito.
+  ///
+  /// Drive non offre scritture condizionate: sovrascrivere un file esistente,
+  /// anche dopo averne ricontrollato la versione, lascerebbe sempre una
+  /// finestra in cui due dispositivi scrivono uno sopra l'altro e le modifiche
+  /// del primo spariscono. Così invece nessun backup viene mai sovrascritto:
+  /// due sync concorrenti producono due file, e il merge — commutativo e
+  /// idempotente — li riunisce al giro successivo. Cancellare un file già
+  /// unito è sicuro, perché il suo contenuto è dentro quello appena caricato.
   Future<DriveSyncSummary> _syncWithClient(
     http.Client client,
-    Object token,
-  ) async {
-    final syncingRevision = _syncTracker.revision;
+    Object token, {
+    required bool onlyIfChanged,
+  }) async {
     final api = drive.DriveApi(client);
-    final remoteFile = await _findRemoteFile(api);
-    final remote = remoteFile == null
-        ? null
-        : await _download(api, remoteFile.id!);
+    final syncingRevision = _syncTracker.revision;
+    final remoteFiles = await _findRemoteFiles(api);
+    final remoteSignature = _signatureOf(remoteFiles);
+    if (onlyIfChanged &&
+        !_syncTracker.hasPendingChanges &&
+        remoteFiles.isNotEmpty &&
+        remoteSignature == _lastSeenRemoteFiles) {
+      _checkActive(token);
+      return _completeSync(token, syncingRevision, await _localStore.read());
+    }
+
+    ArchiveSyncData? remote;
+    for (final file in remoteFiles) {
+      final data = await _download(api, file.id!);
+      remote = remote == null ? data : ArchiveSyncData.merge(remote, data);
+    }
     _checkActive(token);
     final merged = remote == null
         ? await _localStore.read()
@@ -360,6 +467,16 @@ class GoogleDriveSyncService extends ChangeNotifier
             remote,
             beforeReplace: () => _checkActive(token),
           );
+    // Se l'unico backup contiene già tutto, ricaricarlo sprecherebbe banda e
+    // farebbe scaricare inutilmente il backup agli altri dispositivi.
+    if (remote != null &&
+        remoteFiles.length == 1 &&
+        ArchiveSyncData.sameContent(merged, remote)) {
+      _checkActive(token);
+      _lastSeenRemoteFiles = remoteSignature;
+      return _completeSync(token, syncingRevision, merged);
+    }
+
     // Serializzare l'archivio è il passaggio più caro del sync — fino al
     // tetto dei 20 MB, immagini comprese — e bloccherebbe la UI per secondi:
     // va in un isolate, come già fa l'export PDF.
@@ -370,39 +487,75 @@ class GoogleDriveSyncService extends ChangeNotifier
     );
     if (bytes.length > maxBackupBytes) {
       throw FormatException(
-        'Il backup supera il limite di ${maxBackupBytes ~/ (1024 * 1024)} MB. '
+        'Il backup supera il limite di '
+        '${maxBackupBytes ~/ (1024 * 1024)} MB. '
         'Riduci le immagini o il numero di schede prima di riprovare. '
         'I dati locali e il backup su Drive restano conservati.',
       );
     }
-    final media = drive.Media(
-      Stream<List<int>>.value(bytes),
-      bytes.length,
-      contentType: _mimeType,
-    );
-    // Il timeout non annulla la richiesta sottostante, e su desktop il client
-    // HTTP è condiviso, quindi nemmeno la sua chiusura la interrompe: senza
-    // questo controllo un tentativo abbandonato scriverebbe il proprio payload
-    // sopra quello, più recente, già caricato dal tentativo che l'ha
-    // sostituito, facendo sparire da Drive modifiche già marcate come inviate.
+    // Un tentativo abbandonato dopo il timeout non deve più caricare niente:
+    // non sovrascriverebbe nulla, ma cancellerebbe backup che nel frattempo un
+    // tentativo più recente potrebbe non aver ancora unito.
     _checkActive(token);
-    if (remoteFile == null) {
-      await api.files.create(
-        drive.File()
-          ..name = _fileName
-          ..mimeType = _mimeType
-          ..parents = const ['appDataFolder'],
-        uploadMedia: media,
-        $fields: 'id',
-      );
-    } else {
-      await api.files.update(
-        drive.File()..mimeType = _mimeType,
-        remoteFile.id!,
-        uploadMedia: media,
-        $fields: 'id',
-      );
+    final uploaded = await api.files.create(
+      drive.File()
+        ..name = _fileName
+        ..mimeType = _mimeType
+        ..parents = const ['appDataFolder'],
+      uploadMedia: drive.Media(
+        Stream<List<int>>.value(bytes),
+        bytes.length,
+        contentType: _mimeType,
+      ),
+      $fields: 'id,version',
+    );
+    var allMergedRemoved = true;
+    if (identical(_activeSync, token)) {
+      for (final file in remoteFiles) {
+        allMergedRemoved &= await _deleteMerged(api, file);
+      }
     }
+    if (identical(_activeSync, token)) {
+      // Se qualche backup è rimasto, il prossimo giro lo scarica e lo unisce.
+      _lastSeenRemoteFiles = allMergedRemoved ? _signatureOf([uploaded]) : null;
+    }
+    return _completeSync(token, syncingRevision, merged);
+  }
+
+  /// Cancella un backup già unito a quello appena caricato.
+  ///
+  /// Le versioni precedenti dell'app aggiornano invece il backup sul posto:
+  /// se nel frattempo il file è cambiato contiene qualcosa che questo sync non
+  /// ha unito, e resta lì per il prossimo. Restituisce `true` se il file non
+  /// c'è più.
+  Future<bool> _deleteMerged(drive.DriveApi api, drive.File file) async {
+    try {
+      final current = await api.files.get(file.id!, $fields: 'version');
+      if (current is! drive.File || current.version != file.version) {
+        return false;
+      }
+      await api.files.delete(file.id!);
+      return true;
+    } on drive.DetailedApiRequestError catch (error) {
+      // Già cancellato da un altro dispositivo che l'aveva unito a sua volta.
+      return error.status == 404;
+    } catch (_) {
+      // Resta un doppione, che il prossimo sync unirà di nuovo.
+      return false;
+    }
+  }
+
+  static String _signatureOf(Iterable<drive.File> files) =>
+      (files.map((file) => '${file.id}:${file.version}').toList()..sort()).join(
+        ',',
+      );
+
+  /// Chiude un sync riuscito, se nel frattempo non è stato abbandonato.
+  Future<DriveSyncSummary> _completeSync(
+    Object token,
+    int syncingRevision,
+    ArchiveSyncData merged,
+  ) async {
     final completedAt = DateTime.now().toUtc();
     // Il timeout non annulla la richiesta sottostante: un tentativo
     // abbandonato può arrivare in fondo molto dopo, e non deve né dichiarare
@@ -435,16 +588,16 @@ class GoogleDriveSyncService extends ChangeNotifier
     }
   }
 
-  Future<drive.File?> _findRemoteFile(drive.DriveApi api) async {
+  /// I backup presenti su Drive, il più recente per primo.
+  Future<List<drive.File>> _findRemoteFiles(drive.DriveApi api) async {
     final result = await api.files.list(
       spaces: 'appDataFolder',
       q: "name = '$_fileName' and trashed = false",
       orderBy: 'modifiedTime desc',
-      pageSize: 1,
-      $fields: 'files(id,name,modifiedTime)',
+      pageSize: 100,
+      $fields: 'files(id,name,modifiedTime,version)',
     );
-    final files = result.files;
-    return files == null || files.isEmpty ? null : files.first;
+    return result.files ?? const [];
   }
 
   Future<ArchiveSyncData> _download(drive.DriveApi api, String fileId) async {
@@ -471,6 +624,8 @@ class GoogleDriveSyncService extends ChangeNotifier
 
   Future<void> signOut() async {
     await _initialization;
+    // Un altro account ha un altro backup: il prossimo sync lo scarica.
+    _lastSeenRemoteFiles = null;
     if (_isDesktop) {
       await _desktopAuth.signOut();
       _state = GoogleDriveSyncState.idle;

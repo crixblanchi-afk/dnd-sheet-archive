@@ -69,17 +69,46 @@ soltanto lo scope OAuth `drive.appdata`. Il backup è nel formato 2, che porta l
 immagini in un elenco a parte invece di ripeterle dentro ogni scheda e ogni
 versione; i backup nel formato 1 vengono letti e convertiti al primo sync. Una
 versione dell'app che non conosce il formato 2 si fermerà con un messaggio senza
-toccare i dati, quindi i dispositivi vanno aggiornati tutti. Le schede e le versioni vengono unite
-per UUID; per i conflitti sui personaggi prevale `updatedAt` più recente. Le
-cancellazioni vengono sincronizzate e non fanno ricomparire dati provenienti da
-un dispositivo non aggiornato; la traccia di una cancellazione resta nel backup
-per 90 giorni, così l'elenco non cresce all'infinito.
+toccare i dati, quindi i dispositivi vanno aggiornati tutti. Le schede e le
+versioni vengono unite per UUID. Le cancellazioni vengono sincronizzate e non
+fanno ricomparire dati provenienti da un dispositivo non aggiornato; la traccia
+di una cancellazione resta nel backup per 90 giorni, così l'elenco non cresce
+all'infinito.
+
+Le copie della stessa scheda si uniscono campo per campo: ogni campo, commento,
+nome e blocco ricorda quando è cambiato l'ultima volta, e prevale la modifica
+più recente di ciascuno. Due dispositivi che modificano campi diversi della
+stessa scheda, anche offline, ritrovano entrambe le modifiche; sullo stesso
+campo vince l'ultima. Una modifica fatta dopo aver ricevuto quella di un altro
+dispositivo resta la più recente anche se l'orologio locale è indietro. Le
+schede salvate da versioni precedenti, senza orologi per campo, si uniscono
+come prima, sull'intera scheda, finché non vengono modificate.
+
+Drive non permette scritture condizionate, quindi il sync non sovrascrive mai
+un backup: scarica e unisce tutti quelli presenti, carica il risultato come
+file nuovo e poi cancella quelli che ha unito. Due dispositivi che
+sincronizzano nello stesso momento lasciano due file, che il sync successivo
+riunisce senza perdere niente. Un backup aggiornato sul posto da una versione
+precedente dell'app dopo il download non viene cancellato. Un backup che
+contiene già tutto non viene ricaricato.
+
+Il sync automatico riceve anche le modifiche fatte altrove, non solo invia le
+proprie: gira ogni cinque minuti, quando l'app torna in primo piano e quando si
+apre una scheda. Se la versione del backup non è cambiata dall'ultimo sync si
+ferma dopo una sola richiesta leggera. Su desktop, chiudere la finestra salva
+la scheda aperta e spedisce le modifiche in sospeso prima di uscire.
 
 Una scheda aperta riceve gli aggiornamenti da Drive conservando le modifiche
 locali ancora da salvare. Il salvataggio applica solo i campi modificati nella
 sessione: se lo stesso campo viene cambiato anche da remoto, prevale la
 modifica locale esplicita. Un personaggio eliminato da remoto non viene
 ricreato da un editor rimasto aperto.
+
+Su Linux e Windows l'archivio locale vive nella cartella dei dati dell'app
+(`~/.local/share/…` su Linux, `%APPDATA%\…` su Windows), non più in Documenti,
+dove OneDrive o altri client di sync potevano toccarlo durante la scrittura:
+al primo avvio viene spostato. Una seconda finestra dell'app sullo stesso
+archivio viene rifiutata, perché le due si sovrascriverebbero le modifiche.
 
 Su desktop il token di refresh viene affidato al portachiavi del sistema —
 libsecret su Linux, Credential Manager su Windows. Dove non c'è un servizio di

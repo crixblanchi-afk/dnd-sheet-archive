@@ -96,4 +96,12 @@ class CharacterVersion {
       comments: stringMapFromJson(json['comments']),
     );
   }
+
+  static CharacterVersion? tryFromJson(Map<String, Object?> json) {
+    try {
+      return CharacterVersion.fromJson(json);
+    } on Object {
+      return null;
+    }
+  }
 }

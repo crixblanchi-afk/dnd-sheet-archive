@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sembast/sembast.dart';
 
 import 'data/app_database.dart';
 import 'data/blob_store.dart';
@@ -19,8 +20,21 @@ void main() {
   runApp(const _BootstrapApp());
 }
 
+/// L'archivio aperto, condiviso fra i tentativi di avvio.
+///
+/// Se a fallire è un passaggio successivo, «Riprova» riusa l'archivio invece
+/// di riaprirlo: il lock dell'istanza è già di questo processo.
+Future<Database>? _database;
+
 Future<_AppServices> _openServices() async {
-  final database = await openAppDatabase();
+  final opening = _database ??= openAppDatabase();
+  final Database database;
+  try {
+    database = await opening;
+  } catch (_) {
+    if (identical(_database, opening)) _database = null;
+    rethrow;
+  }
   final syncTracker = await ArchiveSyncTracker.open(database);
   // Le schede salvate prima dell'archivio dei blob portano ancora le immagini
   // dentro i campi: spostarle deduplica l'archivio locale, e il backup va
@@ -58,7 +72,22 @@ class _BootstrapApp extends StatefulWidget {
 }
 
 class _BootstrapAppState extends State<_BootstrapApp> {
-  late final Future<_AppServices> _services = _openServices();
+  late Future<_AppServices> _services = _start();
+
+  Future<_AppServices> _start() => _openServices().catchError((
+    Object error,
+    StackTrace stack,
+  ) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stack,
+        library: 'dnd_sheet_archive',
+        context: ErrorDescription('durante l’apertura dell’archivio locale'),
+      ),
+    );
+    return Future<_AppServices>.error(error, stack);
+  });
 
   @override
   Widget build(BuildContext context) => FutureBuilder<_AppServices>(
@@ -80,13 +109,53 @@ class _BootstrapAppState extends State<_BootstrapApp> {
         home: Scaffold(
           body: Center(
             child: snapshot.hasError
-                ? const Text('Impossibile aprire l’archivio locale.')
+                ? _OpenError(
+                    error: snapshot.error!,
+                    onRetry: () => setState(() => _services = _start()),
+                  )
                 : const CircularProgressIndicator(),
           ),
         ),
       );
     },
   );
+}
+
+class _OpenError extends StatelessWidget {
+  const _OpenError({required this.error, required this.onRetry});
+
+  final Object error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final alreadyOpen = error is ArchiveAlreadyOpenException;
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            alreadyOpen
+                ? 'L’archivio è già aperto in un’altra finestra dell’app.'
+                : 'Impossibile aprire l’archivio locale.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            alreadyOpen
+                ? 'Chiudi l’altra finestra, poi riprova: due finestre sullo '
+                      'stesso archivio si sovrascriverebbero le modifiche.'
+                : '$error',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          FilledButton(onPressed: onRetry, child: const Text('Riprova')),
+        ],
+      ),
+    );
+  }
 }
 
 class DndSheetArchiveApp extends StatelessWidget {

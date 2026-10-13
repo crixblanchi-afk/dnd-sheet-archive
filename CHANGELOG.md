@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.4.0 — 2026-10-14
+
+- Modifica contemporanea più resiliente: le copie di una scheda si uniscono
+  campo per campo, con un orologio per ogni campo, commento, nome e blocco.
+  Due dispositivi che modificano campi diversi conservano entrambe le
+  modifiche invece di perdere quelle di chi ha salvato per primo. Gli orologi
+  non tornano mai indietro rispetto all'ultima modifica ricevuta, così un
+  dispositivo con l'orologio indietro non perde le proprie.
+- Il sync non sovrascrive più il backup su Drive: carica un file nuovo e
+  cancella soltanto quelli che ha già unito. Due dispositivi che sincronizzano
+  insieme lasciano due file, riuniti al giro successivo, invece di cancellare
+  l'uno le modifiche dell'altro.
+- Il sync automatico riceve le modifiche fatte altrove anche senza modifiche
+  locali: ogni cinque minuti, al ritorno in primo piano e all'apertura di una
+  scheda, con una sola richiesta leggera quando non è cambiato niente. Un
+  backup che contiene già tutto non viene ricaricato.
+- Corretta la perdita di un'immagine appena scelta: se un sync cadeva prima
+  dell'autosalvataggio della scheda, la raccolta delle immagini orfane la
+  cancellava. Le immagini nuove ora hanno un giorno di tregua.
+- Su desktop, chiudere la finestra salva la scheda aperta e spedisce le
+  modifiche in sospeso prima di uscire.
+- Su Linux e Windows l'archivio passa dalla cartella Documenti a quella dei
+  dati dell'app, con spostamento automatico al primo avvio; una seconda
+  istanza dell'app viene rifiutata invece di corrompere l'archivio.
+- Un record danneggiato non blocca più l'elenco e il sync delle altre schede.
+- Avvio: errore dettagliato e pulsante «Riprova» se l'archivio non si apre.
+- Export PDF: un'immagine condivisa da più schede viene incorporata una volta.
+- CI: una build Android di release senza chiave di firma fallisce invece di
+  produrre un APK firmato con la chiave di debug.
+- Scheda più fluida durante l'animazione della tastiera e il
+  ridimensionamento della finestra: le pagine non vengono più ricostruite a
+  ogni fotogramma — prima erano più di cento campi per fotogramma nella vista
+  a pagine e più di trecento in quella a scorrimento, ora nessuno.
+- Vista a pagine: le pagine già viste restano vive e quella accanto viene
+  preparata a gesto fermo, quindi lo swipe non costruisce più duecento campi
+  nel fotogramma in cui parte. L'artwork delle tre pagine viene precaricato.
+- Digitazione più leggera nei campi lunghi: l'adattamento del carattere parte
+  dalla dimensione trovata per il testo precedente e di solito si chiude con un
+  solo layout invece di dodici.
+
+Build: **9**. Verifiche: **169 test** e analisi statica. I pacchetti Android,
+Linux x86_64 e ARM64, Windows e Web vengono creati da GitHub Actions.
+Restano da verificare su dispositivi reali il sync contemporaneo, la chiusura
+della finestra desktop e la fluidità durante l'apertura della tastiera Android.
+
 ## 1.3.1 — 2026-10-13
 
 - Tema scuro con l'artwork della scheda precalcolato invece di filtrato a
