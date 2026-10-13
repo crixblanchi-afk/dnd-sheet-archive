@@ -173,6 +173,82 @@ void main() {
     fixture.controller.dispose();
   });
 
+  testWidgets('scrivendo il testo resta nel campo e a fine modifica ritrova '
+      'la dimensione ottimale', (tester) async {
+    const field = SheetFieldDef(
+      name: 'Traits',
+      page: 0,
+      type: SheetFieldType.text,
+      x: 0,
+      y: 0,
+      width: 110,
+      height: 30,
+      multiline: true,
+      align: 0,
+    );
+    const start = 'Tratti';
+    final fixture = _Fixture(field: field, value: start);
+    await tester.pumpWidget(fixture.widget);
+    await tester.tapAt(const Offset(30, 10));
+    await tester.pump();
+
+    double editingFontSize() =>
+        tester.widget<TextField>(find.byType(TextField)).style!.fontSize!;
+    void expectFits(String text) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: tester.widget<TextField>(find.byType(TextField)).style,
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: 108);
+      expect(painter.height, lessThanOrEqualTo(30.01), reason: text);
+    }
+
+    var text = start;
+    var previous = editingFontSize();
+    for (final word
+        in ' che crescono parola dopo parola fino a riempire '
+                'il riquadro e oltre'
+            .split(' ')) {
+      text = '$text $word';
+      await tester.enterText(find.byType(TextField), text);
+      await tester.pump();
+      expectFits(text);
+      // Mentre il testo cresce il carattere può solo restringersi.
+      expect(editingFontSize(), lessThanOrEqualTo(previous + .001));
+      previous = editingFontSize();
+    }
+
+    // Cancellando, il carattere torna a crescere.
+    text = text.substring(0, text.length ~/ 2);
+    await tester.enterText(find.byType(TextField), text);
+    await tester.pump();
+    expectFits(text);
+    expect(editingFontSize(), greaterThanOrEqualTo(previous));
+
+    // A fine modifica la misura riparte da capo: identica a quella di un campo
+    // aperto con lo stesso testo.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    final idle = tester
+        .widget<RichText>(find.byType(RichText).last)
+        .text
+        .style!
+        .fontSize;
+    await tester.pumpWidget(const SizedBox.shrink());
+    final fresh = _Fixture(field: field, value: text);
+    await tester.pumpWidget(fresh.widget);
+    expect(
+      idle,
+      tester.widget<RichText>(find.byType(RichText).last).text.style!.fontSize,
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    fixture.controller.dispose();
+    fresh.controller.dispose();
+  });
+
   testWidgets('does not shrink multiline text before wrapped lines fill it', (
     tester,
   ) async {

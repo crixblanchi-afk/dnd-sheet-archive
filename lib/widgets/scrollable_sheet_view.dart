@@ -51,6 +51,16 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
 
   static const _sheetSize = Size(sheetPageWidth, sheetContentHeight);
 
+  /// La colonna delle tre pagine, costruita una volta sola.
+  ///
+  /// La vista vive dentro un `LayoutBuilder`, che riparte a ogni variazione
+  /// del viewport: ogni fotogramma dell'animazione della tastiera, ogni passo
+  /// del ridimensionamento di una finestra desktop. Ricreare lì le pagine
+  /// ricostruiva più di trecento campi per fotogramma; riconsegnando la stessa
+  /// istanza Flutter salta l'intero sottoalbero. Le pagine restano in ascolto
+  /// del controller per conto proprio.
+  Widget? _pages;
+
   @override
   void initState() {
     super.initState();
@@ -220,6 +230,31 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
   }
 
   @override
+  void didUpdateWidget(ScrollableSheetView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.fields, oldWidget.fields) ||
+        !identical(widget.controller, oldWidget.controller)) {
+      _pages = null;
+    }
+  }
+
+  Widget _buildPages() => _pages ??= Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      for (var page = 0; page < sheetPageCount; page++) ...[
+        SheetPage(
+          pageIndex: page,
+          fields: widget.fields[page],
+          controller: widget.controller,
+          onFieldFocused: _ensureVisible,
+          onFieldUnfocused: _clearPendingField,
+        ),
+        if (page < sheetPageCount - 1) const SizedBox(height: sheetPageGap),
+      ],
+    ],
+  );
+
+  @override
   Widget build(BuildContext context) => LayoutBuilder(
     key: _viewportKey,
     builder: (context, constraints) {
@@ -268,22 +303,7 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
                 maxScale: sheetMaxScale,
                 scaleFactor: double.infinity,
                 boundaryMargin: const EdgeInsets.all(160),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (var page = 0; page < sheetPageCount; page++) ...[
-                      SheetPage(
-                        pageIndex: page,
-                        fields: widget.fields[page],
-                        controller: widget.controller,
-                        onFieldFocused: _ensureVisible,
-                        onFieldUnfocused: _clearPendingField,
-                      ),
-                      if (page < sheetPageCount - 1)
-                        const SizedBox(height: sheetPageGap),
-                    ],
-                  ],
-                ),
+                child: _buildPages(),
               ),
             ),
           ),

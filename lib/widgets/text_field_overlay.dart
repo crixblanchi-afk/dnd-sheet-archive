@@ -125,7 +125,8 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
   /// ricostruzione dell'albero le rimisurerebbe tutte.
   TextStyle _fittedStyle(_FitKey key, TextStyle baseStyle) {
     final cached = _fitStyle;
-    if (cached != null && _fitKey == key) return cached;
+    final previous = _fitKey;
+    if (cached != null && previous == key) return cached;
     final style = _sharedFittedStyles[key] ??= _fittedTextStyle(
       text: key.text,
       baseStyle: baseStyle,
@@ -136,6 +137,13 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
       textDirection: key.textDirection,
       textScaler: key.textScaler,
       markdown: key.markdown,
+      hint:
+          cached != null && previous != null && _onlyTextChanged(previous, key)
+          ? (
+              fontSize: cached.fontSize ?? baseStyle.fontSize ?? 14,
+              textGrew: key.text.length >= previous.text.length,
+            )
+          : null,
     );
     while (_sharedFittedStyles.length > _sharedFittedStylesLimit) {
       _sharedFittedStyles.remove(_sharedFittedStyles.keys.first);
@@ -343,6 +351,22 @@ class _IdleFieldValue extends StatelessWidget {
   }
 }
 
+/// Vero se fra le due misure è cambiato soltanto il testo, come accade a ogni
+/// tasto premuto mentre si scrive nel campo.
+bool _onlyTextChanged(_FitKey a, _FitKey b) =>
+    a.color == b.color &&
+    a.fontSize == b.fontSize &&
+    a.maxWidth == b.maxWidth &&
+    a.maxHeight == b.maxHeight &&
+    a.multiline == b.multiline &&
+    a.align == b.align &&
+    a.markdown == b.markdown &&
+    a.textScaler == b.textScaler &&
+    a.textDirection == b.textDirection;
+
+/// La dimensione trovata per il testo precedente dello stesso campo.
+typedef _FitHint = ({double fontSize, bool textGrew});
+
 TextStyle _fittedTextStyle({
   required String text,
   required TextStyle baseStyle,
@@ -353,6 +377,7 @@ TextStyle _fittedTextStyle({
   required TextDirection textDirection,
   required TextScaler textScaler,
   required bool markdown,
+  _FitHint? hint,
 }) {
   final maximum = baseStyle.fontSize ?? 14;
   if (text.isEmpty || maxWidth <= 0 || maxHeight <= 0) return baseStyle;
@@ -392,12 +417,34 @@ TextStyle _fittedTextStyle({
         painter.height <= effectiveMaxHeight + .01;
   }
 
-  if (fits(maximum)) return baseStyle;
-
+  // Dieci dimezzamenti dell'intervallo completo: la precisione che la ricerca
+  // garantisce, qualunque sia l'intervallo da cui parte.
+  final precision = (maximum - _minimumFieldFontSize) / 1024;
   var low = _minimumFieldFontSize;
   var high = maximum;
-  if (!fits(low)) return baseStyle.copyWith(fontSize: low);
-  for (var i = 0; i < 10; i++) {
+
+  // Mentre si scrive ogni tasto cambia il testo e quindi la misura, e la
+  // ricerca completa costa fino a dodici layout del paragrafo: su un campo
+  // lungo, più di un fotogramma per lettera. La dimensione trovata per il
+  // testo precedente restringe la ricerca. Se il testo è cresciuto e quella
+  // dimensione entra ancora, il carattere può solo restare dov'è: basta un
+  // layout. Il risultato entra sempre nel riquadro; al termine della modifica
+  // la misura riparte da capo e ritrova la dimensione ottimale.
+  final hinted = hint?.fontSize.clamp(_minimumFieldFontSize, maximum);
+  if (hint != null && hinted != null && hinted < maximum) {
+    if (fits(hinted)) {
+      if (hint.textGrew) return baseStyle.copyWith(fontSize: hinted);
+      low = hinted;
+    } else {
+      high = hinted;
+    }
+  }
+
+  if (high == maximum && fits(maximum)) return baseStyle;
+  if (low == _minimumFieldFontSize && !fits(low)) {
+    return baseStyle.copyWith(fontSize: low);
+  }
+  for (var i = 0; i < 10 && high - low > precision; i++) {
     final middle = (low + high) / 2;
     if (fits(middle)) {
       low = middle;

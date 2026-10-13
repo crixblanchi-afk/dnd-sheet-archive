@@ -57,6 +57,32 @@ class SheetArtwork extends StatelessWidget {
 
   final int pageIndex;
 
+  /// L'immagine dell'artwork così come la disegna [build], da precaricare.
+  ///
+  /// La chiave deve coincidere con quella di `Image.asset`, altrimenti il
+  /// precaricamento riempirebbe la cache con un'immagine che nessuno usa.
+  static ImageProvider imageFor(BuildContext context, int pageIndex) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return ResizeImage.resizeIfNeeded(
+      _cacheWidth(context),
+      null,
+      AssetImage(
+        'assets/sheet/page-${pageIndex + 1}${dark ? '-dark' : ''}.png',
+      ),
+    );
+  }
+
+  // L'artwork è grande 1700x2200 per una pagina di 612x792 punti: a piena
+  // risoluzione sono 15 MB di bitmap per pagina, e la vista a scorrimento le
+  // tiene tutte e tre insieme. Decodificarlo alla densità dello schermo, con
+  // un fattore 2 di margine per lo zoom, dimezza la memoria sui display 1x
+  // senza togliere un pixel a ciò che si vede; il limite superiore è l'asset
+  // stesso, oltre il quale non c'è più dettaglio da estrarre.
+  static int _cacheWidth(BuildContext context) => math.min(
+    sheetArtworkPixelWidth,
+    (sheetPageWidth * MediaQuery.devicePixelRatioOf(context) * 2).round(),
+  );
+
   @override
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
@@ -66,24 +92,12 @@ class SheetArtwork extends StatelessWidget {
     // scorrimento erano sei buffer fuori schermo da ridisegnare a ogni
     // variazione di zoom. Lo stesso risultato cotto nel PNG non costa nulla.
     // Ritratto e simbolo restano fuori da qui e conservano i colori originali.
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    // L'artwork è grande 1700x2200 per una pagina di 612x792 punti: a piena
-    // risoluzione sono 15 MB di bitmap per pagina, e la vista a scorrimento le
-    // tiene tutte e tre insieme. Decodificarlo alla densità dello schermo, con
-    // un fattore 2 di margine per lo zoom, dimezza la memoria sui display 1x
-    // senza togliere un pixel a ciò che si vede; il limite superiore è l'asset
-    // stesso, oltre il quale non c'è più dettaglio da estrarre.
-    final cacheWidth = math.min(
-      sheetArtworkPixelWidth,
-      (sheetPageWidth * MediaQuery.devicePixelRatioOf(context) * 2).round(),
-    );
     return ColoredBox(
       color: palette.paper,
-      child: Image.asset(
-        'assets/sheet/page-${pageIndex + 1}${dark ? '-dark' : ''}.png',
+      child: Image(
+        image: imageFor(context, pageIndex),
         fit: BoxFit.fill,
         filterQuality: FilterQuality.medium,
-        cacheWidth: cacheWidth,
       ),
     );
   }

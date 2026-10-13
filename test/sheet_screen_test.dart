@@ -6,7 +6,9 @@ import 'package:dnd_sheet_archive/models/sheet_layout.dart';
 import 'package:dnd_sheet_archive/screens/sheet_screen.dart';
 import 'package:dnd_sheet_archive/sync/archive_sync_tracker.dart';
 import 'package:dnd_sheet_archive/sync/google_drive_sync_service.dart';
+import 'package:dnd_sheet_archive/widgets/checkbox_overlay.dart';
 import 'package:dnd_sheet_archive/widgets/sheet_page.dart';
+import 'package:dnd_sheet_archive/widgets/text_field_overlay.dart';
 import 'package:dnd_sheet_archive/widgets/scrollable_sheet_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -567,6 +569,115 @@ void main() {
       },
     );
   }
+
+  /// Quanti campi della scheda vengono costruiti, o ricostruiti, durante
+  /// [action].
+  Future<({int builds, int mounts})> countFieldBuilds(
+    Future<void> Function() action,
+  ) async {
+    var builds = 0;
+    var mounts = 0;
+    debugOnRebuildDirtyWidget = (element, builtOnce) {
+      final widget = element.widget;
+      if (widget is TextFieldOverlay || widget is CheckboxOverlay) {
+        builds++;
+        if (!builtOnce) mounts++;
+      }
+    };
+    try {
+      await action();
+    } finally {
+      debugOnRebuildDirtyWidget = null;
+    }
+    return (builds: builds, mounts: mounts);
+  }
+
+  Future<GoogleDriveSyncService> openSheet(WidgetTester tester) async {
+    final database = await databaseFactoryMemory.openDatabase(
+      'sheet-screen-rebuilds.db',
+    );
+    addTearDown(database.close);
+    final driveSync = GoogleDriveSyncService(
+      LocalArchiveSyncStore(database),
+      syncTracker: ArchiveSyncTracker.inMemory(),
+    );
+    await tester.runAsync(SheetFieldDef.loadByPage);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SheetScreen(
+          character: Character(
+            id: 'character',
+            name: 'Character',
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+            locked: false,
+          ),
+          repository: _FakeRepository(),
+          driveSync: driveSync,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pumpAndSettle();
+    return driveSync;
+  }
+
+  testWidgets('ridimensionare la vista non ricostruisce i campi della scheda', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final driveSync = await openSheet(tester);
+
+    // Come l'animazione della tastiera o il trascinamento del bordo di una
+    // finestra: un cambio di viewport a ogni fotogramma.
+    Future<void> resize() async {
+      for (var height = 880.0; height >= 600; height -= 20) {
+        await tester.binding.setSurfaceSize(Size(800, height));
+        await tester.pump();
+      }
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      await tester.pumpAndSettle();
+    }
+
+    expect((await countFieldBuilds(resize)).builds, 0);
+    await chooseViewMode(tester, 'A scorrimento');
+    expect((await countFieldBuilds(resize)).builds, 0);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    driveSync.dispose();
+  });
+
+  testWidgets('tornare su una pagina già vista non la ricostruisce', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final driveSync = await openSheet(tester);
+
+    Future<void> swipe(double dx) async {
+      await tester.dragFrom(const Offset(400, 450), Offset(dx, 0));
+      await tester.pumpAndSettle();
+    }
+
+    // Il primo giro costruisce le pagine una volta sola.
+    await swipe(-600);
+    await swipe(-600);
+    final revisit = await countFieldBuilds(() async {
+      await swipe(600);
+      await swipe(600);
+      await swipe(-600);
+    });
+    expect(revisit.mounts, 0);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    driveSync.dispose();
+  });
 }
 
 class _FakeRepository extends CharacterRepository {

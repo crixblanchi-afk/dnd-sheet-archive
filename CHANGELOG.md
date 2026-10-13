@@ -29,6 +29,16 @@
 - Export PDF: un'immagine condivisa da più schede viene incorporata una volta.
 - CI: una build Android di release senza chiave di firma fallisce invece di
   produrre un APK firmato con la chiave di debug.
+- Scheda più fluida durante l'animazione della tastiera e il
+  ridimensionamento della finestra: le pagine non vengono più ricostruite a
+  ogni fotogramma — prima erano più di cento campi per fotogramma nella vista
+  a pagine e più di trecento in quella a scorrimento, ora nessuno.
+- Vista a pagine: le pagine già viste restano vive e quella accanto viene
+  preparata a gesto fermo, quindi lo swipe non costruisce più duecento campi
+  nel fotogramma in cui parte. L'artwork delle tre pagine viene precaricato.
+- Digitazione più leggera nei campi lunghi: l'adattamento del carattere parte
+  dalla dimensione trovata per il testo precedente e di solito si chiude con un
+  solo layout invece di dodici.
 
 ## 1.3.1 — 2026-10-13
 
