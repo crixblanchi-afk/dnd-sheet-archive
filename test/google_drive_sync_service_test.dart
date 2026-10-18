@@ -87,4 +87,35 @@ void main() {
     });
     await database.close();
   });
+
+  test('in background il sync periodico si ferma e '
+      'hidden seguito da paused sincronizza una volta', () async {
+    final database = await databaseFactoryMemory.openDatabase('idle.db');
+    fakeAsync((async) {
+      final service = _RecordingSyncService(
+        LocalArchiveSyncStore(database),
+        syncTracker: ArchiveSyncTracker.inMemory(),
+      );
+      async.flushMicrotasks();
+      final startupRequests = service.syncRequests;
+
+      service.didChangeAppLifecycleState(AppLifecycleState.hidden);
+      service.didChangeAppLifecycleState(AppLifecycleState.paused);
+      async.flushMicrotasks();
+      expect(service.syncRequests, startupRequests + 1);
+
+      async.elapse(const Duration(minutes: 20));
+      expect(service.syncRequests, startupRequests + 1);
+
+      service.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      async.flushMicrotasks();
+      expect(service.syncRequests, startupRequests + 2);
+
+      async.elapse(const Duration(minutes: 5));
+      expect(service.syncRequests, startupRequests + 3);
+
+      service.dispose();
+    });
+    await database.close();
+  });
 }

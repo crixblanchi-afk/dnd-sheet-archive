@@ -60,10 +60,12 @@ class GoogleDriveSyncService extends ChangeNotifier
        _ownsSyncTracker = syncTracker == null {
     _syncTracker.addListener(_localChangesChanged);
     _initialization = _initialize();
-    _automaticSyncTimer = Timer.periodic(
-      automaticSyncInterval,
-      (_) => unawaited(syncInBackground()),
-    );
+    _automaticSyncTimer = Timer.periodic(automaticSyncInterval, (_) {
+      // In background nessuno guarda la scheda: svegliare la radio ogni cinque
+      // minuti costa batteria senza mostrare niente, e al ritorno in primo
+      // piano il sync parte comunque.
+      if (!_inBackground) unawaited(syncInBackground());
+    });
     // Modifiche rimaste in sospeso dalla sessione precedente, e quelle fatte
     // altrove mentre l'app era chiusa.
     _initialization.whenComplete(() => unawaited(syncInBackground()));
@@ -117,6 +119,9 @@ class GoogleDriveSyncService extends ChangeNotifier
   Object? _activeSync;
   Future<void>? _runningSync;
   bool _disposed = false;
+
+  /// Vero tra l'uscita dal primo piano (`hidden` o `paused`) e il ritorno.
+  bool _inBackground = false;
 
   /// I backup su Drive, con le loro versioni, dopo l'ultimo sync riuscito.
   ///
@@ -225,8 +230,13 @@ class GoogleDriveSyncService extends ChangeNotifier
     // che è cambiato altrove nel frattempo.
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
+      // Andando in background si passa da `hidden` e poi da `paused`: un solo
+      // sync basta, il secondo rifarebbe la stessa richiesta a Drive.
+      if (_inBackground) return;
+      _inBackground = true;
       unawaited(syncInBackground());
     } else if (state == AppLifecycleState.resumed) {
+      _inBackground = false;
       // Su desktop si torna in primo piano a ogni cambio di finestra: basta un
       // controllo al minuto.
       final lastSyncAt = _lastSyncAt;
