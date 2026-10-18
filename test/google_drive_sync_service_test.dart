@@ -87,4 +87,66 @@ void main() {
     });
     await database.close();
   });
+
+  test('in background il sync periodico si ferma e '
+      'hidden seguito da paused sincronizza una volta', () async {
+    final database = await databaseFactoryMemory.openDatabase('idle.db');
+    fakeAsync((async) {
+      final service = _RecordingSyncService(
+        LocalArchiveSyncStore(database),
+        syncTracker: ArchiveSyncTracker.inMemory(),
+      );
+      async.flushMicrotasks();
+      final startupRequests = service.syncRequests;
+
+      service.didChangeAppLifecycleState(AppLifecycleState.hidden);
+      service.didChangeAppLifecycleState(AppLifecycleState.paused);
+      async.flushMicrotasks();
+      expect(service.syncRequests, startupRequests + 1);
+
+      async.elapse(const Duration(minutes: 20));
+      expect(service.syncRequests, startupRequests + 1);
+
+      service.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      async.flushMicrotasks();
+      expect(service.syncRequests, startupRequests + 2);
+
+      async.elapse(const Duration(minutes: 5));
+      expect(service.syncRequests, startupRequests + 3);
+
+      service.dispose();
+    });
+    await database.close();
+  });
+
+  test('un servizio creato con l\'app già in background '
+      'non fa partire il sync periodico', () async {
+    final database = await databaseFactoryMemory.openDatabase('late.db');
+    final binding = WidgetsBinding.instance;
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    addTearDown(() {
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    });
+    fakeAsync((async) {
+      final service = _RecordingSyncService(
+        LocalArchiveSyncStore(database),
+        syncTracker: ArchiveSyncTracker.inMemory(),
+      );
+      async.flushMicrotasks();
+      final startupRequests = service.syncRequests;
+
+      async.elapse(const Duration(minutes: 20));
+      expect(service.syncRequests, startupRequests);
+
+      service.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      async.flushMicrotasks();
+      expect(service.syncRequests, startupRequests + 1);
+
+      service.dispose();
+    });
+    await database.close();
+  });
 }

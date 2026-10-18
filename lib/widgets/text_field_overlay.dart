@@ -325,6 +325,7 @@ class _IdleFieldValue extends StatelessWidget {
       TextAlign.right => 1.0,
       _ => -1.0,
     };
+    final palette = SheetPalette.of(context);
     return MouseRegion(
       cursor: locked ? MouseCursor.defer : SystemMouseCursors.text,
       child: GestureDetector(
@@ -336,7 +337,13 @@ class _IdleFieldValue extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 1),
               child: RichText(
-                text: buildInlineMarkdownSpan(value, style),
+                text: buildInlineMarkdownSpan(
+                  value,
+                  style,
+                  boldColor: palette.bold,
+                  italicColor: palette.italic,
+                  boldItalicColor: palette.boldItalic,
+                ),
                 textAlign: textAlign,
                 textDirection: Directionality.of(context),
                 textScaler: MediaQuery.textScalerOf(context),

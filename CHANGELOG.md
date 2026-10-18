@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.5.0 — 2026-10-18
+
+- Il menù «Aspetto» è un elenco di temi: Chiaro, Scuro, Chiaro colorato,
+  Scuro colorato e Sistema. Nei temi colorati grassetto e corsivo dei campi
+  sono leggermente tinti — bordeaux, blu e prugna per entrambi sulla carta
+  chiara; rosa antico, celeste e lilla su quella scura — mentre carta,
+  inchiostro e testo normale restano quelli del tema di base. Il tema scelto
+  in precedenza viene conservato.
+- Batteria: con l'app in background il sync automatico ogni cinque minuti si
+  ferma, e riparte al ritorno in primo piano. Andando in background parte un
+  solo sync invece di due richieste identiche a Drive.
+
 ## 1.4.0 — 2026-10-14
 
 - Modifica contemporanea più resiliente: le copie di una scheda si uniscono

@@ -1,3 +1,4 @@
+import 'package:dnd_sheet_archive/theme/sheet_palette.dart';
 import 'package:dnd_sheet_archive/widgets/inline_markdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,7 +9,8 @@ void main() {
   test('nel tema scuro il grassetto spicca sul testo normale', () {
     final span = buildInlineMarkdownSpan(
       'Testo **importante**',
-      const TextStyle(color: Color(0xffd4c9b8), fontFamily: 'RobotoSlab'),
+      TextStyle(color: SheetPalette.dark.text, fontFamily: 'RobotoSlab'),
+      boldColor: SheetPalette.dark.bold,
     );
 
     final spans = span.children!.cast<TextSpan>();
@@ -16,6 +18,31 @@ void main() {
     expect(spans.last.style!.color, const Color(0xffe5d9c6));
     // Il testo normale non viene ricolorato: eredita lo stile della casella.
     expect(spans.first.style, isNull);
+  });
+
+  test('grassetto, corsivo e la combinazione prendono ciascuno il '
+      'proprio colore', () {
+    const palette = SheetPalette.lightColored;
+    Color? colorOf(String source, String text) => _spans(
+      buildInlineMarkdownSpan(
+        source,
+        _baseStyle,
+        boldColor: palette.bold,
+        italicColor: palette.italic,
+        boldItalicColor: palette.boldItalic,
+      ),
+    ).singleWhere((child) => child.text == text).style?.color;
+
+    expect(colorOf('**g**', 'g'), palette.bold);
+    expect(colorOf('*c*', 'c'), palette.italic);
+    expect(colorOf('***e***', 'e'), palette.boldItalic);
+    expect(colorOf('testo *c*', 'testo '), isNull);
+  });
+
+  test('senza colori dedicati il formattato eredita quello della casella', () {
+    expect(_styleOf('**g**', 'g').color, isNull);
+    expect(_styleOf('*c*', 'c').color, isNull);
+    expect(_styleOf('***e***', 'e').color, isNull);
   });
 
   test('il testo senza delimitatori resta un unico frammento', () {

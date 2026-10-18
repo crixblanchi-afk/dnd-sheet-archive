@@ -9,17 +9,18 @@ class ThemeModeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final preferences = ThemePreferenceScope.maybeOf(context);
     if (preferences == null) return const SizedBox.shrink();
-    return PopupMenuButton<ThemeMode>(
+    return PopupMenuButton<AppTheme>(
       tooltip: 'Aspetto',
-      initialValue: preferences.mode,
-      icon: Icon(switch (preferences.mode) {
-        ThemeMode.light => Icons.light_mode_outlined,
-        ThemeMode.dark => Icons.dark_mode_outlined,
-        ThemeMode.system => Icons.brightness_auto_outlined,
+      initialValue: preferences.theme,
+      icon: Icon(switch (preferences.theme) {
+        AppTheme.light => Icons.light_mode_outlined,
+        AppTheme.dark => Icons.dark_mode_outlined,
+        AppTheme.lightColored || AppTheme.darkColored => Icons.palette_outlined,
+        AppTheme.system => Icons.brightness_auto_outlined,
       }),
-      onSelected: (mode) async {
+      onSelected: (theme) async {
         try {
-          await preferences.setMode(mode);
+          await preferences.setTheme(theme);
         } catch (_) {
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -30,15 +31,11 @@ class ThemeModeButton extends StatelessWidget {
         }
       },
       itemBuilder: (_) => [
-        for (final entry in const {
-          ThemeMode.light: 'Chiaro',
-          ThemeMode.dark: 'Scuro',
-          ThemeMode.system: 'Sistema',
-        }.entries)
+        for (final theme in AppTheme.values)
           CheckedPopupMenuItem(
-            value: entry.key,
-            checked: preferences.mode == entry.key,
-            child: Text(entry.value),
+            value: theme,
+            checked: preferences.theme == theme,
+            child: Text(theme.label),
           ),
       ],
     );

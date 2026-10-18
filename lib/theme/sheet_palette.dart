@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import '../models/sheet_layout.dart';
 
 /// Colori del documento, separati dai controlli Material e dalle fotografie.
-class SheetPalette {
+///
+/// Viaggia nel tema come estensione, perché chiaro e chiaro colorato hanno la
+/// stessa luminosità e la sola `brightness` non basta a distinguerli.
+class SheetPalette extends ThemeExtension<SheetPalette> {
   const SheetPalette({
     required this.workspace,
     required this.paper,
@@ -14,6 +17,9 @@ class SheetPalette {
     required this.accent,
     required this.comment,
     required this.expertise,
+    this.bold,
+    this.italic,
+    this.boldItalic,
   });
 
   final Color workspace;
@@ -23,6 +29,11 @@ class SheetPalette {
   final Color accent;
   final Color comment;
   final Color expertise;
+
+  /// Colori del testo formattato nei campi; `null` lascia quello normale.
+  final Color? bold;
+  final Color? italic;
+  final Color? boldItalic;
 
   static const light = SheetPalette(
     workspace: Color(0xffdedbd2),
@@ -46,10 +57,77 @@ class SheetPalette {
     accent: Color(0xffe5bd78),
     comment: Color(0xffffa08e),
     expertise: Color(0xffffa08e),
+    // Sulla carta scura il grassetto si distingue anche per luce: il solo peso
+    // si confonde con il testo normale, già chiaro.
+    bold: Color(0xffe5d9c6),
   );
 
-  static SheetPalette of(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? dark : light;
+  /// Grassetto bordeaux, corsivo blu, e prugna — a metà fra i due — quando
+  /// sono insieme. Toni scuri, che sulla carta bianca restano leggibili.
+  static const lightColored = SheetPalette(
+    workspace: Color(0xffdedbd2),
+    paper: Colors.white,
+    ink: Colors.black,
+    text: Colors.black,
+    accent: Color(0xff7b1f1f),
+    comment: Color(0xffd32f2f),
+    expertise: Color(0xffc62828),
+    bold: Color(0xff7a1f2b),
+    italic: Color(0xff1f4f8a),
+    boldItalic: Color(0xff5c2d6e),
+  );
+
+  /// Gli stessi accenti del chiaro colorato, schiariti per la carta scura:
+  /// rosa antico, celeste e lilla.
+  static const darkColored = SheetPalette(
+    workspace: Colors.black,
+    paper: Color(0xff24211e),
+    ink: Color(0xffc2b8a9),
+    text: Color(0xffd4c9b8),
+    accent: Color(0xffe5bd78),
+    comment: Color(0xffffa08e),
+    expertise: Color(0xffffa08e),
+    bold: Color(0xffe0a3a3),
+    italic: Color(0xff9ccbe8),
+    boldItalic: Color(0xffcdb0e0),
+  );
+
+  static SheetPalette of(BuildContext context) {
+    final theme = Theme.of(context);
+    return theme.extension<SheetPalette>() ??
+        (theme.brightness == Brightness.dark ? dark : light);
+  }
+
+  @override
+  SheetPalette copyWith({
+    Color? workspace,
+    Color? paper,
+    Color? ink,
+    Color? text,
+    Color? accent,
+    Color? comment,
+    Color? expertise,
+    Color? bold,
+    Color? italic,
+    Color? boldItalic,
+  }) => SheetPalette(
+    workspace: workspace ?? this.workspace,
+    paper: paper ?? this.paper,
+    ink: ink ?? this.ink,
+    text: text ?? this.text,
+    accent: accent ?? this.accent,
+    comment: comment ?? this.comment,
+    expertise: expertise ?? this.expertise,
+    bold: bold ?? this.bold,
+    italic: italic ?? this.italic,
+    boldItalic: boldItalic ?? this.boldItalic,
+  );
+
+  /// Nessuna dissolvenza: a metà transizione la carta non combacerebbe con
+  /// l'artwork, che cambia di colpo.
+  @override
+  SheetPalette lerp(SheetPalette? other, double t) =>
+      other == null || t < .5 ? this : other;
 }
 
 class SheetArtwork extends StatelessWidget {

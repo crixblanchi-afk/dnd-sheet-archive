@@ -10,21 +10,41 @@ void main() {
     addTearDown(database.close);
     final preferences = await ThemePreferences.open(database);
     addTearDown(preferences.dispose);
-    expect(preferences.mode, ThemeMode.system);
+    expect(preferences.theme, AppTheme.system);
     await Future.wait([
-      preferences.setMode(ThemeMode.light),
-      preferences.setMode(ThemeMode.dark),
+      preferences.setTheme(AppTheme.light),
+      preferences.setTheme(AppTheme.darkColored),
     ]);
     final restored = await ThemePreferences.open(database);
     addTearDown(restored.dispose);
+    expect(restored.theme, AppTheme.darkColored);
     expect(restored.mode, ThemeMode.dark);
-    await preferences.setMode(ThemeMode.system);
+    await preferences.setTheme(AppTheme.system);
     final automatic = await ThemePreferences.open(database);
     addTearDown(automatic.dispose);
-    expect(automatic.mode, ThemeMode.system);
+    expect(automatic.theme, AppTheme.system);
   });
 
-  testWidgets('appearance menu selects and checks each theme', (tester) async {
+  test('i temi salvati prima dei colorati vengono riletti', () async {
+    final database = await databaseFactoryMemory.openDatabase('legacy.db');
+    addTearDown(database.close);
+    final store = StoreRef<String, String>('app_preferences');
+    for (final entry in {
+      'light': AppTheme.light,
+      'dark': AppTheme.dark,
+      'system': AppTheme.system,
+      'sconosciuto': AppTheme.system,
+    }.entries) {
+      await store.record('theme_mode').put(database, entry.key);
+      final preferences = await ThemePreferences.open(database);
+      addTearDown(preferences.dispose);
+      expect(preferences.theme, entry.value, reason: entry.key);
+    }
+  });
+
+  testWidgets('appearance menu lists, selects and checks each theme', (
+    tester,
+  ) async {
     final preferences = ThemePreferences.inMemory();
     addTearDown(preferences.dispose);
     await tester.pumpWidget(
@@ -35,24 +55,33 @@ void main() {
         ),
       ),
     );
-    for (final entry in {
-      'Scuro': ThemeMode.dark,
-      'Chiaro': ThemeMode.light,
-      'Sistema': ThemeMode.system,
-    }.entries) {
+    await tester.tap(find.byTooltip('Aspetto'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widgetList<CheckedPopupMenuItem<AppTheme>>(
+            find.byType(CheckedPopupMenuItem<AppTheme>),
+          )
+          .map((item) => item.value),
+      AppTheme.values,
+    );
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    for (final theme in AppTheme.values.reversed) {
       await tester.tap(find.byTooltip('Aspetto'));
       await tester.pumpAndSettle();
       await tester.tap(
-        find.widgetWithText(CheckedPopupMenuItem<ThemeMode>, entry.key),
+        find.widgetWithText(CheckedPopupMenuItem<AppTheme>, theme.label),
       );
       await tester.pumpAndSettle();
-      expect(preferences.mode, entry.value);
+      expect(preferences.theme, theme);
       await tester.tap(find.byTooltip('Aspetto'));
       await tester.pumpAndSettle();
       expect(
         tester
-            .widget<CheckedPopupMenuItem<ThemeMode>>(
-              find.widgetWithText(CheckedPopupMenuItem<ThemeMode>, entry.key),
+            .widget<CheckedPopupMenuItem<AppTheme>>(
+              find.widgetWithText(CheckedPopupMenuItem<AppTheme>, theme.label),
             )
             .checked,
         isTrue,
