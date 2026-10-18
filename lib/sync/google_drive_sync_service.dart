@@ -69,6 +69,12 @@ class GoogleDriveSyncService extends ChangeNotifier
     // Modifiche rimaste in sospeso dalla sessione precedente, e quelle fatte
     // altrove mentre l'app era chiusa.
     _initialization.whenComplete(() => unawaited(syncInBackground()));
+    // L'app può essere finita in background mentre l'avvio apriva l'archivio:
+    // quella transizione è già passata e l'observer non la riceverà.
+    _inBackground = switch (WidgetsBinding.instance.lifecycleState) {
+      AppLifecycleState.hidden || AppLifecycleState.paused => true,
+      _ => false,
+    };
     WidgetsBinding.instance.addObserver(this);
   }
 
