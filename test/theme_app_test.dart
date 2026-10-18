@@ -5,6 +5,7 @@ import 'package:dnd_sheet_archive/models/sheet_field.dart';
 import 'package:dnd_sheet_archive/screens/sheet_screen.dart';
 import 'package:dnd_sheet_archive/sync/archive_sync_tracker.dart';
 import 'package:dnd_sheet_archive/sync/google_drive_sync_service.dart';
+import 'package:dnd_sheet_archive/theme/sheet_palette.dart';
 import 'package:dnd_sheet_archive/theme/theme_preferences.dart';
 import 'package:dnd_sheet_archive/widgets/sheet_page.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,7 @@ void main() {
         LocalArchiveSyncStore(database),
         syncTracker: tracker,
       );
-      final preferences = ThemePreferences.inMemory(mode: ThemeMode.light);
+      final preferences = ThemePreferences.inMemory(theme: AppTheme.light);
       addTearDown(preferences.dispose);
       addTearDown(tracker.dispose);
       addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
@@ -59,12 +60,21 @@ void main() {
         await tester.tap(find.byTooltip('Aspetto'));
         await tester.pumpAndSettle();
         await tester.tap(
-          find.widgetWithText(CheckedPopupMenuItem<ThemeMode>, label),
+          find.widgetWithText(CheckedPopupMenuItem<AppTheme>, label),
         );
         await tester.pumpAndSettle();
       }
 
+      SheetPalette palette() =>
+          SheetPalette.of(tester.element(find.byType(SheetPage)));
+
+      expect(palette(), SheetPalette.light);
+      await choose('Chiaro colorato');
+      expect(palette(), SheetPalette.lightColored);
+      await choose('Scuro colorato');
+      expect(palette(), SheetPalette.darkColored);
       await choose('Scuro');
+      expect(palette(), SheetPalette.dark);
       expect(
         Theme.of(tester.element(find.byType(SheetScreen))).brightness,
         Brightness.dark,

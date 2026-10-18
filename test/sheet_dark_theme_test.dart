@@ -188,6 +188,28 @@ void main() {
       greaterThan(4.5),
     );
   });
+
+  test('i temi colorati tengono la carta del tema base e il testo '
+      'formattato resta leggibile', () {
+    double contrast(Color a, Color b) {
+      final [light, dark] = [a.computeLuminance(), b.computeLuminance()]
+        ..sort((x, y) => y.compareTo(x));
+      return (light + .05) / (dark + .05);
+    }
+
+    for (final (colored, base) in [
+      (SheetPalette.lightColored, SheetPalette.light),
+      (SheetPalette.darkColored, SheetPalette.dark),
+    ]) {
+      expect(colored.paper, base.paper);
+      expect(colored.ink, base.ink);
+      expect(colored.text, base.text);
+      for (final color in [colored.bold, colored.italic, colored.boldItalic]) {
+        expect(color, isNotNull);
+        expect(contrast(color!, colored.paper), greaterThan(7));
+      }
+    }
+  });
 }
 
 /// Porta a termine le decodifiche delle immagini presenti nell'albero.

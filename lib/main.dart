@@ -12,6 +12,7 @@ import 'data/sembast_character_repository.dart';
 import 'screens/character_list_screen.dart';
 import 'sync/archive_sync_tracker.dart';
 import 'sync/google_drive_sync_service.dart';
+import 'theme/sheet_palette.dart';
 import 'theme/theme_preferences.dart';
 
 void main() {
@@ -176,8 +177,14 @@ class DndSheetArchiveApp extends StatelessWidget {
     builder: (context, _) => MaterialApp(
       title: 'Schede D&D 5e',
       debugShowCheckedModeBanner: false,
-      theme: _appTheme(Brightness.light),
-      darkTheme: _appTheme(Brightness.dark),
+      theme: _appTheme(
+        Brightness.light,
+        colored: themePreferences.theme.colored,
+      ),
+      darkTheme: _appTheme(
+        Brightness.dark,
+        colored: themePreferences.theme.colored,
+      ),
       themeMode: themePreferences.mode,
       builder: (context, child) =>
           ThemePreferenceScope(preferences: themePreferences, child: child!),
@@ -186,8 +193,16 @@ class DndSheetArchiveApp extends StatelessWidget {
   );
 }
 
-ThemeData _appTheme(Brightness brightness) => ThemeData(
+ThemeData _appTheme(Brightness brightness, {bool colored = false}) => ThemeData(
   brightness: brightness,
+  extensions: [
+    switch ((brightness, colored)) {
+      (Brightness.light, false) => SheetPalette.light,
+      (Brightness.dark, false) => SheetPalette.dark,
+      (Brightness.light, true) => SheetPalette.lightColored,
+      (Brightness.dark, true) => SheetPalette.darkColored,
+    },
+  ],
   colorScheme: ColorScheme.fromSeed(
     seedColor: brightness == Brightness.dark
         ? const Color(0xffe5bd78)

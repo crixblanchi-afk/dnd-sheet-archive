@@ -4,10 +4,19 @@ import 'package:flutter/material.dart';
 ///
 /// Supported delimiters are `**bold**`, `*italic*`, and `***bold italic***`
 /// (with the equivalent underscore forms). Unclosed delimiters remain visible.
-TextSpan buildInlineMarkdownSpan(String source, TextStyle baseStyle) {
+///
+/// I colori arrivano dalla palette della scheda; quello del grassetto corsivo,
+/// se manca, ripiega sul grassetto e poi sul corsivo.
+TextSpan buildInlineMarkdownSpan(
+  String source,
+  TextStyle baseStyle, {
+  Color? boldColor,
+  Color? italicColor,
+  Color? boldItalicColor,
+}) {
   final children = <InlineSpan>[];
   var cursor = 0;
-  // Sulla carta scura il grassetto si distingue per peso e per luce: il solo
+  // Sulla carta scura il grassetto si distingue anche per peso: il solo
   // `bold` si confonde con il testo normale già chiaro.
   final dark =
       baseStyle.color != null &&
@@ -31,7 +40,11 @@ TextSpan buildInlineMarkdownSpan(String source, TextStyle baseStyle) {
           fontWeight: match.bold
               ? (dark ? FontWeight.w800 : FontWeight.bold)
               : null,
-          color: match.bold && dark ? const Color(0xffe5d9c6) : null,
+          color: match.bold && match.italic
+              ? boldItalicColor ?? boldColor ?? italicColor
+              : match.bold
+              ? boldColor
+              : italicColor,
           fontStyle: match.italic ? FontStyle.italic : null,
         ),
       ),
