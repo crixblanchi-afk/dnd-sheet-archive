@@ -126,9 +126,13 @@ Configurazione Google Cloud:
 2. Abilita la **Google Drive API** e configura la schermata consenso OAuth.
 3. Per il Web crea un client OAuth “Applicazione web” e registra le origini
    JavaScript usate, ad esempio `http://localhost:7357`.
-4. Per Android registra anche un client OAuth Android per il package
-   `com.example.dnd_sheet_archive` e gli SHA-1 delle chiavi debug/release. Crea
-   inoltre un client OAuth Web da usare come server client ID.
+4. Per Android registra un client OAuth Android per il package
+   `com.crixisvision.sheetarchive` per ciascuna chiave che firma l'app: debug,
+   caricamento (la keystore dei GitHub Secrets) e firma dell'app di Google
+   Play. Lo SHA-1 di quest'ultima si legge in Play Console, *Test e rilascio →
+   Integrità dell'app → Firma dell'app*: senza, l'accesso Google non funziona
+   nelle installazioni dal Play Store. Crea inoltre un client OAuth Web da
+   usare come server client ID.
 5. Per Linux crea un client OAuth di tipo “App desktop”. Il flusso apre il
    browser predefinito e riceve l'autorizzazione su una porta locale temporanea.
 
@@ -219,11 +223,25 @@ avvia di persona, le porta invece con sé.
 ## Release automatiche
 
 Quando viene pubblicata una GitHub Release con destinazione `main`, GitHub
-Actions esegue analisi e test, crea un APK Android firmato e una AppImage Linux
-x86_64, una AppImage Linux ARM64, un archivio Windows x64 e un bundle Web,
+Actions esegue analisi e test, crea un APK Android firmato, il corrispondente
+App Bundle (`.aab`) da caricare su Google Play, una AppImage Linux x86_64, una AppImage Linux ARM64, un archivio Windows x64 e un bundle Web,
 quindi allega i file alla release. Credenziali OAuth e chiave di firma Android
 vengono lette esclusivamente dai GitHub Actions Secrets. La AppImage ARM64
 viene compilata direttamente su un runner GitHub ARM64 nativo.
+
+## Google Play
+
+Su Android l'app si chiama **Sheet Archive 5e**, con ID
+`com.crixisvision.sheetarchive`. L'ID è cambiato rispetto agli APK fino alla
+1.4.0 (`com.example.dnd_sheet_archive`): Android la tratta come un'app nuova,
+quindi chi aggiorna da quegli APK deve sincronizzare su Drive prima e
+ripristinare dopo, o le schede locali restano nell'app vecchia.
+
+Le icone (launcher adattivo, monocromatica per le icone a tema, icona dello
+Store e feature graphic in `packaging/play-store/`) si rigenerano dagli SVG con
+`tools/icon/generate.sh`. L'informativa sulla privacy è pubblicata con GitHub
+Pages dal branch `gh-pages`:
+<https://crixblanchi-afk.github.io/dnd-sheet-archive/privacy.html>.
 
 ## Sviluppo
 

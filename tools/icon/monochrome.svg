@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+  <!-- Sagoma per le icone a tema: solo l'alfa conta, il colore lo sceglie Android. -->
+  <defs>
+    <mask id="behind-die">
+      <rect width="108" height="108" fill="white"/>
+      <polygon transform="translate(66 66) scale(18)" points="0,-1 0.866,-0.5 0.866,0.5 0,1 -0.866,0.5 -0.866,-0.5" fill="black"/>
+    </mask>
+  </defs>
+  <g mask="url(#behind-die)" transform="rotate(-8 50 52)" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round">
+    <rect x="33" y="27" width="34" height="46" rx="3"/>
+    <rect x="37.5" y="32.5" width="11" height="11" rx="1.5"/>
+    <path d="M53 34.1h9 M53 39.1h7 M38 50.1h24 M38 55.1h18 M38 60.1h21 M38 65.1h12"/>
+  </g>
+  <g transform="translate(66 66) scale(15.5)" fill="none" stroke="white" stroke-width="0.15" stroke-linejoin="round">
+    <polygon points="0,-1 0.866,-0.5 0.866,0.5 0,1 -0.866,0.5 -0.866,-0.5"/>
+    <polygon points="0,-0.55 0.6,0.35 -0.6,0.35"/>
+    <path d="M0,-1 L0,-0.55 M0.866,-0.5 L0,-0.55 M-0.866,-0.5 L0,-0.55 M0.866,-0.5 L0.6,0.35 M0.866,0.5 L0.6,0.35 M0,1 L0.6,0.35 M-0.866,-0.5 L-0.6,0.35 M-0.866,0.5 L-0.6,0.35 M0,1 L-0.6,0.35"/>
+  </g>
+</svg>

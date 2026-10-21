@@ -1,5 +1,13 @@
 # Changelog
 
+## Non rilasciato
+
+- Preparazione per Google Play: su Android l'app si chiama Sheet Archive 5e e
+  ha l'ID definitivo `com.crixisvision.sheetarchive`. È un'app distinta dagli
+  APK precedenti: sincronizza su Drive prima di passare alla nuova.
+- Nuova icona, con versione adattiva e monocromatica per le icone a tema.
+- Le release producono anche l'App Bundle (`.aab`) per il Play Store.
+
 ## 1.4.0 — 2026-10-14
 
 - Modifica contemporanea più resiliente: le copie di una scheda si uniscono
