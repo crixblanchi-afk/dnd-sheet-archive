@@ -260,4 +260,4 @@ Le dipendenze e i materiali di terzi mantengono le rispettive licenze e i
 relativi diritti. Il font Roboto Slab è distribuito sotto
 [licenza Apache 2.0](assets/fonts/licenses/RobotoSlab-LICENSE.txt).
 La licenza MIT del progetto non si estende a PDF, immagini, marchi o contenuti
-D&D di terzi.
+D&D di terzi; il dettaglio è in [NOTICE.md](NOTICE.md).
