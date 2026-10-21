@@ -5,6 +5,7 @@ import '../data/character_repository.dart';
 import '../export/character_pdf_exporter.dart';
 import '../models/character.dart';
 import '../sync/google_drive_sync_service.dart';
+import '../widgets/about_button.dart';
 import '../widgets/character_export_dialog.dart';
 import '../widgets/version_history_sheet.dart';
 import '../widgets/theme_mode_button.dart';
@@ -365,7 +366,12 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('Schede D&D 5e'),
-      actions: [_exportAction(), const ThemeModeButton(), _driveAction()],
+      actions: [
+        _exportAction(),
+        const ThemeModeButton(),
+        _driveAction(),
+        const AboutButton(),
+      ],
     ),
     body: StreamBuilder<List<CharacterSummary>>(
       stream: _characters,

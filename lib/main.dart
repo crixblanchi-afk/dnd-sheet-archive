@@ -13,10 +13,12 @@ import 'screens/character_list_screen.dart';
 import 'sync/archive_sync_tracker.dart';
 import 'sync/google_drive_sync_service.dart';
 import 'theme/theme_preferences.dart';
+import 'widgets/about_button.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) unawaited(BrowserContextMenu.disableContextMenu());
+  registerThirdPartyLicenses();
   runApp(const _BootstrapApp());
 }
 

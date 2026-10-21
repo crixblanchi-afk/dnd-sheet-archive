@@ -7,6 +7,8 @@
   APK precedenti: sincronizza su Drive prima di passare alla nuova.
 - Nuova icona, con versione adattiva e monocromatica per le icone a tema.
 - Le release producono anche l'App Bundle (`.aab`) per il Play Store.
+- Nuova finestra **Informazioni** nell'elenco: attribuisce la scheda ufficiale a
+  Wizards of the Coast e raccoglie le licenze, compresa quella di Roboto Slab.
 
 ## 1.4.0 — 2026-10-14
 
