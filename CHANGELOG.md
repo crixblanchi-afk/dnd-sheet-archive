@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.1 — 2026-11-22
+
+- Navigazione a pulsanti nella vista «A pagine»: aggiunti in basso a destra i
+  comandi «Pagina precedente» e «Pagina successiva» con indicatore di pagina
+  (`1 / 3`) e cambio istantaneo senza animazione di scorrimento, pensati per
+  schermi E-Ink e uso con puntatore/mouse.
+
 ## 1.5.0 — 2026-10-18
 
 - Il menù «Aspetto» è un elenco di temi: Chiaro, Scuro, Chiaro colorato,

@@ -179,8 +179,9 @@ void main() {
           tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar,
           isNull,
         );
-        expect(find.byTooltip('Pagina successiva'), findsNothing);
-        expect(find.byTooltip('Pagina precedente'), findsNothing);
+        expect(find.byTooltip('Pagina successiva'), findsOneWidget);
+        expect(find.byTooltip('Pagina precedente'), findsOneWidget);
+        expect(find.text('1 / $sheetPageCount'), findsOneWidget);
         expect(find.byType(InteractiveViewer), findsNothing);
         expect(find.byTooltip('Aumenta zoom'), findsNothing);
         expect(find.byTooltip('Riduci zoom'), findsNothing);
@@ -236,6 +237,8 @@ void main() {
 
         await chooseViewMode(tester, 'A scorrimento');
         expect(find.byType(ScrollableSheetView), findsOneWidget);
+        expect(find.byTooltip('Pagina successiva'), findsNothing);
+        expect(find.byTooltip('Pagina precedente'), findsNothing);
         expect(find.byType(SheetPage), findsNWidgets(sheetPageCount));
         expect(find.byType(InteractiveViewer), findsOneWidget);
         expect(find.byTooltip('Aumenta zoom'), findsOneWidget);
@@ -250,8 +253,19 @@ void main() {
         }
         await chooseViewMode(tester, 'A pagine');
         expect(currentPage().pageIndex, 1);
+        expect(find.text('2 / $sheetPageCount'), findsOneWidget);
         expect(find.byType(InteractiveViewer), findsNothing);
         expectPageFits();
+
+        await tester.tap(find.byTooltip('Pagina successiva'));
+        await tester.pumpAndSettle();
+        expect(currentPage().pageIndex, 2);
+        expect(find.text('3 / $sheetPageCount'), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Pagina precedente'));
+        await tester.pumpAndSettle();
+        expect(currentPage().pageIndex, 1);
+        expect(find.text('2 / $sheetPageCount'), findsOneWidget);
 
         final pageRect = tester.getRect(find.byType(SheetPage));
         await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);

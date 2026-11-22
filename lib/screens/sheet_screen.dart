@@ -166,6 +166,55 @@ class _SheetScreenState extends State<SheetScreen> {
     setState(() => _pageIndex = pageIndex);
   }
 
+  void _goToPage(int pageIndex) {
+    if (pageIndex < 0 ||
+        pageIndex >= sheetPageCount ||
+        pageIndex == _pageIndex) {
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    if (_pageController.hasClients) {
+      // Cambio secco in un solo fotogramma: evita frame intermedi su schermi E-Ink.
+      _pageController.jumpToPage(pageIndex);
+    } else {
+      setState(() => _pageIndex = pageIndex);
+    }
+  }
+
+  Widget _pageNavigationButtons() {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      elevation: 2,
+      shape: StadiumBorder(
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Pagina precedente',
+            onPressed: _pageIndex > 0 ? () => _goToPage(_pageIndex - 1) : null,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Text(
+            '${_pageIndex + 1} / $sheetPageCount',
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Pagina successiva',
+            onPressed: _pageIndex < sheetPageCount - 1
+                ? () => _goToPage(_pageIndex + 1)
+                : null,
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _setViewMode(_SheetViewMode mode) {
     if (_viewMode == mode) return;
     FocusScope.of(context).unfocus();
@@ -325,6 +374,12 @@ class _SheetScreenState extends State<SheetScreen> {
                     child: const DiceRollerOverlay(),
                   ),
                 ),
+                if (_viewMode == _SheetViewMode.pages && !compactLayout)
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: _pageNavigationButtons(),
+                  ),
               ],
             );
           },
