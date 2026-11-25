@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0-rc.2 — 2026-11-25
+
+- Grafica della vista **Verticale** allineata allo stile della scheda D&D 5e:
+  carta piena con vassoi ombreggiati, riquadri a doppio filo d'inchiostro con
+  angoli intagliati e didascalie in basso, nastro per il nome, scudo araldico
+  CA, cartigli caratteristica con ovale sporgente per il modificatore, stemmi
+  per Ispirazione/Competenza/Percezione passiva, traccia collegata per i tiri
+  salvezza contro morte, placche monete e intestazioni incantesimi a losanga.
+
 ## 1.6.0-rc.1 — 2026-11-25
 
 - Preferenza di visualizzazione persistente: la scelta della modalità della scheda

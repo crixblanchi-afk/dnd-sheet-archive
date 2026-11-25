@@ -279,7 +279,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Salta agli incantesimi tramite la barra superiore.
-    await tester.tap(find.text('Incantesimi').first);
+    final spellsTab = find.text('Incantesimi').first;
+    await tester.ensureVisible(spellsTab);
+    await tester.tap(spellsTab);
     await tester.pumpAndSettle();
 
     // Il livello 3 è già aperto perché contiene dati; mostra la riga piena e
