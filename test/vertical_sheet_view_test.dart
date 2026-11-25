@@ -187,9 +187,20 @@ void main() {
       await tester.pumpAndSettle();
       expect(controller.commentFor('AC'), 'Con scudo');
 
+      final verticalScrollable = find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      );
+
       // Tiro salvezza: 2 stati (unchecked -> proficient -> unchecked).
       final strSaveBox = find.byKey(const ValueKey('Check Box 11'));
+      await tester.scrollUntilVisible(
+        strSaveBox,
+        300,
+        scrollable: verticalScrollable,
+      );
       await tester.ensureVisible(strSaveBox);
+      await tester.pumpAndSettle();
       await tester.tap(strSaveBox);
       await tester.pump();
       expect(
@@ -205,7 +216,13 @@ void main() {
 
       // Abilità: 3 stati (unchecked -> proficient -> expertise -> unchecked).
       final acrobaticsBox = find.byKey(const ValueKey('Check Box 23'));
+      await tester.scrollUntilVisible(
+        acrobaticsBox,
+        300,
+        scrollable: verticalScrollable,
+      );
       await tester.ensureVisible(acrobaticsBox);
+      await tester.pumpAndSettle();
       await tester.tap(acrobaticsBox);
       await tester.pump();
       expect(
@@ -234,7 +251,13 @@ void main() {
         SheetCheckboxValue.fromStored(controller.valueFor('Check Box 23')),
         SheetCheckboxValue.unchecked,
       );
+      await tester.scrollUntilVisible(
+        acField,
+        -300,
+        scrollable: verticalScrollable,
+      );
       await tester.ensureVisible(acField);
+      await tester.pumpAndSettle();
       await tester.longPress(acField);
       await tester.pumpAndSettle();
       expect(find.text('Con scudo'), findsOneWidget);
@@ -284,15 +307,32 @@ void main() {
     await tester.tap(spellsTab);
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const ValueKey('Spellcasting Class 2')), findsOneWidget);
+
+    final verticalScrollable = find.descendant(
+      of: find.byType(CustomScrollView),
+      matching: find.byType(Scrollable),
+    );
+
     // Il livello 3 è già aperto perché contiene dati; mostra la riga piena e
     // la prima riga vuota, più il pulsante per mostrare tutte le 13 righe.
     final fireball = find.byKey(const ValueKey('Spells 1048'));
+    await tester.scrollUntilVisible(
+      fireball,
+      300,
+      scrollable: verticalScrollable,
+    );
     await tester.ensureVisible(fireball);
     expect(fireball, findsOneWidget);
     expect(find.byKey(const ValueKey('Spells 1047')), findsOneWidget);
     expect(find.byKey(const ValueKey('Spells 1059')), findsNothing);
 
     final showAll = find.text('Mostra tutti gli spazi (13)');
+    await tester.scrollUntilVisible(
+      showAll,
+      300,
+      scrollable: verticalScrollable,
+    );
     await tester.ensureVisible(showAll);
     await tester.tap(showAll);
     await tester.pumpAndSettle();
@@ -427,8 +467,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // Verifica il caricamento pigro: la sezione Incantesimi in fondo alla
+      // scheda non viene montata finché non ci si scorre vicino.
+      expect(find.byKey(const ValueKey('Spells 1048')), findsNothing);
+
       var fieldOrOrnamentRebuilds = 0;
       debugOnRebuildDirtyWidget = (element, builtOnce) {
+        if (!builtOnce) return;
         final widget = element.widget;
         if (widget is CustomPaint || widget is RichText) {
           fieldOrOrnamentRebuilds++;
@@ -437,7 +482,7 @@ void main() {
       try {
         for (var i = 0; i < 6; i++) {
           await tester.drag(
-            find.byType(SingleChildScrollView).last,
+            find.byType(CustomScrollView),
             const Offset(0, -450),
           );
           await tester.pump();

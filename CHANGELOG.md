@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0-rc.4 — 2026-11-25
+
+- Scorrimento a 120 Hz nella vista **Verticale** su Impeller (Vulkan):
+  sostituito `SingleChildScrollView + Column` con `CustomScrollView` e
+  `SliverList.builder` lazy a 29 blocchi (mantenendo in scena solo i blocchi
+  visibili invece dell'intera scheda), convertiti i tratti interni delle
+  cornici in `drawRect`/`drawRRect` con `StrokeJoin.bevel`, tracciamento della
+  sezione attiva in O(1) via `layoutOffset`, uniti i `GestureDetector` annidati
+  dei campi e aggiunto fast-path plain text senza parsing markdown.
+
 ## 1.6.0-rc.3 — 2026-11-25
 
 - Prestazioni dello scorrimento nella vista **Verticale**: aggiunti

@@ -38,18 +38,19 @@ class _SheetTrayPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final path = _chamferedRect(Offset.zero & size, 10);
+    final rect = Offset.zero & size;
+    final path = _chamferedRect(rect, 10);
     canvas.drawPath(path, Paint()..color = fill);
     canvas.drawPath(
       path,
       Paint()
         ..color = stroke
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
+        ..strokeWidth = 1
+        ..strokeJoin = StrokeJoin.bevel,
     );
-    final inner = _chamferedRect((Offset.zero & size).deflate(3), 8);
-    canvas.drawPath(
-      inner,
+    canvas.drawRect(
+      rect.deflate(3.5),
       Paint()
         ..color = stroke.withValues(alpha: stroke.a * .65)
         ..style = PaintingStyle.stroke
@@ -139,11 +140,10 @@ class _NotchedBoxPainter extends CustomPainter {
         ..color = ink
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.6
-        ..strokeJoin = StrokeJoin.miter,
+        ..strokeJoin = StrokeJoin.bevel,
     );
-    final inner = _chamferedRect(outerRect.deflate(2.8), 4.5);
-    canvas.drawPath(
-      inner,
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(outerRect.deflate(3), const Radius.circular(2)),
       Paint()
         ..color = ink.withValues(alpha: .42)
         ..style = PaintingStyle.stroke
@@ -453,11 +453,11 @@ class _AbilityFramePainter extends CustomPainter {
       Paint()
         ..color = ink
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.65,
+        ..strokeWidth = 1.65
+        ..strokeJoin = StrokeJoin.bevel,
     );
-    final inner = _chamferedRect(rect.deflate(2.8), 5);
-    canvas.drawPath(
-      inner,
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect.deflate(3), const Radius.circular(2)),
       Paint()
         ..color = ink.withValues(alpha: .42)
         ..style = PaintingStyle.stroke
@@ -694,10 +694,11 @@ class _CoinPlaquePainter extends CustomPainter {
       Paint()
         ..color = ink
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4,
+        ..strokeWidth = 1.4
+        ..strokeJoin = StrokeJoin.bevel,
     );
-    canvas.drawPath(
-      _chamferedRect(rect.deflate(2.5), 5),
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect.deflate(2.8), const Radius.circular(2)),
       Paint()
         ..color = ink.withValues(alpha: .36)
         ..style = PaintingStyle.stroke
@@ -771,7 +772,7 @@ class _SpellHeaderPainter extends CustomPainter {
       ..color = ink
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6
-      ..strokeJoin = StrokeJoin.miter;
+      ..strokeJoin = StrokeJoin.bevel;
     final innerStroke = Paint()
       ..color = ink.withValues(alpha: .42)
       ..style = PaintingStyle.stroke
@@ -783,7 +784,7 @@ class _SpellHeaderPainter extends CustomPainter {
     canvas
       ..drawPath(bar, Paint()..color = paper)
       ..drawPath(bar, stroke)
-      ..drawPath(_chamferedRect(barRect.deflate(2.5), 4.5), innerStroke);
+      ..drawRect(barRect.deflate(3), innerStroke);
 
     // Scudetto a punta per il numero del livello a sinistra.
     final badge = Path()
