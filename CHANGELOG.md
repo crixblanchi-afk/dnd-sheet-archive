@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0-rc.1 — 2026-11-25
+
+- Preferenza di visualizzazione persistente: la scelta della modalità della scheda
+  (**A pagine**, **A scorrimento**, **Verticale**) viene salvata localmente sul
+  dispositivo e ripristinata ai riavvi successivi.
+- Nuova vista **Verticale** per smartphone: riorganizza l'intera scheda in una
+  colonna verticale a sezioni con barra di salto rapido (`Identità`,
+  `Combattimento`, `Caratteristiche`, `Abilità`, `Tratti & Zaino`, `Storia`,
+  `Incantesimi`), schede espandibili per i livelli di incantesimo e pieno
+  supporto a temi, markdown inline, maestria, immagini, note e blocco scheda.
+
 ## 1.5.1 — 2026-11-22
 
 - Navigazione a pulsanti nella vista «A pagine»: aggiunti in basso a destra i

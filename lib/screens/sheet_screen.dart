@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../controllers/sheet_controller.dart';
 import '../data/character_repository.dart';
+import '../data/sheet_view_preferences.dart';
 import '../models/character.dart';
 import '../models/sheet_field.dart';
 import '../models/sheet_layout.dart';
@@ -14,9 +15,8 @@ import '../widgets/dice_roller_overlay.dart';
 import '../widgets/sheet_page.dart';
 import '../widgets/scrollable_sheet_view.dart';
 import '../widgets/theme_mode_button.dart';
+import '../widgets/vertical_sheet_view.dart';
 import '../theme/sheet_palette.dart';
-
-enum _SheetViewMode { pages, scroll }
 
 class SheetScreen extends StatefulWidget {
   const SheetScreen({
@@ -36,12 +36,15 @@ class SheetScreen extends StatefulWidget {
 
 class _SheetScreenState extends State<SheetScreen> {
   late final SheetController _sheetController;
-  late final Future<List<List<SheetFieldDef>>> _fields;
+  List<List<SheetFieldDef>>? _loadedFields;
+  Object? _fieldsError;
   late final VoidCallback _removeExitTask;
   bool _allowPop = false;
   bool _exiting = false;
   int _pageIndex = 0;
-  _SheetViewMode _viewMode = _SheetViewMode.pages;
+  SheetViewPreferences? _viewPreferences;
+  bool _initializedViewMode = false;
+  SheetViewMode _viewMode = SheetViewMode.pages;
   PageController _pageController = PageController();
 
   /// Le pagine della vista a pagine, costruite una volta per indice.
@@ -83,7 +86,22 @@ class _SheetScreenState extends State<SheetScreen> {
       repository: widget.repository,
       character: widget.character,
     );
-    _fields = SheetFieldDef.loadByPage();
+    unawaited(
+      SheetFieldDef.loadByPage().then(
+        (fields) {
+          _loadedFields = fields;
+          if (mounted && _viewMode != SheetViewMode.vertical) {
+            setState(() {});
+          }
+        },
+        onError: (Object error) {
+          _fieldsError = error;
+          if (mounted && _viewMode != SheetViewMode.vertical) {
+            setState(() {});
+          }
+        },
+      ),
+    );
     // Chiudere la finestra su desktop non passa dal pulsante indietro: la
     // sessione va salvata prima che il processo termini.
     _removeExitTask = widget.driveSync.addExitTask(
@@ -97,6 +115,22 @@ class _SheetScreenState extends State<SheetScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final viewPreferences = SheetViewPreferenceScope.maybeOf(context);
+    _viewPreferences = viewPreferences;
+    if (viewPreferences != null && _viewMode != viewPreferences.mode) {
+      if (_initializedViewMode && viewPreferences.mode == SheetViewMode.pages) {
+        _pageController.dispose();
+        _pageController = PageController(initialPage: _pageIndex);
+      }
+      _viewMode = viewPreferences.mode;
+    }
+    _initializedViewMode = true;
+    if (_viewMode != SheetViewMode.vertical) {
+      _precacheArtwork();
+    }
+  }
+
+  void _precacheArtwork() {
     // Le pagine non ancora viste vanno decodificate prima dello swipe che le
     // porta in vista, altrimenti compaiono bianche per qualche fotogramma.
     // Gira di nuovo se cambiano tema o densità dello schermo, cioè l'artwork.
@@ -215,43 +249,102 @@ class _SheetScreenState extends State<SheetScreen> {
     );
   }
 
-  void _setViewMode(_SheetViewMode mode) {
-    if (_viewMode == mode) return;
-    FocusScope.of(context).unfocus();
-    if (mode == _SheetViewMode.pages) {
-      _pageController.dispose();
-      _pageController = PageController(initialPage: _pageIndex);
+  Future<void> _setViewMode(SheetViewMode mode) async {
+    if (_viewMode != mode) {
+      FocusScope.of(context).unfocus();
+      if (mode == SheetViewMode.pages) {
+        _pageController.dispose();
+        _pageController = PageController(initialPage: _pageIndex);
+      }
+      if (_viewMode == SheetViewMode.vertical &&
+          mode != SheetViewMode.vertical) {
+        _precacheArtwork();
+      }
+      setState(() => _viewMode = mode);
     }
-    setState(() => _viewMode = mode);
+    final preferences = _viewPreferences;
+    if (preferences == null) return;
+    try {
+      await preferences.setMode(mode);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Visualizzazione applicata, ma non salvata. Riprova.'),
+        ),
+      );
+    }
   }
 
   Widget _viewModeButton() => Material(
     color: Theme.of(context).colorScheme.surface,
     shape: const CircleBorder(),
     elevation: 2,
-    child: PopupMenuButton<_SheetViewMode>(
+    child: PopupMenuButton<SheetViewMode>(
       tooltip: 'Visualizzazione scheda',
       initialValue: _viewMode,
-      icon: Icon(
-        _viewMode == _SheetViewMode.pages
-            ? Icons.view_carousel_outlined
-            : Icons.view_day_outlined,
-      ),
+      icon: Icon(switch (_viewMode) {
+        SheetViewMode.pages => Icons.view_carousel_outlined,
+        SheetViewMode.scroll => Icons.view_day_outlined,
+        SheetViewMode.vertical => Icons.smartphone_outlined,
+      }),
       onSelected: _setViewMode,
       itemBuilder: (_) => [
-        CheckedPopupMenuItem(
-          value: _SheetViewMode.pages,
-          checked: _viewMode == _SheetViewMode.pages,
-          child: const Text('A pagine'),
-        ),
-        CheckedPopupMenuItem(
-          value: _SheetViewMode.scroll,
-          checked: _viewMode == _SheetViewMode.scroll,
-          child: const Text('A scorrimento'),
-        ),
+        for (final mode in SheetViewMode.values)
+          CheckedPopupMenuItem(
+            value: mode,
+            checked: _viewMode == mode,
+            child: Text(mode.label),
+          ),
       ],
     ),
   );
+
+  Widget _buildPdfSheetBody(BuildContext context) {
+    final error = _fieldsError;
+    if (error != null) {
+      return Center(
+        child: Card(
+          margin: const EdgeInsets.all(32),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              'Impossibile caricare il layout della scheda.\n$error',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+    final fields = _loadedFields;
+    if (fields == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_viewMode == SheetViewMode.scroll) {
+      return ScrollableSheetView(
+        controller: _sheetController,
+        fields: fields,
+        initialPage: _pageIndex,
+      );
+    }
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(
+        dragDevices: {
+          ...ScrollConfiguration.of(context).dragDevices,
+          PointerDeviceKind.mouse,
+        },
+      ),
+      child: PageView.builder(
+        controller: _pageController,
+        // La pagina accanto viene preparata a gesto fermo,
+        // non a metà dello swipe che la porta in vista.
+        allowImplicitScrolling: true,
+        itemCount: sheetPageCount,
+        onPageChanged: _changePage,
+        itemBuilder: (context, page) => _pagedPage(fields, page),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) => PopScope(
@@ -269,54 +362,12 @@ class _SheetScreenState extends State<SheetScreen> {
               fit: StackFit.expand,
               children: [
                 Positioned.fill(
-                  child: FutureBuilder<List<List<SheetFieldDef>>>(
-                    future: _fields,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Card(
-                            margin: const EdgeInsets.all(32),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Text(
-                                'Impossibile caricare il layout della scheda.\n'
-                                '${snapshot.error}',
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (_viewMode == _SheetViewMode.scroll) {
-                        return ScrollableSheetView(
+                  child: _viewMode == SheetViewMode.vertical
+                      ? VerticalSheetView(
                           controller: _sheetController,
-                          fields: snapshot.data!,
-                          initialPage: _pageIndex,
-                        );
-                      }
-                      return ScrollConfiguration(
-                        behavior: ScrollConfiguration.of(context).copyWith(
-                          dragDevices: {
-                            ...ScrollConfiguration.of(context).dragDevices,
-                            PointerDeviceKind.mouse,
-                          },
-                        ),
-                        child: PageView.builder(
-                          controller: _pageController,
-                          // La pagina accanto viene preparata a gesto fermo,
-                          // non a metà dello swipe che la porta in vista.
-                          allowImplicitScrolling: true,
-                          itemCount: sheetPageCount,
-                          onPageChanged: _changePage,
-                          itemBuilder: (context, page) =>
-                              _pagedPage(snapshot.data!, page),
-                        ),
-                      );
-                    },
-                  ),
+                          compactLayout: compactLayout,
+                        )
+                      : _buildPdfSheetBody(context),
                 ),
                 Padding(
                   padding: EdgeInsets.symmetric(
@@ -374,7 +425,7 @@ class _SheetScreenState extends State<SheetScreen> {
                     child: const DiceRollerOverlay(),
                   ),
                 ),
-                if (_viewMode == _SheetViewMode.pages && !compactLayout)
+                if (_viewMode == SheetViewMode.pages && !compactLayout)
                   Positioned(
                     right: 16,
                     bottom: 16,

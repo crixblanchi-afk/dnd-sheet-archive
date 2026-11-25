@@ -9,6 +9,7 @@ import 'data/app_database.dart';
 import 'data/blob_store.dart';
 import 'data/local_archive_sync_store.dart';
 import 'data/sembast_character_repository.dart';
+import 'data/sheet_view_preferences.dart';
 import 'screens/character_list_screen.dart';
 import 'sync/archive_sync_tracker.dart';
 import 'sync/google_drive_sync_service.dart';
@@ -45,6 +46,7 @@ Future<_AppServices> _openServices() async {
   }
   return _AppServices(
     themePreferences: await ThemePreferences.open(database),
+    sheetViewPreferences: await SheetViewPreferences.open(database),
     repository: SembastCharacterRepository(database, syncTracker: syncTracker),
     driveSync: GoogleDriveSyncService(
       LocalArchiveSyncStore(database),
@@ -58,11 +60,13 @@ class _AppServices {
     required this.repository,
     required this.driveSync,
     required this.themePreferences,
+    required this.sheetViewPreferences,
   });
 
   final SembastCharacterRepository repository;
   final GoogleDriveSyncService driveSync;
   final ThemePreferences themePreferences;
+  final SheetViewPreferences sheetViewPreferences;
 }
 
 class _BootstrapApp extends StatefulWidget {
@@ -100,6 +104,7 @@ class _BootstrapAppState extends State<_BootstrapApp> {
           repository: services.repository,
           driveSync: services.driveSync,
           themePreferences: services.themePreferences,
+          sheetViewPreferences: services.sheetViewPreferences,
         );
       }
       return MaterialApp(
@@ -165,11 +170,13 @@ class DndSheetArchiveApp extends StatelessWidget {
     required this.repository,
     required this.driveSync,
     required this.themePreferences,
+    required this.sheetViewPreferences,
   });
 
   final SembastCharacterRepository repository;
   final GoogleDriveSyncService driveSync;
   final ThemePreferences themePreferences;
+  final SheetViewPreferences sheetViewPreferences;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -186,8 +193,13 @@ class DndSheetArchiveApp extends StatelessWidget {
         colored: themePreferences.theme.colored,
       ),
       themeMode: themePreferences.mode,
-      builder: (context, child) =>
-          ThemePreferenceScope(preferences: themePreferences, child: child!),
+      builder: (context, child) => ThemePreferenceScope(
+        preferences: themePreferences,
+        child: SheetViewPreferenceScope(
+          preferences: sheetViewPreferences,
+          child: child!,
+        ),
+      ),
       home: CharacterListScreen(repository: repository, driveSync: driveSync),
     ),
   );

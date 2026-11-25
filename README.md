@@ -16,12 +16,15 @@ blocchi avvenuti entro 24 ore dal primo snapshot automatico aggiornano quello
 stesso snapshot invece di crearne uno nuovo; passata la finestra si riparte con
 una versione nuova.
 
-Il pulsante **Visualizzazione scheda**, in alto, permette di scegliere **A pagine**
-o **A scorrimento**. La vista a pagine usa tutto lo spazio disponibile, senza
-zoom né barra inferiore: uno swipe orizzontale gira il foglio. La vista a
-scorrimento mostra i tre fogli in una colonna continua e offre zoom, adattamento
-alla larghezza e barre di scorrimento. Cambiare modalità conserva le modifiche
-ai campi, che vengono salvate automaticamente.
+Il pulsante **Visualizzazione scheda**, in alto, permette di scegliere **A pagine**,
+**A scorrimento** o **Verticale**. La scelta viene ricordata sul dispositivo. La
+vista a pagine usa tutto lo spazio disponibile, senza zoom né barra inferiore:
+uno swipe orizzontale gira il foglio. La vista a scorrimento mostra i tre fogli
+in una colonna continua e offre zoom, adattamento alla larghezza e barre di
+scorrimento. La vista verticale riorganizza l'intera scheda in sezioni impilate
+pensate per lo smartphone, con barra di salto rapido e incantesimi raggruppati
+per livello. Cambiare modalità conserva le modifiche ai campi, che vengono
+salvate automaticamente.
 
 La seconda pagina ospita due riquadri per immagini: il ritratto del personaggio
 e il simbolo in “Allies & Organizations”. Si riempiono con un tocco e si

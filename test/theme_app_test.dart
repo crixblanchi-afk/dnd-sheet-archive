@@ -1,5 +1,6 @@
 import 'package:dnd_sheet_archive/data/local_archive_sync_store.dart';
 import 'package:dnd_sheet_archive/data/sembast_character_repository.dart';
+import 'package:dnd_sheet_archive/data/sheet_view_preferences.dart';
 import 'package:dnd_sheet_archive/main.dart';
 import 'package:dnd_sheet_archive/models/sheet_field.dart';
 import 'package:dnd_sheet_archive/screens/sheet_screen.dart';
@@ -31,7 +32,9 @@ void main() {
         syncTracker: tracker,
       );
       final preferences = ThemePreferences.inMemory(theme: AppTheme.light);
+      final sheetViewPreferences = SheetViewPreferences.inMemory();
       addTearDown(preferences.dispose);
+      addTearDown(sheetViewPreferences.dispose);
       addTearDown(tracker.dispose);
       addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
       await tester.runAsync(SheetFieldDef.loadByPage);
@@ -40,6 +43,7 @@ void main() {
           repository: repository,
           driveSync: driveSync,
           themePreferences: preferences,
+          sheetViewPreferences: sheetViewPreferences,
         ),
       );
       await tester.pumpAndSettle();

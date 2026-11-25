@@ -107,6 +107,7 @@ class ImageFieldOverlay extends StatefulWidget {
     required this.fieldName,
     required this.boxSize,
     required this.sheetController,
+    this.placeholder,
   });
 
   final String fieldName;
@@ -116,6 +117,7 @@ class ImageFieldOverlay extends StatefulWidget {
   final Size boxSize;
 
   final SheetController sheetController;
+  final Widget? placeholder;
 
   @override
   State<ImageFieldOverlay> createState() => _ImageFieldOverlayState();
@@ -220,7 +222,7 @@ class _ImageFieldOverlayState extends State<ImageFieldOverlay> {
           onTap: locked ? null : _pickImage,
           onLongPress: locked || bytes == null ? null : _clearImage,
           child: bytes == null
-              ? const SizedBox.expand()
+              ? (widget.placeholder ?? const SizedBox.expand())
               : Image.memory(bytes, fit: BoxFit.contain, gaplessPlayback: true),
         ),
       );
