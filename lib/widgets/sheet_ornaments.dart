@@ -20,6 +20,7 @@ class SheetTray extends StatelessWidget {
     final palette = SheetPalette.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return CustomPaint(
+      isComplex: true,
       painter: _SheetTrayPainter(
         fill: palette.ink.withValues(alpha: isDark ? .10 : .07),
         stroke: palette.ink.withValues(alpha: isDark ? .26 : .18),
@@ -70,25 +71,24 @@ class SheetFrameBox extends StatelessWidget {
     this.caption,
     this.topTrailing,
     this.padding = const EdgeInsets.fromLTRB(12, 10, 12, 8),
-    this.fillHeight = false,
   });
 
   final Widget child;
   final String? caption;
   final Widget? topTrailing;
   final EdgeInsetsGeometry padding;
-  final bool fillHeight;
 
   @override
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
     return CustomPaint(
+      isComplex: true,
       painter: _NotchedBoxPainter(paper: palette.paper, ink: palette.ink),
       child: Padding(
         padding: padding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: fillHeight ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             if (topTrailing != null)
               Align(
@@ -98,7 +98,7 @@ class SheetFrameBox extends StatelessWidget {
                   child: topTrailing!,
                 ),
               ),
-            if (fillHeight) Expanded(child: Center(child: child)) else child,
+            child,
             if (caption != null) ...[
               const SizedBox(height: 6),
               Text(
@@ -171,6 +171,7 @@ class SheetBannerBox extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         CustomPaint(
+          isComplex: true,
           painter: _RibbonBannerPainter(paper: palette.paper, ink: palette.ink),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(22, 10, 22, 10),
@@ -271,6 +272,7 @@ class ArmorClassShield extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
     return CustomPaint(
+      isComplex: true,
       painter: _ArmorShieldPainter(paper: palette.paper, ink: palette.ink),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(10, 12, 10, 14),
@@ -387,6 +389,7 @@ class AbilityCartouche extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 14),
           child: CustomPaint(
+            isComplex: true,
             painter: _AbilityFramePainter(
               paper: palette.paper,
               ink: palette.ink,
@@ -723,6 +726,7 @@ class SpellLevelHeaderFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
     return CustomPaint(
+      isComplex: true,
       painter: _SpellHeaderPainter(paper: palette.paper, ink: palette.ink),
       child: Row(
         children: [

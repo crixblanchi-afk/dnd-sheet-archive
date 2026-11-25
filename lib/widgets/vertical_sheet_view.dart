@@ -46,7 +46,7 @@ class _VerticalSheetViewState extends State<VerticalSheetView> {
   ];
 
   final _scrollController = ScrollController();
-  final _scrollViewportKey = GlobalKey();
+  final _contentKey = GlobalKey();
   final _activeSection = ValueNotifier<int>(0);
   late final List<GlobalKey> _sectionKeys = List.generate(
     _sectionLabels.length,
@@ -57,25 +57,71 @@ class _VerticalSheetViewState extends State<VerticalSheetView> {
     (_) => GlobalKey(),
   );
   bool _jumpingToSection = false;
+  List<double>? _sectionOffsets;
+  double? _measuredMaxScrollExtent;
+  double _lastCheckedOffset = double.negativeInfinity;
+  Widget? _sectionsColumn;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
+    widget.controller.addListener(_handleControllerChanged);
+  }
+
+  void _handleControllerChanged() {
+    if (!mounted) return;
+    setState(() {
+      _sectionsColumn = null;
+      _sectionOffsets = null;
+    });
+  }
+
+  @override
+  void didUpdateWidget(VerticalSheetView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.controller, oldWidget.controller)) {
+      oldWidget.controller.removeListener(_handleControllerChanged);
+      widget.controller.addListener(_handleControllerChanged);
+      _sectionsColumn = null;
+      _sectionOffsets = null;
+    }
+  }
+
+  /// Calcola una volta la posizione verticale di ciascuna sezione rispetto al
+  /// contenuto scorrevole, così lo scroll non percorre l'albero dei
+  /// RenderObject a ogni fotogramma.
+  List<double>? _ensureSectionOffsets() {
+    if (!_scrollController.hasClients) return null;
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    if (_sectionOffsets != null && _measuredMaxScrollExtent == maxExtent) {
+      return _sectionOffsets;
+    }
+    final contentBox =
+        _contentKey.currentContext?.findRenderObject() as RenderBox?;
+    if (contentBox == null || !contentBox.hasSize) return null;
+    final offsets = <double>[];
+    for (final key in _sectionKeys) {
+      final box = key.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null || !box.hasSize) return null;
+      offsets.add(box.localToGlobal(Offset.zero, ancestor: contentBox).dy);
+    }
+    _sectionOffsets = offsets;
+    _measuredMaxScrollExtent = maxExtent;
+    return offsets;
   }
 
   void _handleScroll() {
-    if (_jumpingToSection || !mounted) return;
-    final viewport =
-        _scrollViewportKey.currentContext?.findRenderObject() as RenderBox?;
-    if (viewport == null || !viewport.hasSize) return;
-    final viewportTop = viewport.localToGlobal(Offset.zero).dy + 24;
+    if (_jumpingToSection || !mounted || !_scrollController.hasClients) return;
+    final offset = _scrollController.offset;
+    if ((offset - _lastCheckedOffset).abs() < 16) return;
+    _lastCheckedOffset = offset;
+    final offsets = _ensureSectionOffsets();
+    if (offsets == null) return;
+    final threshold = offset + 28;
     var active = 0;
-    for (var i = 0; i < _sectionKeys.length; i++) {
-      final box =
-          _sectionKeys[i].currentContext?.findRenderObject() as RenderBox?;
-      if (box == null || !box.hasSize) continue;
-      if (box.localToGlobal(Offset.zero).dy <= viewportTop) {
+    for (var i = 0; i < offsets.length; i++) {
+      if (offsets[i] <= threshold) {
         active = i;
       } else {
         break;
@@ -88,7 +134,7 @@ class _VerticalSheetViewState extends State<VerticalSheetView> {
         unawaited(
           Scrollable.ensureVisible(
             chipContext,
-            duration: const Duration(milliseconds: 180),
+            duration: const Duration(milliseconds: 160),
             curve: Curves.easeOut,
             alignment: .5,
           ),
@@ -109,10 +155,56 @@ class _VerticalSheetViewState extends State<VerticalSheetView> {
         curve: Curves.easeOut,
         alignment: 0,
       );
+      if (_scrollController.hasClients) {
+        _lastCheckedOffset = _scrollController.offset;
+      }
     } finally {
       _jumpingToSection = false;
     }
   }
+
+  Widget _buildSectionsColumn() => _sectionsColumn ??= Column(
+    key: _contentKey,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _SectionAnchor(
+        key: _sectionKeys[0],
+        child: _IdentitySection(controller: widget.controller),
+      ),
+      const SizedBox(height: 14),
+      _SectionAnchor(
+        key: _sectionKeys[1],
+        child: _CombatSection(controller: widget.controller),
+      ),
+      const SizedBox(height: 14),
+      _SectionAnchor(
+        key: _sectionKeys[2],
+        child: _AbilitiesSection(controller: widget.controller),
+      ),
+      const SizedBox(height: 14),
+      _SectionAnchor(
+        key: _sectionKeys[3],
+        child: _SkillsSection(controller: widget.controller),
+      ),
+      const SizedBox(height: 14),
+      _SectionAnchor(
+        key: _sectionKeys[4],
+        child: _TraitsAndEquipmentSection(controller: widget.controller),
+      ),
+      const SizedBox(height: 14),
+      _SectionAnchor(
+        key: _sectionKeys[5],
+        child: _StorySection(controller: widget.controller),
+      ),
+      const SizedBox(height: 14),
+      _SectionAnchor(
+        key: _sectionKeys[6],
+        child: _SpellsSection(controller: widget.controller),
+      ),
+      const SizedBox(height: 10),
+      const _FooterHint(),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -125,88 +217,28 @@ class _VerticalSheetViewState extends State<VerticalSheetView> {
           // Aspetto, Blocca) così lo scorrimento non passa sotto ai pulsanti.
           SizedBox(height: widget.compactLayout ? 48 : 64),
           if (!widget.compactLayout)
-            _SectionNavBar(
-              labels: _sectionLabels,
-              chipKeys: _chipKeys,
-              activeSection: _activeSection,
-              onSelect: _jumpToSection,
+            RepaintBoundary(
+              child: _SectionNavBar(
+                labels: _sectionLabels,
+                chipKeys: _chipKeys,
+                activeSection: _activeSection,
+                onSelect: _jumpToSection,
+              ),
             ),
           Expanded(
-            child: ListenableBuilder(
-              listenable: widget.controller,
-              builder: (context, _) => SingleChildScrollView(
-                key: _scrollViewportKey,
-                controller: _scrollController,
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: EdgeInsets.fromLTRB(
-                  10,
-                  10,
-                  10,
-                  widget.compactLayout ? 16 : 96,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 620),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _SectionAnchor(
-                          key: _sectionKeys[0],
-                          child: _IdentitySection(
-                            controller: widget.controller,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _SectionAnchor(
-                          key: _sectionKeys[1],
-                          child: _CombatSection(controller: widget.controller),
-                        ),
-                        const SizedBox(height: 14),
-                        _SectionAnchor(
-                          key: _sectionKeys[2],
-                          child: _AbilitiesSection(
-                            controller: widget.controller,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _SectionAnchor(
-                          key: _sectionKeys[3],
-                          child: _SkillsSection(controller: widget.controller),
-                        ),
-                        const SizedBox(height: 14),
-                        _SectionAnchor(
-                          key: _sectionKeys[4],
-                          child: _TraitsAndEquipmentSection(
-                            controller: widget.controller,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _SectionAnchor(
-                          key: _sectionKeys[5],
-                          child: _StorySection(controller: widget.controller),
-                        ),
-                        const SizedBox(height: 14),
-                        _SectionAnchor(
-                          key: _sectionKeys[6],
-                          child: _SpellsSection(controller: widget.controller),
-                        ),
-                        const SizedBox(height: 10),
-                        Center(
-                          child: Text(
-                            'Tieni premuto su un campo per aggiungere o leggere una nota.',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  fontFamily: 'RobotoSlab',
-                                  fontSize: 11,
-                                  color: palette.ink.withValues(alpha: .58),
-                                ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                10,
+                10,
+                10,
+                widget.compactLayout ? 16 : 96,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 620),
+                  child: _buildSectionsColumn(),
                 ),
               ),
             ),
@@ -218,11 +250,32 @@ class _VerticalSheetViewState extends State<VerticalSheetView> {
 
   @override
   void dispose() {
+    widget.controller.removeListener(_handleControllerChanged);
     _scrollController
       ..removeListener(_handleScroll)
       ..dispose();
     _activeSection.dispose();
     super.dispose();
+  }
+}
+
+class _FooterHint extends StatelessWidget {
+  const _FooterHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = SheetPalette.of(context);
+    return Center(
+      child: Text(
+        'Tieni premuto su un campo per aggiungere o leggere una nota.',
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontFamily: 'RobotoSlab',
+          fontSize: 11,
+          color: palette.ink.withValues(alpha: .58),
+        ),
+      ),
+    );
   }
 }
 
@@ -232,7 +285,7 @@ class _SectionAnchor extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => child;
+  Widget build(BuildContext context) => RepaintBoundary(child: child);
 }
 
 class _SectionNavBar extends StatelessWidget {
@@ -395,314 +448,329 @@ class _CombatSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SheetTray(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+        RepaintBoundary(
+          child: SheetTray(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: ArmorClassShield(
-                        child: _SheetTextField(
-                          key: const ValueKey('AC'),
-                          fieldName: 'AC',
-                          dialogLabel: 'Classe armatura',
-                          controller: controller,
-                          textAlign: TextAlign.center,
-                          style: _FieldDecorationStyle.plain,
-                          compact: true,
-                          textStyle: bigNumberStyle,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: SheetFrameBox(
-                        caption: 'Iniziativa',
-                        fillHeight: true,
-                        padding: const EdgeInsets.fromLTRB(6, 12, 6, 8),
-                        child: _SheetTextField(
-                          key: const ValueKey('Initiative'),
-                          fieldName: 'Initiative',
-                          dialogLabel: 'Iniziativa',
-                          controller: controller,
-                          textAlign: TextAlign.center,
-                          style: _FieldDecorationStyle.plain,
-                          compact: true,
-                          textStyle: bigNumberStyle,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: SheetFrameBox(
-                        caption: 'Velocità',
-                        fillHeight: true,
-                        padding: const EdgeInsets.fromLTRB(6, 12, 6, 8),
-                        child: _SheetTextField(
-                          key: const ValueKey('Speed'),
-                          fieldName: 'Speed',
-                          dialogLabel: 'Velocità',
-                          controller: controller,
-                          textAlign: TextAlign.center,
-                          style: _FieldDecorationStyle.plain,
-                          compact: true,
-                          textStyle: bigNumberStyle,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              SheetFrameBox(
-                caption: 'Punti ferita attuali',
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Punti ferita massimi',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                fontFamily: 'RobotoSlab',
-                                fontSize: 10,
-                                color: palette.ink.withValues(alpha: .62),
-                              ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 88),
+                        child: ArmorClassShield(
                           child: _SheetTextField(
-                            key: const ValueKey('HPMax'),
-                            fieldName: 'HPMax',
-                            dialogLabel: 'Punti ferita massimi',
+                            key: const ValueKey('AC'),
+                            fieldName: 'AC',
+                            dialogLabel: 'Classe armatura',
                             controller: controller,
                             textAlign: TextAlign.center,
-                            style: _FieldDecorationStyle.underline,
+                            style: _FieldDecorationStyle.plain,
                             compact: true,
-                            textStyle: TextStyle(
-                              fontFamily: 'RobotoSlab',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: palette.text,
-                            ),
+                            textStyle: bigNumberStyle,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 6),
-                    _SheetTextField(
-                      key: const ValueKey('HPCurrent'),
-                      fieldName: 'HPCurrent',
-                      dialogLabel: 'Punti ferita attuali',
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      style: _FieldDecorationStyle.plain,
-                      textStyle: TextStyle(
-                        fontFamily: 'RobotoSlab',
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: palette.text,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 88),
+                        child: SheetFrameBox(
+                          caption: 'Iniziativa',
+                          padding: const EdgeInsets.fromLTRB(6, 16, 6, 8),
+                          child: _SheetTextField(
+                            key: const ValueKey('Initiative'),
+                            fieldName: 'Initiative',
+                            dialogLabel: 'Iniziativa',
+                            controller: controller,
+                            textAlign: TextAlign.center,
+                            style: _FieldDecorationStyle.plain,
+                            compact: true,
+                            textStyle: bigNumberStyle,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 88),
+                        child: SheetFrameBox(
+                          caption: 'Velocità',
+                          padding: const EdgeInsets.fromLTRB(6, 16, 6, 8),
+                          child: _SheetTextField(
+                            key: const ValueKey('Speed'),
+                            fieldName: 'Speed',
+                            dialogLabel: 'Velocità',
+                            controller: controller,
+                            textAlign: TextAlign.center,
+                            style: _FieldDecorationStyle.plain,
+                            compact: true,
+                            textStyle: bigNumberStyle,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              SheetFrameBox(
-                caption: 'Punti ferita temporanei',
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                child: _SheetTextField(
-                  key: const ValueKey('HPTemp'),
-                  fieldName: 'HPTemp',
-                  dialogLabel: 'Punti ferita temporanei',
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  style: _FieldDecorationStyle.plain,
-                  textStyle: TextStyle(
-                    fontFamily: 'RobotoSlab',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: palette.text,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      flex: 9,
-                      child: SheetFrameBox(
-                        caption: 'Dadi vita',
-                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  'Totale',
-                                  style: Theme.of(context).textTheme.labelSmall
-                                      ?.copyWith(
-                                        fontFamily: 'RobotoSlab',
-                                        fontSize: 9.5,
-                                        color: palette.ink.withValues(
-                                          alpha: .62,
-                                        ),
-                                      ),
+                const SizedBox(height: 8),
+                SheetFrameBox(
+                  caption: 'Punti ferita attuali',
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Punti ferita massimi',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  fontFamily: 'RobotoSlab',
+                                  fontSize: 10,
+                                  color: palette.ink.withValues(alpha: .62),
                                 ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: _SheetTextField(
-                                    key: const ValueKey('HDTotal'),
-                                    fieldName: 'HDTotal',
-                                    dialogLabel: 'Totale dadi vita',
-                                    controller: controller,
-                                    textAlign: TextAlign.center,
-                                    style: _FieldDecorationStyle.underline,
-                                    compact: true,
-                                    textStyle: TextStyle(
-                                      fontFamily: 'RobotoSlab',
-                                      fontSize: 13,
-                                      color: palette.text,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            _SheetTextField(
-                              key: const ValueKey('HD'),
-                              fieldName: 'HD',
-                              dialogLabel: 'Dadi vita',
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _SheetTextField(
+                              key: const ValueKey('HPMax'),
+                              fieldName: 'HPMax',
+                              dialogLabel: 'Punti ferita massimi',
                               controller: controller,
                               textAlign: TextAlign.center,
-                              style: _FieldDecorationStyle.plain,
+                              style: _FieldDecorationStyle.underline,
                               compact: true,
                               textStyle: TextStyle(
                                 fontFamily: 'RobotoSlab',
-                                fontSize: 18,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: palette.text,
                               ),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      _SheetTextField(
+                        key: const ValueKey('HPCurrent'),
+                        fieldName: 'HPCurrent',
+                        dialogLabel: 'Punti ferita attuali',
+                        controller: controller,
+                        textAlign: TextAlign.center,
+                        style: _FieldDecorationStyle.plain,
+                        textStyle: TextStyle(
+                          fontFamily: 'RobotoSlab',
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: palette.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SheetFrameBox(
+                  caption: 'Punti ferita temporanei',
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                  child: _SheetTextField(
+                    key: const ValueKey('HPTemp'),
+                    fieldName: 'HPTemp',
+                    dialogLabel: 'Punti ferita temporanei',
+                    controller: controller,
+                    textAlign: TextAlign.center,
+                    style: _FieldDecorationStyle.plain,
+                    textStyle: TextStyle(
+                      fontFamily: 'RobotoSlab',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: palette.text,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 9,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 98),
+                        child: SheetFrameBox(
+                          caption: 'Dadi vita',
+                          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Totale',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          fontFamily: 'RobotoSlab',
+                                          fontSize: 9.5,
+                                          color: palette.ink.withValues(
+                                            alpha: .62,
+                                          ),
+                                        ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: _SheetTextField(
+                                      key: const ValueKey('HDTotal'),
+                                      fieldName: 'HDTotal',
+                                      dialogLabel: 'Totale dadi vita',
+                                      controller: controller,
+                                      textAlign: TextAlign.center,
+                                      style: _FieldDecorationStyle.underline,
+                                      compact: true,
+                                      textStyle: TextStyle(
+                                        fontFamily: 'RobotoSlab',
+                                        fontSize: 13,
+                                        color: palette.text,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              _SheetTextField(
+                                key: const ValueKey('HD'),
+                                fieldName: 'HD',
+                                dialogLabel: 'Dadi vita',
+                                controller: controller,
+                                textAlign: TextAlign.center,
+                                style: _FieldDecorationStyle.plain,
+                                compact: true,
+                                textStyle: TextStyle(
+                                  fontFamily: 'RobotoSlab',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: palette.text,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       flex: 11,
-                      child: SheetFrameBox(
-                        caption: 'Tiri salvezza contro morte',
-                        padding: const EdgeInsets.fromLTRB(8, 8, 6, 8),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _DeathSaveRow(
-                              label: 'SUCCESSI',
-                              fields: verticalDeathSaveSuccesses,
-                              controller: controller,
-                            ),
-                            const SizedBox(height: 2),
-                            _DeathSaveRow(
-                              label: 'FALLIMENTI',
-                              fields: verticalDeathSaveFailures,
-                              controller: controller,
-                            ),
-                          ],
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 98),
+                        child: SheetFrameBox(
+                          caption: 'Tiri salvezza contro morte',
+                          padding: const EdgeInsets.fromLTRB(8, 10, 6, 8),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _DeathSaveRow(
+                                label: 'SUCCESSI',
+                                fields: verticalDeathSaveSuccesses,
+                                controller: controller,
+                              ),
+                              const SizedBox(height: 2),
+                              _DeathSaveRow(
+                                label: 'FALLIMENTI',
+                                fields: verticalDeathSaveFailures,
+                                controller: controller,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        SheetFrameBox(
-          caption: 'Attacchi e incantesimi',
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    Expanded(flex: 5, child: _MicroHeader('NOME')),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      flex: 2,
-                      child: _MicroHeader('BONUS', align: TextAlign.center),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(flex: 4, child: _MicroHeader('DANNI / TIPO')),
-                  ],
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Attacchi e incantesimi',
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Expanded(flex: 5, child: _MicroHeader('NOME')),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        flex: 2,
+                        child: _MicroHeader('BONUS', align: TextAlign.center),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(flex: 4, child: _MicroHeader('DANNI / TIPO')),
+                    ],
+                  ),
                 ),
-              ),
-              for (var i = 0; i < verticalAttacks.length; i++) ...[
-                if (i > 0) const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 5,
-                      child: _SheetTextField(
-                        key: ValueKey(verticalAttacks[i].nameField),
-                        fieldName: verticalAttacks[i].nameField,
-                        dialogLabel: 'Arma ${i + 1}',
-                        controller: controller,
-                        style: _FieldDecorationStyle.shaded,
-                        compact: true,
+                for (var i = 0; i < verticalAttacks.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 5,
+                        child: _SheetTextField(
+                          key: ValueKey(verticalAttacks[i].nameField),
+                          fieldName: verticalAttacks[i].nameField,
+                          dialogLabel: 'Arma ${i + 1}',
+                          controller: controller,
+                          style: _FieldDecorationStyle.shaded,
+                          compact: true,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      flex: 2,
-                      child: _SheetTextField(
-                        key: ValueKey(verticalAttacks[i].bonusField),
-                        fieldName: verticalAttacks[i].bonusField,
-                        dialogLabel: 'Bonus attacco ${i + 1}',
-                        controller: controller,
-                        textAlign: TextAlign.center,
-                        style: _FieldDecorationStyle.shaded,
-                        compact: true,
+                      const SizedBox(width: 6),
+                      Expanded(
+                        flex: 2,
+                        child: _SheetTextField(
+                          key: ValueKey(verticalAttacks[i].bonusField),
+                          fieldName: verticalAttacks[i].bonusField,
+                          dialogLabel: 'Bonus attacco ${i + 1}',
+                          controller: controller,
+                          textAlign: TextAlign.center,
+                          style: _FieldDecorationStyle.shaded,
+                          compact: true,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      flex: 4,
-                      child: _SheetTextField(
-                        key: ValueKey(verticalAttacks[i].damageField),
-                        fieldName: verticalAttacks[i].damageField,
-                        dialogLabel: 'Danni ${i + 1}',
-                        controller: controller,
-                        style: _FieldDecorationStyle.shaded,
-                        compact: true,
+                      const SizedBox(width: 6),
+                      Expanded(
+                        flex: 4,
+                        child: _SheetTextField(
+                          key: ValueKey(verticalAttacks[i].damageField),
+                          fieldName: verticalAttacks[i].damageField,
+                          dialogLabel: 'Danni ${i + 1}',
+                          controller: controller,
+                          style: _FieldDecorationStyle.shaded,
+                          compact: true,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Divider(height: 1, color: palette.ink.withValues(alpha: .2)),
+                const SizedBox(height: 4),
+                _SheetTextField(
+                  key: const ValueKey('AttacksSpellcasting'),
+                  fieldName: 'AttacksSpellcasting',
+                  dialogLabel: 'Note su attacchi e incantesimi',
+                  hintText: 'Note su attacchi e incantesimi…',
+                  controller: controller,
+                  multiline: true,
+                  minLines: 3,
+                  style: _FieldDecorationStyle.plain,
                 ),
               ],
-              const SizedBox(height: 8),
-              Divider(height: 1, color: palette.ink.withValues(alpha: .2)),
-              const SizedBox(height: 4),
-              _SheetTextField(
-                key: const ValueKey('AttacksSpellcasting'),
-                fieldName: 'AttacksSpellcasting',
-                dialogLabel: 'Note su attacchi e incantesimi',
-                hintText: 'Note su attacchi e incantesimi…',
-                controller: controller,
-                multiline: true,
-                minLines: 3,
-                style: _FieldDecorationStyle.plain,
-              ),
-            ],
+            ),
           ),
         ),
       ],
@@ -768,124 +836,136 @@ class _AbilitiesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SheetTray(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final columns = constraints.maxWidth < 290 ? 2 : 3;
-              final rows = (verticalAbilities.length / columns).ceil();
-              return Column(
-                children: [
-                  for (var r = 0; r < rows; r++) ...[
-                    if (r > 0) const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        for (var c = 0; c < columns; c++) ...[
-                          if (c > 0) const SizedBox(width: 8),
-                          Expanded(
-                            child: r * columns + c < verticalAbilities.length
-                                ? _AbilityItem(
-                                    ability: verticalAbilities[r * columns + c],
-                                    controller: controller,
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ],
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 10),
-        StatBadgeBar(
-          label: 'Ispirazione',
-          shape: StatEmblemShape.square,
-          value: _SheetTextField(
-            key: const ValueKey('Inspiration'),
-            fieldName: 'Inspiration',
-            dialogLabel: 'Ispirazione',
-            controller: controller,
-            textAlign: TextAlign.center,
-            style: _FieldDecorationStyle.plain,
-            compact: true,
-            textStyle: TextStyle(
-              fontFamily: 'RobotoSlab',
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: palette.text,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        StatBadgeBar(
-          label: 'Bonus competenza',
-          shape: StatEmblemShape.circle,
-          value: _SheetTextField(
-            key: const ValueKey('ProfBonus'),
-            fieldName: 'ProfBonus',
-            dialogLabel: 'Bonus competenza',
-            controller: controller,
-            textAlign: TextAlign.center,
-            style: _FieldDecorationStyle.plain,
-            compact: true,
-            textStyle: TextStyle(
-              fontFamily: 'RobotoSlab',
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: palette.text,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        StatBadgeBar(
-          label: 'Percezione passiva (Saggezza)',
-          shape: StatEmblemShape.circle,
-          value: _SheetTextField(
-            key: const ValueKey('Passive'),
-            fieldName: 'Passive',
-            dialogLabel: 'Percezione passiva',
-            controller: controller,
-            textAlign: TextAlign.center,
-            style: _FieldDecorationStyle.plain,
-            compact: true,
-            textStyle: TextStyle(
-              fontFamily: 'RobotoSlab',
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: palette.text,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        SheetFrameBox(
-          caption: 'Tiri salvezza',
-          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-          child: Column(
-            children: [
-              for (var i = 0; i < verticalAbilities.length; i += 2) ...[
-                if (i > 0) const SizedBox(height: 2),
-                Row(
+        RepaintBoundary(
+          child: SheetTray(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth < 290 ? 2 : 3;
+                final rows = (verticalAbilities.length / columns).ceil();
+                return Column(
                   children: [
-                    Expanded(
-                      child: _SavingThrowCell(
-                        ability: verticalAbilities[i],
-                        controller: controller,
+                    for (var r = 0; r < rows; r++) ...[
+                      if (r > 0) const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          for (var c = 0; c < columns; c++) ...[
+                            if (c > 0) const SizedBox(width: 8),
+                            Expanded(
+                              child: r * columns + c < verticalAbilities.length
+                                  ? _AbilityItem(
+                                      ability:
+                                          verticalAbilities[r * columns + c],
+                                      controller: controller,
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _SavingThrowCell(
-                        ability: verticalAbilities[i + 1],
-                        controller: controller,
-                      ),
-                    ),
+                    ],
                   ],
+                );
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        RepaintBoundary(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              StatBadgeBar(
+                label: 'Ispirazione',
+                shape: StatEmblemShape.square,
+                value: _SheetTextField(
+                  key: const ValueKey('Inspiration'),
+                  fieldName: 'Inspiration',
+                  dialogLabel: 'Ispirazione',
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  style: _FieldDecorationStyle.plain,
+                  compact: true,
+                  textStyle: TextStyle(
+                    fontFamily: 'RobotoSlab',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: palette.text,
+                  ),
                 ),
-              ],
+              ),
+              const SizedBox(height: 8),
+              StatBadgeBar(
+                label: 'Bonus competenza',
+                shape: StatEmblemShape.circle,
+                value: _SheetTextField(
+                  key: const ValueKey('ProfBonus'),
+                  fieldName: 'ProfBonus',
+                  dialogLabel: 'Bonus competenza',
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  style: _FieldDecorationStyle.plain,
+                  compact: true,
+                  textStyle: TextStyle(
+                    fontFamily: 'RobotoSlab',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: palette.text,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              StatBadgeBar(
+                label: 'Percezione passiva (Saggezza)',
+                shape: StatEmblemShape.circle,
+                value: _SheetTextField(
+                  key: const ValueKey('Passive'),
+                  fieldName: 'Passive',
+                  dialogLabel: 'Percezione passiva',
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  style: _FieldDecorationStyle.plain,
+                  compact: true,
+                  textStyle: TextStyle(
+                    fontFamily: 'RobotoSlab',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: palette.text,
+                  ),
+                ),
+              ),
             ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Tiri salvezza',
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            child: Column(
+              children: [
+                for (var i = 0; i < verticalAbilities.length; i += 2) ...[
+                  if (i > 0) const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SavingThrowCell(
+                          ability: verticalAbilities[i],
+                          controller: controller,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _SavingThrowCell(
+                          ability: verticalAbilities[i + 1],
+                          controller: controller,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ],
@@ -1100,104 +1180,114 @@ class _TraitsAndEquipmentSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SheetFrameBox(
-          caption: 'Privilegi e tratti',
-          child: _SheetTextField(
-            key: const ValueKey('Features and Traits'),
-            fieldName: 'Features and Traits',
-            dialogLabel: 'Privilegi e tratti',
-            controller: controller,
-            multiline: true,
-            minLines: 4,
-            style: _FieldDecorationStyle.plain,
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Privilegi e tratti',
+            child: _SheetTextField(
+              key: const ValueKey('Features and Traits'),
+              fieldName: 'Features and Traits',
+              dialogLabel: 'Privilegi e tratti',
+              controller: controller,
+              multiline: true,
+              minLines: 4,
+              style: _FieldDecorationStyle.plain,
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        SheetFrameBox(
-          caption: 'Privilegi e tratti aggiuntivi',
-          child: _SheetTextField(
-            key: const ValueKey('Feat+Traits'),
-            fieldName: 'Feat+Traits',
-            dialogLabel: 'Privilegi e tratti aggiuntivi',
-            controller: controller,
-            multiline: true,
-            minLines: 3,
-            style: _FieldDecorationStyle.plain,
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Privilegi e tratti aggiuntivi',
+            child: _SheetTextField(
+              key: const ValueKey('Feat+Traits'),
+              fieldName: 'Feat+Traits',
+              dialogLabel: 'Privilegi e tratti aggiuntivi',
+              controller: controller,
+              multiline: true,
+              minLines: 3,
+              style: _FieldDecorationStyle.plain,
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        SheetFrameBox(
-          caption: 'Altre competenze e linguaggi',
-          child: _SheetTextField(
-            key: const ValueKey('ProficienciesLang'),
-            fieldName: 'ProficienciesLang',
-            dialogLabel: 'Altre competenze e linguaggi',
-            controller: controller,
-            multiline: true,
-            minLines: 3,
-            style: _FieldDecorationStyle.plain,
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Altre competenze e linguaggi',
+            child: _SheetTextField(
+              key: const ValueKey('ProficienciesLang'),
+              fieldName: 'ProficienciesLang',
+              dialogLabel: 'Altre competenze e linguaggi',
+              controller: controller,
+              multiline: true,
+              minLines: 3,
+              style: _FieldDecorationStyle.plain,
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        SheetFrameBox(
-          caption: 'Equipaggiamento',
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  for (var i = 0; i < verticalCoins.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 5),
-                    Expanded(
-                      child: CoinPlaque(
-                        label: verticalCoins[i].label,
-                        child: _SheetTextField(
-                          key: ValueKey(verticalCoins[i].field),
-                          fieldName: verticalCoins[i].field,
-                          dialogLabel: verticalCoins[i].label,
-                          controller: controller,
-                          textAlign: TextAlign.center,
-                          style: _FieldDecorationStyle.plain,
-                          compact: true,
-                          textStyle: TextStyle(
-                            fontFamily: 'RobotoSlab',
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: palette.text,
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Equipaggiamento',
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    for (var i = 0; i < verticalCoins.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 5),
+                      Expanded(
+                        child: CoinPlaque(
+                          label: verticalCoins[i].label,
+                          child: _SheetTextField(
+                            key: ValueKey(verticalCoins[i].field),
+                            fieldName: verticalCoins[i].field,
+                            dialogLabel: verticalCoins[i].label,
+                            controller: controller,
+                            textAlign: TextAlign.center,
+                            style: _FieldDecorationStyle.plain,
+                            compact: true,
+                            textStyle: TextStyle(
+                              fontFamily: 'RobotoSlab',
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: palette.text,
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
-              ),
-              const SizedBox(height: 8),
-              Divider(height: 1, color: palette.ink.withValues(alpha: .2)),
-              const SizedBox(height: 4),
-              _SheetTextField(
-                key: const ValueKey('Equipment'),
-                fieldName: 'Equipment',
-                dialogLabel: 'Equipaggiamento',
-                controller: controller,
-                multiline: true,
-                minLines: 4,
-                style: _FieldDecorationStyle.plain,
-              ),
-            ],
+                ),
+                const SizedBox(height: 8),
+                Divider(height: 1, color: palette.ink.withValues(alpha: .2)),
+                const SizedBox(height: 4),
+                _SheetTextField(
+                  key: const ValueKey('Equipment'),
+                  fieldName: 'Equipment',
+                  dialogLabel: 'Equipaggiamento',
+                  controller: controller,
+                  multiline: true,
+                  minLines: 4,
+                  style: _FieldDecorationStyle.plain,
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        SheetFrameBox(
-          caption: 'Tesoro',
-          child: _SheetTextField(
-            key: const ValueKey('Treasure'),
-            fieldName: 'Treasure',
-            dialogLabel: 'Tesoro',
-            controller: controller,
-            multiline: true,
-            minLines: 3,
-            style: _FieldDecorationStyle.plain,
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Tesoro',
+            child: _SheetTextField(
+              key: const ValueKey('Treasure'),
+              fieldName: 'Treasure',
+              dialogLabel: 'Tesoro',
+              controller: controller,
+              multiline: true,
+              minLines: 3,
+              style: _FieldDecorationStyle.plain,
+            ),
           ),
         ),
       ],
@@ -1216,120 +1306,132 @@ class _StorySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SheetFrameBox(
-          caption: 'Aspetto del personaggio',
-          child: Column(
-            children: [
-              _FramedImageField(
-                fieldName: 'CharacterAppearanceImage',
-                label: 'Ritratto del personaggio',
-                boxSize: const Size(172, 222),
-                maxHeight: 220,
-                controller: controller,
-              ),
-              const SizedBox(height: 10),
-              for (var i = 0; i < verticalAppearanceFields.length; i += 3) ...[
-                if (i > 0) const SizedBox(height: 6),
-                Row(
-                  children: [
-                    for (var j = 0; j < 3; j++) ...[
-                      if (j > 0) const SizedBox(width: 8),
-                      Expanded(
-                        child: _UnderlinedLabeledField(
-                          fieldName: verticalAppearanceFields[i + j].field,
-                          caption: verticalAppearanceFields[i + j].label,
-                          controller: controller,
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Aspetto del personaggio',
+            child: Column(
+              children: [
+                _FramedImageField(
+                  fieldName: 'CharacterAppearanceImage',
+                  label: 'Ritratto del personaggio',
+                  boxSize: const Size(172, 222),
+                  maxHeight: 220,
+                  controller: controller,
+                ),
+                const SizedBox(height: 10),
+                for (
+                  var i = 0;
+                  i < verticalAppearanceFields.length;
+                  i += 3
+                ) ...[
+                  if (i > 0) const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      for (var j = 0; j < 3; j++) ...[
+                        if (j > 0) const SizedBox(width: 8),
+                        Expanded(
+                          child: _UnderlinedLabeledField(
+                            fieldName: verticalAppearanceFields[i + j].field,
+                            caption: verticalAppearanceFields[i + j].label,
+                            controller: controller,
+                          ),
                         ),
+                      ],
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        RepaintBoundary(
+          child: SheetTray(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < verticalPersonalityFields.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  SheetFrameBox(
+                    caption: verticalPersonalityFields[i].label,
+                    child: _SheetTextField(
+                      key: ValueKey(verticalPersonalityFields[i].field),
+                      fieldName: verticalPersonalityFields[i].field,
+                      dialogLabel: verticalPersonalityFields[i].label,
+                      controller: controller,
+                      multiline: true,
+                      minLines: 2,
+                      style: _FieldDecorationStyle.plain,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Alleati e organizzazioni',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SheetTray(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _MicroHeader('NOME ORGANIZZAZIONE'),
+                      const SizedBox(height: 4),
+                      _SheetTextField(
+                        key: const ValueKey('FactionName'),
+                        fieldName: 'FactionName',
+                        dialogLabel: 'Nome organizzazione',
+                        controller: controller,
+                        textAlign: TextAlign.center,
+                        style: _FieldDecorationStyle.shaded,
+                        compact: true,
+                      ),
+                      const SizedBox(height: 8),
+                      _FramedImageField(
+                        fieldName: 'FactionSymbolImage',
+                        label: 'Simbolo',
+                        boxSize: const Size(143, 114),
+                        maxHeight: 136,
+                        controller: controller,
                       ),
                     ],
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SheetTray(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < verticalPersonalityFields.length; i++) ...[
-                if (i > 0) const SizedBox(height: 8),
-                SheetFrameBox(
-                  caption: verticalPersonalityFields[i].label,
-                  child: _SheetTextField(
-                    key: ValueKey(verticalPersonalityFields[i].field),
-                    fieldName: verticalPersonalityFields[i].field,
-                    dialogLabel: verticalPersonalityFields[i].label,
-                    controller: controller,
-                    multiline: true,
-                    minLines: 2,
-                    style: _FieldDecorationStyle.plain,
                   ),
                 ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SheetFrameBox(
-          caption: 'Alleati e organizzazioni',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SheetTray(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _MicroHeader('NOME ORGANIZZAZIONE'),
-                    const SizedBox(height: 4),
-                    _SheetTextField(
-                      key: const ValueKey('FactionName'),
-                      fieldName: 'FactionName',
-                      dialogLabel: 'Nome organizzazione',
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      style: _FieldDecorationStyle.shaded,
-                      compact: true,
-                    ),
-                    const SizedBox(height: 8),
-                    _FramedImageField(
-                      fieldName: 'FactionSymbolImage',
-                      label: 'Simbolo',
-                      boxSize: const Size(143, 114),
-                      maxHeight: 136,
-                      controller: controller,
-                    ),
-                  ],
+                const SizedBox(height: 8),
+                Divider(height: 1, color: palette.ink.withValues(alpha: .2)),
+                const SizedBox(height: 4),
+                _SheetTextField(
+                  key: const ValueKey('Allies'),
+                  fieldName: 'Allies',
+                  dialogLabel: 'Alleati e organizzazioni',
+                  controller: controller,
+                  multiline: true,
+                  minLines: 3,
+                  style: _FieldDecorationStyle.plain,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Divider(height: 1, color: palette.ink.withValues(alpha: .2)),
-              const SizedBox(height: 4),
-              _SheetTextField(
-                key: const ValueKey('Allies'),
-                fieldName: 'Allies',
-                dialogLabel: 'Alleati e organizzazioni',
-                controller: controller,
-                multiline: true,
-                minLines: 3,
-                style: _FieldDecorationStyle.plain,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        SheetFrameBox(
-          caption: 'Storia del personaggio',
-          child: _SheetTextField(
-            key: const ValueKey('Backstory'),
-            fieldName: 'Backstory',
-            dialogLabel: 'Storia del personaggio',
-            controller: controller,
-            multiline: true,
-            minLines: 5,
-            style: _FieldDecorationStyle.plain,
+        RepaintBoundary(
+          child: SheetFrameBox(
+            caption: 'Storia del personaggio',
+            child: _SheetTextField(
+              key: const ValueKey('Backstory'),
+              fieldName: 'Backstory',
+              dialogLabel: 'Storia del personaggio',
+              controller: controller,
+              multiline: true,
+              minLines: 5,
+              style: _FieldDecorationStyle.plain,
+            ),
           ),
         ),
       ],
@@ -1494,82 +1596,82 @@ class _SpellsSectionState extends State<_SpellsSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: SheetFrameBox(
-                        caption: 'Caratteristica',
-                        padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
-                        child: _SheetTextField(
-                          key: const ValueKey('SpellcastingAbility 2'),
-                          fieldName: 'SpellcastingAbility 2',
-                          dialogLabel: 'Caratteristica da incantatore',
-                          controller: widget.controller,
-                          textAlign: TextAlign.center,
-                          style: _FieldDecorationStyle.plain,
-                          compact: true,
-                          textStyle: statStyle,
-                        ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: SheetFrameBox(
+                      caption: 'Caratteristica',
+                      padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
+                      child: _SheetTextField(
+                        key: const ValueKey('SpellcastingAbility 2'),
+                        fieldName: 'SpellcastingAbility 2',
+                        dialogLabel: 'Caratteristica da incantatore',
+                        controller: widget.controller,
+                        textAlign: TextAlign.center,
+                        style: _FieldDecorationStyle.plain,
+                        compact: true,
+                        textStyle: statStyle,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: SheetFrameBox(
-                        caption: 'CD Salvezza',
-                        padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
-                        child: _SheetTextField(
-                          key: const ValueKey('SpellSaveDC  2'),
-                          fieldName: 'SpellSaveDC  2',
-                          dialogLabel: 'CD Tiro Salvezza Incantesimi',
-                          controller: widget.controller,
-                          textAlign: TextAlign.center,
-                          style: _FieldDecorationStyle.plain,
-                          compact: true,
-                          textStyle: statStyle,
-                        ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: SheetFrameBox(
+                      caption: 'CD Salvezza',
+                      padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
+                      child: _SheetTextField(
+                        key: const ValueKey('SpellSaveDC  2'),
+                        fieldName: 'SpellSaveDC  2',
+                        dialogLabel: 'CD Tiro Salvezza Incantesimi',
+                        controller: widget.controller,
+                        textAlign: TextAlign.center,
+                        style: _FieldDecorationStyle.plain,
+                        compact: true,
+                        textStyle: statStyle,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: SheetFrameBox(
-                        caption: 'Bonus Attacco',
-                        padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
-                        child: _SheetTextField(
-                          key: const ValueKey('SpellAtkBonus 2'),
-                          fieldName: 'SpellAtkBonus 2',
-                          dialogLabel: 'Bonus Attacco Incantesimi',
-                          controller: widget.controller,
-                          textAlign: TextAlign.center,
-                          style: _FieldDecorationStyle.plain,
-                          compact: true,
-                          textStyle: statStyle,
-                        ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: SheetFrameBox(
+                      caption: 'Bonus Attacco',
+                      padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
+                      child: _SheetTextField(
+                        key: const ValueKey('SpellAtkBonus 2'),
+                        fieldName: 'SpellAtkBonus 2',
+                        dialogLabel: 'Bonus Attacco Incantesimi',
+                        controller: widget.controller,
+                        textAlign: TextAlign.center,
+                        style: _FieldDecorationStyle.plain,
+                        compact: true,
+                        textStyle: statStyle,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               for (final level in verticalSpellLevels) ...[
                 const SizedBox(height: 10),
-                _SpellLevelCard(
-                  level: level,
-                  controller: widget.controller,
-                  expanded: _expandedLevels.contains(level.level),
-                  showAllRows: _showAllRows.contains(level.level),
-                  slotHasData: _slotHasData,
-                  onToggleExpanded: () => setState(() {
-                    if (!_expandedLevels.add(level.level)) {
-                      _expandedLevels.remove(level.level);
-                    }
-                  }),
-                  onToggleShowAll: () => setState(() {
-                    if (!_showAllRows.add(level.level)) {
-                      _showAllRows.remove(level.level);
-                    }
-                  }),
-                  onRowEdited: () => setState(() {}),
+                RepaintBoundary(
+                  child: _SpellLevelCard(
+                    level: level,
+                    controller: widget.controller,
+                    expanded: _expandedLevels.contains(level.level),
+                    showAllRows: _showAllRows.contains(level.level),
+                    slotHasData: _slotHasData,
+                    onToggleExpanded: () => setState(() {
+                      if (!_expandedLevels.add(level.level)) {
+                        _expandedLevels.remove(level.level);
+                      }
+                    }),
+                    onToggleShowAll: () => setState(() {
+                      if (!_showAllRows.add(level.level)) {
+                        _showAllRows.remove(level.level);
+                      }
+                    }),
+                    onRowEdited: () => setState(() {}),
+                  ),
                 ),
               ],
             ],
@@ -2055,7 +2157,8 @@ class _SheetTextFieldState extends State<_SheetTextField> {
                         widget.onChanged?.call();
                       },
                     )
-                  : InkWell(
+                  : GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: locked ? null : _startEditing,
                       child: Container(
                         width: double.infinity,

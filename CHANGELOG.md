@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0-rc.3 — 2026-11-25
+
+- Prestazioni dello scorrimento nella vista **Verticale**: aggiunti
+  `RepaintBoundary` per sezione, blocco e barra di navigazione, marcati
+  `isComplex` i `CustomPaint` delle cornici, sostituito `InkWell` con
+  `GestureDetector` nei campi (niente ripple/focus extra al tocco di drag),
+  rimossi gli `IntrinsicHeight`, messe in cache le posizioni delle sezioni per
+  la barra superiore e la colonna durante l'animazione della tastiera.
+
 ## 1.6.0-rc.2 — 2026-11-25
 
 - Grafica della vista **Verticale** allineata allo stile della scheda D&D 5e:

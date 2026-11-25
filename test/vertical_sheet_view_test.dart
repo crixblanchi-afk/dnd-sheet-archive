@@ -395,6 +395,71 @@ void main() {
     await tester.pump();
     driveSync.dispose();
   });
+
+  testWidgets(
+    'scrolling the vertical sheet does not rebuild sheet fields or ornaments',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final controller = SheetController(
+        repository: _FakeRepository(),
+        character: Character(
+          id: 'c1',
+          name: 'Arannis',
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          locked: false,
+          fields: {
+            'CharacterName': 'Arannis',
+            'AC': '16',
+            'HPCurrent': '34',
+            'Spells 1048': 'Palla di fuoco',
+          },
+        ),
+      );
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: VerticalSheetView(controller: controller)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      var fieldOrOrnamentRebuilds = 0;
+      debugOnRebuildDirtyWidget = (element, builtOnce) {
+        final widget = element.widget;
+        if (widget is CustomPaint || widget is RichText) {
+          fieldOrOrnamentRebuilds++;
+        }
+      };
+      try {
+        for (var i = 0; i < 6; i++) {
+          await tester.drag(
+            find.byType(SingleChildScrollView).last,
+            const Offset(0, -450),
+          );
+          await tester.pump();
+        }
+        await tester.pumpAndSettle();
+        for (var height = 820.0; height >= 540; height -= 40) {
+          await tester.binding.setSurfaceSize(Size(390, height));
+          await tester.pump();
+        }
+        await tester.binding.setSurfaceSize(const Size(390, 844));
+        await tester.pumpAndSettle();
+      } finally {
+        debugOnRebuildDirtyWidget = null;
+      }
+
+      expect(fieldOrOrnamentRebuilds, 0);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    },
+  );
 }
 
 class _FakeRepository extends CharacterRepository {
