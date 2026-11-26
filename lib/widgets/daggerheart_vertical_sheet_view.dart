@@ -647,64 +647,78 @@ class _DefenseBlock extends StatelessWidget {
       color: palette.text,
     );
     return SheetTray(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 88),
-                  child: SheetFrameBox(
-                    caption: 'Evasion',
-                    padding: const EdgeInsets.fromLTRB(8, 14, 8, 8),
-                    child: _DhTextField(
-                      key: const ValueKey('DH_Evasion'),
-                      fieldName: 'DH_Evasion',
-                      dialogLabel: 'Evasion',
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      style: _FieldStyle.plain,
-                      compact: true,
-                      textStyle: bigStyle,
-                    ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 3,
+              child: SheetFrameBox(
+                caption: 'Evasion',
+                padding: const EdgeInsets.fromLTRB(6, 16, 6, 8),
+                child: Center(
+                  child: _DhTextField(
+                    key: const ValueKey('DH_Evasion'),
+                    fieldName: 'DH_Evasion',
+                    dialogLabel: 'Evasion',
+                    controller: controller,
+                    textAlign: TextAlign.center,
+                    style: _FieldStyle.plain,
+                    compact: true,
+                    textStyle: bigStyle,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 88),
-                  child: ArmorClassShield(
-                    caption: 'ARMOR\nSCORE',
-                    child: _DhTextField(
-                      key: const ValueKey('DH_ArmorScore'),
-                      fieldName: 'DH_ArmorScore',
-                      dialogLabel: 'Armor Score',
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      style: _FieldStyle.plain,
-                      compact: true,
-                      textStyle: bigStyle,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SheetFrameBox(
-            caption: 'Armor Slots (12)',
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-            child: _SlotWrap(
-              controller: controller,
-              count: 12,
-              fieldPrefix: 'DH_ArmorSlot_',
-              labelPrefix: 'Armor Slot',
-              shape: _SlotShape.shield,
             ),
-          ),
-        ],
+            const SizedBox(width: 6),
+            Expanded(
+              flex: 3,
+              child: ArmorClassShield(
+                caption: 'ARMOR\nSCORE',
+                child: _DhTextField(
+                  key: const ValueKey('DH_ArmorScore'),
+                  fieldName: 'DH_ArmorScore',
+                  dialogLabel: 'Armor Score',
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  style: _FieldStyle.plain,
+                  compact: true,
+                  textStyle: bigStyle,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              flex: 4,
+              child: SheetFrameBox(
+                caption: 'Armor Slots',
+                padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (var row = 0; row < 4; row++)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var col = 0; col < 3; col++)
+                            _DhCheckbox(
+                              key: ValueKey(
+                                'DH_ArmorSlot_${row * 3 + col + 1}',
+                              ),
+                              fieldName: 'DH_ArmorSlot_${row * 3 + col + 1}',
+                              dialogLabel: 'Armor Slot ${row * 3 + col + 1}',
+                              controller: controller,
+                              shape: _SlotShape.shield,
+                              size: 22,
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2394,7 +2408,7 @@ class _DhCheckboxState extends State<_DhCheckbox> {
       case _SlotShape.shield:
         return Icon(
           checked ? Icons.shield : Icons.shield_outlined,
-          size: 20,
+          size: widget.size <= 24 ? 17 : 20,
           color: checked ? palette.text : palette.ink.withValues(alpha: .78),
         );
     }
