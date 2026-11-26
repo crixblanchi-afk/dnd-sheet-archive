@@ -1450,96 +1450,207 @@ class _ExperienceBlock extends StatelessWidget {
   }
 }
 
-/// Barra Gold compatta in una sola riga con caselle selezionabili
-/// (`DH_GoldHandful_1..9`, `DH_GoldBag_1..9` e `DH_GoldChest`).
+/// Barra Gold compatta in una sola riga con contatori − / + sincronizzati con
+/// i checkbox `DH_GoldHandful_1..9`, `DH_GoldBag_1..9` e `DH_GoldChest`.
 class _GoldBarBlock extends StatelessWidget {
   const _GoldBarBlock({required this.controller, required this.onFieldEdited});
 
   final SheetController controller;
   final VoidCallback onFieldEdited;
 
+  void _setCount(String prefix, int max, int target) {
+    final clamped = target.clamp(0, max);
+    for (var i = 1; i <= max; i++) {
+      controller.setCheckbox(
+        '$prefix$i',
+        i <= clamped
+            ? SheetCheckboxValue.proficient
+            : SheetCheckboxValue.unchecked,
+      );
+    }
+    onFieldEdited();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final handfuls = _countChecked(controller, 'DH_GoldHandful_', 9);
+    final bags = _countChecked(controller, 'DH_GoldBag_', 9);
+    final chest = _dhIsChecked(controller, 'DH_GoldChest');
+    final locked = controller.locked;
+
     return SheetFrameBox(
       padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 520;
-          final slotSize = compact ? 21.0 : 23.0;
-          final chestWidth = compact ? 70.0 : 84.0;
-          return IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: CoinPlaque(
-                    label: 'HANDFULS',
-                    child: Center(
-                      child: Wrap(
-                        alignment: WrapAlignment.center,
-                        runSpacing: 2,
-                        children: [
-                          for (var i = 1; i <= 9; i++)
-                            _DhCheckbox(
-                              key: ValueKey('DH_GoldHandful_$i'),
-                              fieldName: 'DH_GoldHandful_$i',
-                              dialogLabel: 'Gold Handful $i',
-                              controller: controller,
-                              shape: _SlotShape.circle,
-                              size: slotSize,
-                              onChanged: onFieldEdited,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: CoinPlaque(
-                    label: 'BAGS',
-                    child: Center(
-                      child: Wrap(
-                        alignment: WrapAlignment.center,
-                        runSpacing: 2,
-                        children: [
-                          for (var i = 1; i <= 9; i++)
-                            _DhCheckbox(
-                              key: ValueKey('DH_GoldBag_$i'),
-                              fieldName: 'DH_GoldBag_$i',
-                              dialogLabel: 'Gold Bag $i',
-                              controller: controller,
-                              shape: _SlotShape.circle,
-                              size: slotSize,
-                              onChanged: onFieldEdited,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: chestWidth,
-                  child: CoinPlaque(
-                    label: 'CHEST',
-                    child: Center(
-                      child: _DhCheckbox(
-                        key: const ValueKey('DH_GoldChest'),
-                        fieldName: 'DH_GoldChest',
-                        dialogLabel: 'Gold Chest',
-                        controller: controller,
-                        shape: _SlotShape.box,
-                        size: 24,
-                        onChanged: onFieldEdited,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+      child: Row(
+        children: [
+          Expanded(
+            flex: 4,
+            child: _GoldStepperPlaque(
+              label: 'HANDFULS',
+              value: handfuls,
+              max: 9,
+              locked: locked,
+              decrementKey: const ValueKey('dh-gold-handful-dec'),
+              incrementKey: const ValueKey('dh-gold-handful-inc'),
+              onChanged: (next) => _setCount('DH_GoldHandful_', 9, next),
             ),
-          );
-        },
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: 4,
+            child: _GoldStepperPlaque(
+              label: 'BAGS',
+              value: bags,
+              max: 9,
+              locked: locked,
+              decrementKey: const ValueKey('dh-gold-bag-dec'),
+              incrementKey: const ValueKey('dh-gold-bag-inc'),
+              onChanged: (next) => _setCount('DH_GoldBag_', 9, next),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: 3,
+            child: _GoldChestPlaque(
+              checked: chest,
+              locked: locked,
+              onToggle: () {
+                controller.setCheckbox(
+                  'DH_GoldChest',
+                  chest
+                      ? SheetCheckboxValue.unchecked
+                      : SheetCheckboxValue.proficient,
+                );
+                onFieldEdited();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GoldStepperPlaque extends StatelessWidget {
+  const _GoldStepperPlaque({
+    required this.label,
+    required this.value,
+    required this.max,
+    required this.locked,
+    required this.decrementKey,
+    required this.incrementKey,
+    required this.onChanged,
+  });
+
+  final String label;
+  final int value;
+  final int max;
+  final bool locked;
+  final Key decrementKey;
+  final Key incrementKey;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = SheetPalette.of(context);
+    return CoinPlaque(
+      label: label,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _MicroStepButton(
+            key: decrementKey,
+            icon: Icons.remove,
+            enabled: !locked && value > 0,
+            onTap: () => onChanged(value - 1),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              '$value',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontFamily: 'RobotoSlab',
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: palette.text,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          _MicroStepButton(
+            key: incrementKey,
+            icon: Icons.add,
+            enabled: !locked && value < max,
+            onTap: () => onChanged(value + 1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MicroStepButton extends StatelessWidget {
+  const _MicroStepButton({
+    super.key,
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = SheetPalette.of(context);
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox.square(
+        dimension: 26,
+        child: Icon(
+          icon,
+          size: 16,
+          color: palette.ink.withValues(alpha: enabled ? .85 : .25),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoldChestPlaque extends StatelessWidget {
+  const _GoldChestPlaque({
+    required this.checked,
+    required this.locked,
+    required this.onToggle,
+  });
+
+  final bool checked;
+  final bool locked;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = SheetPalette.of(context);
+    return InkWell(
+      key: const ValueKey('DH_GoldChest'),
+      onTap: locked ? null : onToggle,
+      borderRadius: BorderRadius.circular(6),
+      child: CoinPlaque(
+        label: 'CHEST',
+        child: SizedBox(
+          height: 26,
+          child: Center(
+            child: Icon(
+              checked ? Icons.inventory_2 : Icons.inventory_2_outlined,
+              size: 18,
+              color: checked
+                  ? palette.accent
+                  : palette.ink.withValues(alpha: .42),
+            ),
+          ),
+        ),
       ),
     );
   }

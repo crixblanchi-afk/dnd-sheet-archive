@@ -388,106 +388,110 @@ class _DaggerheartCardsPageState extends State<DaggerheartCardsPage> {
             onChanged: (value) => setState(() => _query = value),
           ),
           const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                if (_hasSpecificClass && cls != null) ...[
-                  FilterChip(
-                    key: const ValueKey('dh-filter-class'),
-                    label: Text(
-                      'Solo ${cls.label} (${cls.domains.map((d) => daggerheartDomainLabels[d] ?? d).join(' & ')})',
-                    ),
-                    selected: _onlyClassRelevant,
-                    onSelected: (value) => setState(() {
-                      _onlyClassRelevant = value;
-                      if (value &&
-                          _domainFilter != null &&
-                          !cls.domains.contains(_domainFilter)) {
-                        _domainFilter = null;
-                      }
-                    }),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (_hasSpecificClass && cls != null)
+                FilterChip(
+                  key: const ValueKey('dh-filter-class'),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  label: Text(
+                    'Solo ${cls.label} (${cls.domains.map((d) => daggerheartDomainLabels[d] ?? d).join(' & ')})',
                   ),
-                  const SizedBox(width: 8),
-                ],
-                ChoiceChip(
-                  label: const Text('Tutte'),
-                  selected: _categoryFilter == null,
-                  onSelected: (_) => setState(() => _categoryFilter = null),
+                  selected: _onlyClassRelevant,
+                  onSelected: (value) => setState(() {
+                    _onlyClassRelevant = value;
+                    if (value &&
+                        _domainFilter != null &&
+                        !cls.domains.contains(_domainFilter)) {
+                      _domainFilter = null;
+                    }
+                  }),
                 ),
-                for (final category in DaggerheartCardCategory.values) ...[
-                  const SizedBox(width: 6),
-                  ChoiceChip(
-                    key: ValueKey('dh-filter-cat-${category.id}'),
-                    label: Text(category.label),
-                    selected: _categoryFilter == category,
-                    onSelected: (_) => setState(() {
-                      _categoryFilter = category;
-                      if (category != DaggerheartCardCategory.domain) {
-                        _domainFilter = null;
-                        _levelFilter = null;
-                      }
-                    }),
-                  ),
-                ],
-              ],
-            ),
+              ChoiceChip(
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                label: const Text('Tutte'),
+                selected: _categoryFilter == null,
+                onSelected: (_) => setState(() => _categoryFilter = null),
+              ),
+              for (final category in DaggerheartCardCategory.values)
+                ChoiceChip(
+                  key: ValueKey('dh-filter-cat-${category.id}'),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  label: Text(category.label),
+                  selected: _categoryFilter == category,
+                  onSelected: (_) => setState(() {
+                    _categoryFilter = category;
+                    if (category != DaggerheartCardCategory.domain) {
+                      _domainFilter = null;
+                      _levelFilter = null;
+                    }
+                  }),
+                ),
+            ],
           ),
           if (showDomainControls) ...[
             const SizedBox(height: 6),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ChoiceChip(
-                    label: const Text('Tutti i domini'),
-                    selected: _domainFilter == null,
-                    onSelected: (_) => setState(() => _domainFilter = null),
-                  ),
-                  for (final entry in daggerheartDomainLabels.entries)
-                    if (!_onlyClassRelevant ||
-                        !_hasSpecificClass ||
-                        (cls?.domains.contains(entry.key) ?? true)) ...[
-                      const SizedBox(width: 6),
-                      ChoiceChip(
-                        key: ValueKey('dh-filter-domain-${entry.key}'),
-                        label: Text(entry.value),
-                        selected: _domainFilter == entry.key,
-                        onSelected: (_) => setState(() {
-                          _domainFilter = _domainFilter == entry.key
-                              ? null
-                              : entry.key;
-                          if (_domainFilter != null) {
-                            _categoryFilter = DaggerheartCardCategory.domain;
-                          }
-                        }),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                ChoiceChip(
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  label: const Text('Tutti i domini'),
+                  selected: _domainFilter == null,
+                  onSelected: (_) => setState(() => _domainFilter = null),
+                ),
+                for (final entry in daggerheartDomainLabels.entries)
+                  if (!_onlyClassRelevant ||
+                      !_hasSpecificClass ||
+                      (cls?.domains.contains(entry.key) ?? true))
+                    ChoiceChip(
+                      key: ValueKey('dh-filter-domain-${entry.key}'),
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      label: Text(entry.value),
+                      selected: _domainFilter == entry.key,
+                      onSelected: (_) => setState(() {
+                        _domainFilter = _domainFilter == entry.key
+                            ? null
+                            : entry.key;
+                        if (_domainFilter != null) {
+                          _categoryFilter = DaggerheartCardCategory.domain;
+                        }
+                      }),
+                    ),
+                DropdownButton<int?>(
+                  key: const ValueKey('dh-filter-level'),
+                  value: _levelFilter,
+                  isDense: true,
+                  underline: const SizedBox.shrink(),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('Tutti i livelli'),
+                    ),
+                    for (var lv = 1; lv <= 10; lv++)
+                      DropdownMenuItem<int?>(
+                        value: lv,
+                        child: Text('Livello $lv'),
                       ),
-                    ],
-                  const SizedBox(width: 12),
-                  DropdownButton<int?>(
-                    key: const ValueKey('dh-filter-level'),
-                    value: _levelFilter,
-                    underline: const SizedBox.shrink(),
-                    items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text('Tutti i livelli'),
-                      ),
-                      for (var lv = 1; lv <= 10; lv++)
-                        DropdownMenuItem<int?>(
-                          value: lv,
-                          child: Text('Livello $lv'),
-                        ),
-                    ],
-                    onChanged: (value) => setState(() {
-                      _levelFilter = value;
-                      if (value != null) {
-                        _categoryFilter = DaggerheartCardCategory.domain;
-                      }
-                    }),
-                  ),
-                ],
-              ),
+                  ],
+                  onChanged: (value) => setState(() {
+                    _levelFilter = value;
+                    if (value != null) {
+                      _categoryFilter = DaggerheartCardCategory.domain;
+                    }
+                  }),
+                ),
+              ],
             ),
           ],
         ],
