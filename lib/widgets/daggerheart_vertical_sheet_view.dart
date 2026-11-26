@@ -180,7 +180,9 @@ class _DaggerheartVerticalSheetViewState
     }
     if (includeSlots &&
         (_dhIsChecked(c, '${prefix}_Primary') ||
-            _dhIsChecked(c, '${prefix}_Secondary'))) {
+            _dhIsChecked(c, '${prefix}_Secondary') ||
+            _dhIsChecked(c, '${prefix}_Hand1') ||
+            _dhIsChecked(c, '${prefix}_Hand2'))) {
       return true;
     }
     return false;
@@ -1680,32 +1682,63 @@ class _EquipmentBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Proficiency compatta su una sola riga.
+          // Proficiency + mani attive compatti (a capo automatico su schermi stretti).
           SheetFrameBox(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: Row(
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
-                Text(
-                  'PROFICIENCY ($profCount/6)',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontFamily: 'RobotoSlab',
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: .6,
-                    color: palette.ink,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'PROFICIENCY ($profCount/6)',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontFamily: 'RobotoSlab',
+                        fontSize: 9.2,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .5,
+                        color: palette.ink,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    for (var i = 1; i <= 6; i++)
+                      _DhCheckbox(
+                        key: ValueKey('DH_Proficiency_$i'),
+                        fieldName: 'DH_Proficiency_$i',
+                        dialogLabel: 'Proficiency $i',
+                        controller: controller,
+                        shape: _SlotShape.circle,
+                        size: 22,
+                        onChanged: onFieldEdited,
+                      ),
+                  ],
                 ),
-                const Spacer(),
-                for (var i = 1; i <= 6; i++)
-                  _DhCheckbox(
-                    key: ValueKey('DH_Proficiency_$i'),
-                    fieldName: 'DH_Proficiency_$i',
-                    dialogLabel: 'Proficiency $i',
-                    controller: controller,
-                    shape: _SlotShape.circle,
-                    size: 26,
-                    onChanged: onFieldEdited,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'MANI',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontFamily: 'RobotoSlab',
+                        fontSize: 8.8,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .5,
+                        color: palette.ink.withValues(alpha: .78),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    _HandTogglePair(
+                      leftFieldName: 'DH_ActiveHand_1',
+                      rightFieldName: 'DH_ActiveHand_2',
+                      controller: controller,
+                      onChanged: onFieldEdited,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1820,6 +1853,13 @@ class _WeaponCard extends StatelessWidget {
                     color: palette.ink,
                   ),
                 ),
+                const Spacer(),
+                _HandTogglePair(
+                  leftFieldName: '${prefix}_Hand1',
+                  rightFieldName: '${prefix}_Hand2',
+                  controller: controller,
+                  onChanged: onFieldEdited,
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -1882,6 +1922,79 @@ class _WeaponCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _HandTogglePair extends StatelessWidget {
+  const _HandTogglePair({
+    required this.leftFieldName,
+    required this.rightFieldName,
+    required this.controller,
+    required this.onChanged,
+  });
+
+  final String leftFieldName;
+  final String rightFieldName;
+  final SheetController controller;
+  final VoidCallback onChanged;
+
+  Widget _buildHand(
+    BuildContext context, {
+    required String fieldName,
+    required String tooltip,
+    required bool flipX,
+  }) {
+    final palette = SheetPalette.of(context);
+    final checked = _dhIsChecked(controller, fieldName);
+    final locked = controller.locked;
+    Widget icon = Icon(
+      checked ? Icons.front_hand : Icons.front_hand_outlined,
+      size: 16,
+      color: checked ? palette.accent : palette.ink.withValues(alpha: .48),
+    );
+    if (flipX) {
+      icon = Transform.flip(flipX: true, child: icon);
+    }
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        key: ValueKey(fieldName),
+        borderRadius: BorderRadius.circular(12),
+        onTap: locked
+            ? null
+            : () {
+                controller.setCheckbox(
+                  fieldName,
+                  checked
+                      ? SheetCheckboxValue.unchecked
+                      : SheetCheckboxValue.proficient,
+                );
+                onChanged();
+              },
+        child: SizedBox.square(dimension: 24, child: Center(child: icon)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildHand(
+          context,
+          fieldName: leftFieldName,
+          tooltip: 'Mano sinistra',
+          flipX: true,
+        ),
+        _buildHand(
+          context,
+          fieldName: rightFieldName,
+          tooltip: 'Mano destra',
+          flipX: false,
+        ),
+      ],
     );
   }
 }

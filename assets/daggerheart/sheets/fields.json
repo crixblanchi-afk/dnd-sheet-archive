@@ -835,6 +835,22 @@
       "h": 9.9
     },
     {
+      "name": "DH_ActiveHand_1",
+      "type": "checkbox",
+      "x": 541.5,
+      "y": 156.5,
+      "w": 14.0,
+      "h": 14.0
+    },
+    {
+      "name": "DH_ActiveHand_2",
+      "type": "checkbox",
+      "x": 560.5,
+      "y": 156.5,
+      "w": 14.0,
+      "h": 14.0
+    },
+    {
       "name": "DH_PrimaryWeapon_Name",
       "type": "text",
       "x": 291.0,
@@ -1035,6 +1051,22 @@
       "align": 0
     },
     {
+      "name": "DH_InvWeapon1_Hand1",
+      "type": "checkbox",
+      "x": 467.6,
+      "y": 604.9,
+      "w": 9.8,
+      "h": 11.2
+    },
+    {
+      "name": "DH_InvWeapon1_Hand2",
+      "type": "checkbox",
+      "x": 478.8,
+      "y": 604.9,
+      "w": 9.8,
+      "h": 11.2
+    },
+    {
       "name": "DH_InvWeapon1_Primary",
       "type": "checkbox",
       "x": 498.1,
@@ -1099,6 +1131,22 @@
       "h": 13.0,
       "multiline": false,
       "align": 0
+    },
+    {
+      "name": "DH_InvWeapon2_Hand1",
+      "type": "checkbox",
+      "x": 467.6,
+      "y": 695.5,
+      "w": 9.8,
+      "h": 11.2
+    },
+    {
+      "name": "DH_InvWeapon2_Hand2",
+      "type": "checkbox",
+      "x": 478.8,
+      "y": 695.5,
+      "w": 9.8,
+      "h": 11.2
     },
     {
       "name": "DH_InvWeapon2_Primary",

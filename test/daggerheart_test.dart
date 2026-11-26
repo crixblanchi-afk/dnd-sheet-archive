@@ -322,6 +322,20 @@ void main() {
       await tester.pumpAndSettle();
       expect(character.fields['DH_HP_1'], isTrue);
 
+      // Left/right hand checkboxes on Active Weapons and Inventory Weapons are clickable.
+      for (final handField in [
+        'DH_ActiveHand_1',
+        'DH_ActiveHand_2',
+        'DH_InvWeapon1_Hand1',
+        'DH_InvWeapon1_Hand2',
+      ]) {
+        final handFinder = find.byKey(ValueKey(handField));
+        expect(handFinder, findsOneWidget);
+        await tester.tapAt(tester.getCenter(handFinder));
+        await tester.pumpAndSettle();
+        expect(character.fields[handField], isTrue);
+      }
+
       // Navigate to page 2 (Guide) then page 3 (Cards).
       await tester.tap(find.byTooltip('Pagina successiva'));
       await tester.pumpAndSettle();

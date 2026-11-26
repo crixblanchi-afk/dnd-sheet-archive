@@ -142,10 +142,12 @@ def build_main_common_fields() -> list[dict]:
         fields.append(_field_check(f"DH_GoldBag_{i + 1}", x, 510.7, 10.2, 12.8))
     fields.append(_field_check("DH_GoldChest", 242.8, 508.9, 14.7, 14.7))
 
-    # Active Weapons: Proficiency (6 circles)
+    # Active Weapons: Proficiency (6 circles) + Left/Right Hand icons
     prof_xs = [439.0, 450.4, 461.9, 473.3, 484.8, 496.2]
     for i, x in enumerate(prof_xs):
         fields.append(_field_check(f"DH_Proficiency_{i + 1}", x, 172.0, 9.9, 9.9))
+    fields.append(_field_check("DH_ActiveHand_1", 541.5, 156.5, 14.0, 14.0))
+    fields.append(_field_check("DH_ActiveHand_2", 560.5, 156.5, 14.0, 14.0))
 
     # Active Primary & Secondary Weapons
     for prefix, base_y, feat_y1, feat_y2 in [
@@ -171,7 +173,7 @@ def build_main_common_fields() -> list[dict]:
         height = 12.5 if i == 0 else 15.0
         fields.append(_field_text(f"DH_Inventory_{i + 1}", 291.0, line_y - height, 303.5, height))
 
-    # Inventory Weapons (2 blocks, each with Primary/Secondary checkboxes + fields)
+    # Inventory Weapons (2 blocks, each with Left/Right Hand + Primary/Secondary checkboxes + fields)
     for idx, (cb_y, base_y, feat_y1, feat_y2) in enumerate(
         [
             (606.5, 630.5, 656.1, 678.1),
@@ -180,6 +182,8 @@ def build_main_common_fields() -> list[dict]:
         start=1,
     ):
         prefix = f"DH_InvWeapon{idx}"
+        fields.append(_field_check(f"{prefix}_Hand1", 467.6, cb_y - 1.6, 9.8, 11.2))
+        fields.append(_field_check(f"{prefix}_Hand2", 478.8, cb_y - 1.6, 9.8, 11.2))
         fields.append(_field_check(f"{prefix}_Primary", 498.1, cb_y - 1.0, 9.2, 9.2))
         fields.append(_field_check(f"{prefix}_Secondary", 548.0, cb_y - 1.0, 9.2, 9.2))
         fields.append(_field_text(f"{prefix}_Name", 291.0, base_y - 13.5, 123.0, 13.5))
