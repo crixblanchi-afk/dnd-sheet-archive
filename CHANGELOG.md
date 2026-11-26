@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.6.0-rc.5 — 2026-11-26
+
+- Supporto completo alle schede **Daggerheart**: alla creazione di un nuovo
+  personaggio è possibile scegliere tra **D&D 5e** e **Daggerheart** con tutte
+  le 9 classi ufficiali (più scheda generica, schede Druid Beastform e Ranger
+  Companion) e compilare i campi su tutte le viste (**A pagine**,
+  **A scorrimento** e **Verticale**), inclusi i checkbox mano sinistra/destra
+  sulle armi e l'export PDF con le card selezionate.
+- Pagina dedicata **Card** per Daggerheart con catalogo completo di 269 card
+  (Ancestry, Community, Subclass, Domain) ricercabile e filtrabile per classe,
+  categoria, dominio e livello, gestione Loadout/Vault e anteprima ingrandibile.
+- Vista **Verticale** rifinita per Daggerheart: HP/Stress iniziali per classe
+  con slot massimi regolabili (`− / +`), `Evasion` + `Armor Score` + `Armor
+  Slots` su una riga, barra Gold compatta, inventario multiriga, sezioni
+  collassabili, card selezionate sopra lo zaino con zoom al tocco e pulsante
+  `Modifica`.
+- **Tiro duale (2d12 · Hope + Fear)** nel selettore dadi per le schede
+  Daggerheart, con esito automatico (`con Hope`, `con Fear`, `Critico!`) e
+  supporto all'aggiunta di dadi extra (es. `d6` di Vantaggio).
+
 ## 1.6.0-rc.4 — 2026-11-25
 
 - Scorrimento a 120 Hz nella vista **Verticale** su Impeller (Vulkan):
