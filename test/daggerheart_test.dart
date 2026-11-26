@@ -486,20 +486,44 @@ void main() {
       expect(find.text('Compagno'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      // Jump to Esperienze & Oro: empty experience rows are hidden until added.
-      await tester.ensureVisible(find.text('Esperienze & Oro'));
+      // Jump to Tratti: empty experience rows are hidden until added, Gold steppers update checkboxes.
+      await tester.ensureVisible(find.text('Tratti'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Esperienze & Oro'));
+      await tester.tap(find.text('Tratti'));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('DH_Experience_1')), findsNothing);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('dh-add-experience')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('dh-add-experience')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('DH_Experience_1')), findsOneWidget);
 
-      // Jump to Classe & Guida: Background Questions start collapsed.
-      await tester.ensureVisible(find.text('Classe & Guida'));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('dh-gold-handful-inc')),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Classe & Guida'));
+      await tester.tap(find.byKey(const ValueKey('dh-gold-handful-inc')));
+      await tester.pumpAndSettle();
+      expect(character.fields['DH_GoldHandful_1'], isTrue);
+
+      // Jump to Zaino: Inventory is a single multiline box synced with DH_Inventory_1..5.
+      await tester.ensureVisible(find.text('Zaino'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Zaino'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('DH_Inventory_Multiline')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Torcia\nCorda 15m');
+      await tester.pumpAndSettle();
+      expect(character.fields['DH_Inventory_1'], 'Torcia');
+      expect(character.fields['DH_Inventory_2'], 'Corda 15m');
+
+      // Jump to Guida: Background Questions start collapsed.
+      await tester.ensureVisible(find.text('Guida'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Guida'));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('DH_Background_1')), findsNothing);
       await tester.tap(find.byKey(const ValueKey('dh-section-background')));
