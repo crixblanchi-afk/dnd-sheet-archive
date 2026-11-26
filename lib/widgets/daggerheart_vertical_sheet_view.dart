@@ -10,6 +10,7 @@ import '../models/game_system.dart';
 import '../models/sheet_field.dart';
 import '../theme/sheet_palette.dart';
 import 'comment_dialog.dart';
+import 'daggerheart_cards_page.dart';
 import 'image_field_overlay.dart';
 import 'inline_markdown.dart';
 import 'sheet_ornaments.dart';
@@ -2878,18 +2879,22 @@ class _SelectedCardsBlock extends StatelessWidget {
                   ),
                 ),
               ),
-              TextButton.icon(
+              OutlinedButton.icon(
                 key: const ValueKey('dh-vertical-manage-cards'),
-                style: TextButton.styleFrom(
+                style: OutlinedButton.styleFrom(
                   foregroundColor: palette.ink,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  side: BorderSide(color: palette.ink.withValues(alpha: .35)),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   minimumSize: const Size(0, 30),
                   visualDensity: VisualDensity.compact,
                 ),
                 onPressed: onManageCards,
-                icon: const Icon(Icons.style_outlined, size: 16),
+                icon: Icon(
+                  selectedMap.isEmpty ? Icons.add : Icons.edit_outlined,
+                  size: 15,
+                ),
                 label: Text(
-                  selectedMap.isEmpty ? 'Seleziona card' : 'Gestisci',
+                  selectedMap.isEmpty ? 'Seleziona card' : 'Modifica',
                   style: const TextStyle(
                     fontFamily: 'RobotoSlab',
                     fontSize: 11.5,
@@ -2917,7 +2922,11 @@ class _SelectedCardsBlock extends StatelessWidget {
                     selectedMap[card.id] == DaggerheartCardState.vault;
                 return InkWell(
                   key: ValueKey('dh-vertical-card-${card.id}'),
-                  onTap: onManageCards,
+                  onTap: () => showDaggerheartCardPreviewDialog(
+                    context: context,
+                    controller: controller,
+                    card: card,
+                  ),
                   borderRadius: BorderRadius.circular(8),
                   child: DecoratedBox(
                     decoration: BoxDecoration(

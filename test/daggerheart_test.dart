@@ -441,109 +441,120 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Daggerheart vertical view renders cleanly on 390x844 phone viewport',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(390, 844));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('Daggerheart vertical view renders cleanly on 390x844 phone viewport', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final db = await databaseFactoryMemory.openDatabase(
-        'dh-vertical-phone.db',
-      );
-      addTearDown(db.close);
-      final repo = SembastCharacterRepository(db);
-      final drive = GoogleDriveSyncService(
-        LocalArchiveSyncStore(db),
-        syncTracker: ArchiveSyncTracker.inMemory(),
-      );
-      final character = (await tester.runAsync(
-        () => repo.createCharacter(
-          'Kaelen',
-          system: GameSystem.daggerheart,
-          daggerheartClass: DaggerheartClass.ranger,
-        ),
-      ))!;
-      final viewPrefs = SheetViewPreferences.inMemory(
-        mode: SheetViewMode.vertical,
-      );
+    final db = await databaseFactoryMemory.openDatabase('dh-vertical-phone.db');
+    addTearDown(db.close);
+    final repo = SembastCharacterRepository(db);
+    final drive = GoogleDriveSyncService(
+      LocalArchiveSyncStore(db),
+      syncTracker: ArchiveSyncTracker.inMemory(),
+    );
+    final character = (await tester.runAsync(
+      () => repo.createCharacter(
+        'Kaelen',
+        system: GameSystem.daggerheart,
+        daggerheartClass: DaggerheartClass.ranger,
+      ),
+    ))!;
+    character.fields[daggerheartCardFieldKey('core_073')] = true;
+    await tester.runAsync(() => repo.saveCharacter(character));
+    final viewPrefs = SheetViewPreferences.inMemory(
+      mode: SheetViewMode.vertical,
+    );
 
-      await tester.runAsync(DaggerheartCardDef.loadCatalog);
-      await tester.pumpWidget(
-        SheetViewPreferenceScope(
-          preferences: viewPrefs,
-          child: MaterialApp(
-            home: SheetScreen(
-              character: character,
-              repository: repo,
-              driveSync: drive,
-            ),
+    await tester.runAsync(DaggerheartCardDef.loadCatalog);
+    await tester.pumpWidget(
+      SheetViewPreferenceScope(
+        preferences: viewPrefs,
+        child: MaterialApp(
+          home: SheetScreen(
+            character: character,
+            repository: repo,
+            driveSync: drive,
           ),
         ),
-      );
-      await tester.pumpAndSettle();
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      expect(find.byType(DaggerheartVerticalSheetView), findsOneWidget);
-      expect(find.text('Compagno'), findsOneWidget);
-      expect(tester.takeException(), isNull);
+    expect(find.byType(DaggerheartVerticalSheetView), findsOneWidget);
+    expect(find.text('Compagno'), findsOneWidget);
+    expect(tester.takeException(), isNull);
 
-      // Jump to Tratti: empty experience rows are hidden until added, Gold steppers update checkboxes.
-      await tester.ensureVisible(find.text('Tratti'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Tratti'));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('DH_Experience_1')), findsNothing);
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('dh-add-experience')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('dh-add-experience')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('DH_Experience_1')), findsOneWidget);
+    // Jump to Tratti: empty experience rows are hidden until added, Gold steppers update checkboxes.
+    await tester.ensureVisible(find.text('Tratti'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tratti'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('DH_Experience_1')), findsNothing);
+    await tester.ensureVisible(find.byKey(const ValueKey('dh-add-experience')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('dh-add-experience')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('DH_Experience_1')), findsOneWidget);
 
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('dh-gold-handful-inc')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('dh-gold-handful-inc')));
-      await tester.pumpAndSettle();
-      expect(character.fields['DH_GoldHandful_1'], isTrue);
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('dh-gold-handful-inc')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('dh-gold-handful-inc')));
+    await tester.pumpAndSettle();
+    expect(character.fields['DH_GoldHandful_1'], isTrue);
 
-      // Jump to Zaino: Inventory is a single multiline box synced with DH_Inventory_1..5.
-      await tester.ensureVisible(find.text('Zaino'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Zaino'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('DH_Inventory_Multiline')));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), 'Torcia\nCorda 15m');
-      await tester.pumpAndSettle();
-      expect(character.fields['DH_Inventory_1'], 'Torcia');
-      expect(character.fields['DH_Inventory_2'], 'Corda 15m');
+    // Jump to Zaino: Inventory is a single multiline box synced with DH_Inventory_1..5.
+    await tester.ensureVisible(find.text('Zaino'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Zaino'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('DH_Inventory_Multiline')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Torcia\nCorda 15m');
+    await tester.pumpAndSettle();
+    expect(character.fields['DH_Inventory_1'], 'Torcia');
+    expect(character.fields['DH_Inventory_2'], 'Corda 15m');
 
-      // Jump to Guida: Background Questions start collapsed.
-      await tester.ensureVisible(find.text('Guida'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Guida'));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('DH_Background_1')), findsNothing);
-      await tester.tap(find.byKey(const ValueKey('dh-section-background')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('DH_Background_1')), findsOneWidget);
+    // Jump to Guida: Background Questions start collapsed.
+    await tester.ensureVisible(find.text('Guida'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Guida'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('DH_Background_1')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('dh-section-background')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('DH_Background_1')), findsOneWidget);
 
-      // Jump to the Card section chip at the end of the sheet.
-      await tester.ensureVisible(find.text('Card'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Card'));
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey('dh-vertical-manage-cards')),
-        findsOneWidget,
-      );
-      expect(tester.takeException(), isNull);
+    // Jump to the Card section chip at the end of the sheet: tapping a card zooms it,
+    // while the Modifica button stays available to manage the card list.
+    await tester.ensureVisible(find.text('Card'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Card'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('dh-vertical-manage-cards')),
+      findsOneWidget,
+    );
+    expect(find.text('Modifica'), findsOneWidget);
+    final cardTile = find.byKey(const ValueKey('dh-vertical-card-core_073'));
+    await tester.ensureVisible(cardTile);
+    await tester.pumpAndSettle();
+    await tester.tap(cardTile);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('dh-card-preview-dialog')),
+      findsOneWidget,
+    );
+    expect(find.byType(InteractiveViewer), findsOneWidget);
+    await tester.tap(find.byTooltip('Chiudi'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
 
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump(const Duration(milliseconds: 50));
-      drive.dispose();
-    },
-  );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 50));
+    drive.dispose();
+  });
 }

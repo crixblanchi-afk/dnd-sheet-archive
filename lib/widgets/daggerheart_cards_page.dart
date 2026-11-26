@@ -7,6 +7,129 @@ import '../models/daggerheart_card.dart';
 import '../models/game_system.dart';
 import '../theme/sheet_palette.dart';
 
+/// Mostra il dialog di anteprima ingrandibile (pinch/scroll zoom) di una card
+/// Daggerheart con azioni rapide per Loadout/Vault e selezione/rimozione.
+Future<void> showDaggerheartCardPreviewDialog({
+  required BuildContext context,
+  required SheetController controller,
+  required DaggerheartCardDef card,
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => ListenableBuilder(
+      listenable: Listenable.merge([controller, controller.lockedState]),
+      builder: (context, _) {
+        final locked = controller.locked;
+        final state = controller.cardStateFor(card.id);
+        final isDomain = card.category == DaggerheartCardCategory.domain;
+        return Dialog(
+          key: const ValueKey('dh-card-preview-dialog'),
+          insetPadding: const EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460, maxHeight: 740),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              card.title,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            Text(
+                              card.subtitle,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Chiudi',
+                        onPressed: () => Navigator.pop(dialogContext),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: InteractiveViewer(
+                        minScale: 1,
+                        maxScale: 3.5,
+                        child: Center(
+                          child: AspectRatio(
+                            aspectRatio: 5 / 7,
+                            child: Image.asset(
+                              card.asset,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.medium,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (isDomain && state.isSelected)
+                        OutlinedButton.icon(
+                          onPressed: locked
+                              ? null
+                              : () => controller.setCardState(
+                                  card.id,
+                                  state == DaggerheartCardState.vault
+                                      ? DaggerheartCardState.loadout
+                                      : DaggerheartCardState.vault,
+                                ),
+                          icon: Icon(
+                            state == DaggerheartCardState.vault
+                                ? Icons.bolt_outlined
+                                : Icons.inventory_2_outlined,
+                          ),
+                          label: Text(
+                            state == DaggerheartCardState.vault
+                                ? 'Sposta in Loadout'
+                                : 'Sposta in Vault',
+                          ),
+                        ),
+                      FilledButton.icon(
+                        onPressed: locked
+                            ? null
+                            : () => controller.toggleCard(card.id),
+                        icon: Icon(
+                          state.isSelected
+                              ? Icons.remove_circle_outline
+                              : Icons.add_circle_outline,
+                        ),
+                        label: Text(
+                          state.isSelected ? 'Rimuovi' : 'Seleziona card',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
+
 enum _CardsViewTab { selected, catalog }
 
 /// Pagina dedicata alle card di Daggerheart: mostra le card selezionate per il
@@ -110,124 +233,12 @@ class _DaggerheartCardsPageState extends State<DaggerheartCardsPage> {
     return card.matchesQuery(normalizedQuery);
   }
 
-  Future<void> _showCardPreview(DaggerheartCardDef card) async {
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => ListenableBuilder(
-        listenable: Listenable.merge([
-          widget.controller,
-          widget.controller.lockedState,
-        ]),
-        builder: (context, _) {
-          final locked = widget.controller.locked;
-          final state = widget.controller.cardStateFor(card.id);
-          final isDomain = card.category == DaggerheartCardCategory.domain;
-          return Dialog(
-            insetPadding: const EdgeInsets.all(16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460, maxHeight: 740),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                card.title,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              Text(
-                                card.subtitle,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'Chiudi',
-                          onPressed: () => Navigator.pop(dialogContext),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Flexible(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: InteractiveViewer(
-                          minScale: 1,
-                          maxScale: 3.5,
-                          child: Center(
-                            child: AspectRatio(
-                              aspectRatio: 5 / 7,
-                              child: Image.asset(
-                                card.asset,
-                                fit: BoxFit.contain,
-                                filterQuality: FilterQuality.medium,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (isDomain && state.isSelected)
-                          OutlinedButton.icon(
-                            onPressed: locked
-                                ? null
-                                : () => widget.controller.setCardState(
-                                    card.id,
-                                    state == DaggerheartCardState.vault
-                                        ? DaggerheartCardState.loadout
-                                        : DaggerheartCardState.vault,
-                                  ),
-                            icon: Icon(
-                              state == DaggerheartCardState.vault
-                                  ? Icons.bolt_outlined
-                                  : Icons.inventory_2_outlined,
-                            ),
-                            label: Text(
-                              state == DaggerheartCardState.vault
-                                  ? 'Sposta in Loadout'
-                                  : 'Sposta in Vault',
-                            ),
-                          ),
-                        FilledButton.icon(
-                          onPressed: locked
-                              ? null
-                              : () => widget.controller.toggleCard(card.id),
-                          icon: Icon(
-                            state.isSelected
-                                ? Icons.remove_circle_outline
-                                : Icons.add_circle_outline,
-                          ),
-                          label: Text(
-                            state.isSelected ? 'Rimuovi' : 'Seleziona card',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
+  Future<void> _showCardPreview(DaggerheartCardDef card) =>
+      showDaggerheartCardPreviewDialog(
+        context: context,
+        controller: widget.controller,
+        card: card,
+      );
 
   @override
   Widget build(BuildContext context) {
