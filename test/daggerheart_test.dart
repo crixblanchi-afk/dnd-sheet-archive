@@ -486,6 +486,26 @@ void main() {
       expect(find.text('Compagno'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
+      // Jump to Esperienze & Oro: empty experience rows are hidden until added.
+      await tester.ensureVisible(find.text('Esperienze & Oro'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Esperienze & Oro'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('DH_Experience_1')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('dh-add-experience')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('DH_Experience_1')), findsOneWidget);
+
+      // Jump to Classe & Guida: Background Questions start collapsed.
+      await tester.ensureVisible(find.text('Classe & Guida'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Classe & Guida'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('DH_Background_1')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('dh-section-background')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('DH_Background_1')), findsOneWidget);
+
       // Jump to the Card section chip at the end of the sheet.
       await tester.ensureVisible(find.text('Card'));
       await tester.pumpAndSettle();

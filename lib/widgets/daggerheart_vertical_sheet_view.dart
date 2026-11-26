@@ -137,11 +137,65 @@ class _DaggerheartVerticalSheetViewState
   late final List<double> _sectionOffsets;
   late final List<Widget Function(BuildContext)> _itemBuilders;
   List<DaggerheartCardDef>? _catalog;
+  final Set<String> _expandedSections = {};
+  final Map<String, int> _extraRevealedRows = {};
   bool _jumpingToSection = false;
   double _lastCheckedOffset = double.negativeInfinity;
 
   DaggerheartClass get _cls =>
       widget.controller.character.daggerheartClass ?? DaggerheartClass.blank;
+
+  bool _fieldHasData(String name) =>
+      (widget.controller.valueFor(name)?.toString().isNotEmpty ?? false) ||
+      (widget.controller.commentFor(name)?.isNotEmpty ?? false);
+
+  bool _checkboxChecked(String name) =>
+      SheetCheckboxValue.fromStored(widget.controller.valueFor(name)) !=
+      SheetCheckboxValue.unchecked;
+
+  bool _weaponHasData(String prefix, {bool includeSlots = false}) {
+    for (final suffix in [
+      '_Name',
+      '_TraitRange',
+      '_Damage',
+      '_Feature',
+      '_Feature2',
+    ]) {
+      if (_fieldHasData('$prefix$suffix')) return true;
+    }
+    if (includeSlots &&
+        (_checkboxChecked('${prefix}_Primary') ||
+            _checkboxChecked('${prefix}_Secondary'))) {
+      return true;
+    }
+    return false;
+  }
+
+  int _checkedCount(String prefix, int count) {
+    var total = 0;
+    for (var i = 1; i <= count; i++) {
+      if (_checkboxChecked('$prefix$i')) total++;
+    }
+    return total;
+  }
+
+  void _toggleExpanded(String key) => setState(() {
+    if (!_expandedSections.add(key)) {
+      _expandedSections.remove(key);
+    }
+  });
+
+  void _revealOneRow(String key) => setState(() {
+    _extraRevealedRows[key] = (_extraRevealedRows[key] ?? 0) + 1;
+  });
+
+  void _hideEmptyRows(String key) => setState(() {
+    _extraRevealedRows.remove(key);
+  });
+
+  void _onFieldEdited() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void initState() {
@@ -154,6 +208,20 @@ class _DaggerheartVerticalSheetViewState
           setState(() => _catalog = cards);
         }, onError: (Object _) {}),
       );
+    }
+    if (_checkedCount('DH_GoldHandful_', 9) > 0 ||
+        _checkedCount('DH_GoldBag_', 9) > 0 ||
+        _checkboxChecked('DH_GoldChest')) {
+      _expandedSections.add('gold');
+    }
+    if (_weaponHasData('DH_SecondaryWeapon')) {
+      _expandedSections.add('secondary_weapon');
+    }
+    if (_weaponHasData('DH_InvWeapon1', includeSlots: true)) {
+      _expandedSections.add('inv_weapon_1');
+    }
+    if (_weaponHasData('DH_InvWeapon2', includeSlots: true)) {
+      _expandedSections.add('inv_weapon_2');
     }
     _buildSections();
     _scrollController.addListener(_handleScroll);
@@ -184,22 +252,67 @@ class _DaggerheartVerticalSheetViewState
     addSection('Tratti', [(_) => _TraitsBlock(controller: c)]);
 
     addSection('Esperienze & Oro', [
-      (_) => _ExperienceBlock(controller: c),
-      (_) => _GoldBlock(controller: c),
+      (_) => _ExperienceBlock(
+        controller: c,
+        extraRows: _extraRevealedRows['experience'] ?? 0,
+        onAddRow: () => _revealOneRow('experience'),
+        onHideEmpty: () => _hideEmptyRows('experience'),
+        onFieldEdited: _onFieldEdited,
+      ),
+      (_) => _GoldBlock(
+        controller: c,
+        expanded: _expandedSections.contains('gold'),
+        onToggleExpanded: () => _toggleExpanded('gold'),
+        onFieldEdited: _onFieldEdited,
+      ),
     ]);
 
     addSection('Armi & Armatura', [
-      (_) => _ActiveWeaponsBlock(controller: c),
-      (_) => _ActiveArmorBlock(controller: c),
+      (_) => _ActiveWeaponsBlock(
+        controller: c,
+        secondaryExpanded:
+            _expandedSections.contains('secondary_weapon') ||
+            _weaponHasData('DH_SecondaryWeapon'),
+        onToggleSecondary: () => _toggleExpanded('secondary_weapon'),
+        onFieldEdited: _onFieldEdited,
+      ),
+      (_) => _ActiveArmorBlock(controller: c, onFieldEdited: _onFieldEdited),
     ]);
 
     addSection('Inventario', [
-      (_) => _InventoryBlock(controller: c),
-      (_) => _InventoryWeaponsBlock(controller: c),
+      (_) => _InventoryBlock(
+        controller: c,
+        extraRows: _extraRevealedRows['inventory'] ?? 0,
+        onAddRow: () => _revealOneRow('inventory'),
+        onHideEmpty: () => _hideEmptyRows('inventory'),
+        onFieldEdited: _onFieldEdited,
+      ),
+      (_) => _InventoryWeaponsBlock(
+        controller: c,
+        showWeapon1:
+            _expandedSections.contains('inv_weapon_1') ||
+            _weaponHasData('DH_InvWeapon1', includeSlots: true),
+        showWeapon2:
+            _expandedSections.contains('inv_weapon_2') ||
+            _weaponHasData('DH_InvWeapon2', includeSlots: true),
+        onRevealWeapon1: () => _toggleExpanded('inv_weapon_1'),
+        onRevealWeapon2: () => _toggleExpanded('inv_weapon_2'),
+        onFieldEdited: _onFieldEdited,
+      ),
     ]);
 
     if (_cls == DaggerheartClass.ranger) {
-      addSection('Compagno', [(_) => _RangerCompanionBlock(controller: c)]);
+      addSection('Compagno', [
+        (_) => _RangerCompanionBlock(
+          controller: c,
+          extraExpRows: _extraRevealedRows['comp_experience'] ?? 0,
+          onAddExpRow: () => _revealOneRow('comp_experience'),
+          onHideEmptyExp: () => _hideEmptyRows('comp_experience'),
+          trainingExpanded: _expandedSections.contains('comp_training'),
+          onToggleTraining: () => _toggleExpanded('comp_training'),
+          onFieldEdited: _onFieldEdited,
+        ),
+      ]);
     }
 
     if (_cls == DaggerheartClass.blank ||
@@ -215,8 +328,24 @@ class _DaggerheartVerticalSheetViewState
           (_) =>
               _ClassFeatureExtrasBlock(controller: c, daggerheartClass: _cls),
         if (_cls != DaggerheartClass.blank) ...[
-          (_) => _GuideQuestionsBlock(controller: c),
-          (_) => _LevelUpTiersBlock(controller: c),
+          (_) => _GuideQuestionsBlock(
+            controller: c,
+            backgroundExpanded: _expandedSections.contains('background'),
+            connectionsExpanded: _expandedSections.contains('connections'),
+            onToggleBackground: () => _toggleExpanded('background'),
+            onToggleConnections: () => _toggleExpanded('connections'),
+            onFieldEdited: _onFieldEdited,
+          ),
+          (_) => _LevelUpTiersBlock(
+            controller: c,
+            expandedTiers: {
+              if (_expandedSections.contains('tier_2')) 2,
+              if (_expandedSections.contains('tier_3')) 3,
+              if (_expandedSections.contains('tier_4')) 4,
+            },
+            onToggleTier: (tier) => _toggleExpanded('tier_$tier'),
+            onFieldEdited: _onFieldEdited,
+          ),
         ],
       ]);
     }
@@ -996,61 +1125,244 @@ class _TraitCard extends StatelessWidget {
   );
 }
 
-class _ExperienceBlock extends StatelessWidget {
-  const _ExperienceBlock({required this.controller});
+bool _dhHasValue(SheetController c, String fieldName) =>
+    (c.valueFor(fieldName)?.toString().isNotEmpty ?? false) ||
+    (c.commentFor(fieldName)?.isNotEmpty ?? false);
 
-  final SheetController controller;
+bool _dhIsChecked(SheetController c, String fieldName) =>
+    SheetCheckboxValue.fromStored(c.valueFor(fieldName)) !=
+    SheetCheckboxValue.unchecked;
 
-  @override
-  Widget build(BuildContext context) => SheetFrameBox(
-    caption: 'Experience',
-    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-    child: Column(
-      children: [
-        for (var i = 1; i <= 5; i++) ...[
-          if (i > 1) const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: _DhTextField(
-                  key: ValueKey('DH_Experience_$i'),
-                  fieldName: 'DH_Experience_$i',
-                  dialogLabel: 'Experience $i',
-                  controller: controller,
-                  hintText: 'Esperienza $i',
-                  compact: true,
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 58,
-                child: _DhTextField(
-                  key: ValueKey('DH_ExperienceMod_$i'),
-                  fieldName: 'DH_ExperienceMod_$i',
-                  dialogLabel: 'Bonus Experience $i',
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  style: _FieldStyle.shaded,
-                  hintText: '+2',
-                  compact: true,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
-    ),
-  );
-}
+class _CollapsibleSheetBox extends StatelessWidget {
+  const _CollapsibleSheetBox({
+    super.key,
+    required this.title,
+    required this.expanded,
+    required this.onToggle,
+    required this.child,
+    this.summary,
+  });
 
-class _GoldBlock extends StatelessWidget {
-  const _GoldBlock({required this.controller});
-
-  final SheetController controller;
+  final String title;
+  final String? summary;
+  final bool expanded;
+  final VoidCallback onToggle;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
+    return SheetFrameBox(
+      padding: EdgeInsets.fromLTRB(12, 8, 10, expanded ? 10 : 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onToggle,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontFamily: 'RobotoSlab',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .75,
+                      color: palette.ink,
+                    ),
+                  ),
+                ),
+                if (summary != null && summary!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Text(
+                      summary!,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontFamily: 'RobotoSlab',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: palette.ink.withValues(alpha: .68),
+                      ),
+                    ),
+                  ),
+                Icon(
+                  expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                  color: palette.ink,
+                ),
+              ],
+            ),
+          ),
+          if (expanded) ...[const SizedBox(height: 8), child],
+        ],
+      ),
+    );
+  }
+}
+
+class _ExperienceBlock extends StatelessWidget {
+  const _ExperienceBlock({
+    required this.controller,
+    required this.extraRows,
+    required this.onAddRow,
+    required this.onHideEmpty,
+    required this.onFieldEdited,
+  });
+
+  final SheetController controller;
+  final int extraRows;
+  final VoidCallback onAddRow;
+  final VoidCallback onHideEmpty;
+  final VoidCallback onFieldEdited;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = SheetPalette.of(context);
+    final filledIndices = <int>[];
+    final emptyIndices = <int>[];
+    for (var i = 1; i <= 5; i++) {
+      if (_dhHasValue(controller, 'DH_Experience_$i') ||
+          _dhHasValue(controller, 'DH_ExperienceMod_$i')) {
+        filledIndices.add(i);
+      } else {
+        emptyIndices.add(i);
+      }
+    }
+    final shownEmpty = emptyIndices.take(extraRows).toList();
+    final visible = [...filledIndices, ...shownEmpty]..sort();
+    final remainingEmpty = emptyIndices.length - shownEmpty.length;
+
+    return SheetFrameBox(
+      caption: 'Experience (${filledIndices.length}/5)',
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (visible.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'Nessuna esperienza inserita',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontFamily: 'RobotoSlab',
+                  color: palette.ink.withValues(alpha: .58),
+                ),
+              ),
+            )
+          else
+            for (var idx = 0; idx < visible.length; idx++) ...[
+              if (idx > 0) const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: _DhTextField(
+                      key: ValueKey('DH_Experience_${visible[idx]}'),
+                      fieldName: 'DH_Experience_${visible[idx]}',
+                      dialogLabel: 'Experience ${visible[idx]}',
+                      controller: controller,
+                      hintText: 'Esperienza ${visible[idx]}',
+                      compact: true,
+                      onChanged: onFieldEdited,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 58,
+                    child: _DhTextField(
+                      key: ValueKey('DH_ExperienceMod_${visible[idx]}'),
+                      fieldName: 'DH_ExperienceMod_${visible[idx]}',
+                      dialogLabel: 'Bonus Experience ${visible[idx]}',
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      style: _FieldStyle.shaded,
+                      hintText: '+2',
+                      compact: true,
+                      onChanged: onFieldEdited,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          if (!controller.locked &&
+              (remainingEmpty > 0 || shownEmpty.isNotEmpty)) ...[
+            const SizedBox(height: 6),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 4,
+              children: [
+                if (shownEmpty.isNotEmpty)
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: palette.ink.withValues(alpha: .72),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: onHideEmpty,
+                    child: const Text(
+                      'Nascondi vuote',
+                      style: TextStyle(fontFamily: 'RobotoSlab', fontSize: 11),
+                    ),
+                  ),
+                if (remainingEmpty > 0)
+                  TextButton.icon(
+                    key: const ValueKey('dh-add-experience'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: palette.ink,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: onAddRow,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text(
+                      'Aggiungi esperienza',
+                      style: TextStyle(
+                        fontFamily: 'RobotoSlab',
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _GoldBlock extends StatelessWidget {
+  const _GoldBlock({
+    required this.controller,
+    required this.expanded,
+    required this.onToggleExpanded,
+    required this.onFieldEdited,
+  });
+
+  final SheetController controller;
+  final bool expanded;
+  final VoidCallback onToggleExpanded;
+  final VoidCallback onFieldEdited;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = SheetPalette.of(context);
+    var handfuls = 0;
+    for (var i = 1; i <= 9; i++) {
+      if (_dhIsChecked(controller, 'DH_GoldHandful_$i')) handfuls++;
+    }
+    var bags = 0;
+    for (var i = 1; i <= 9; i++) {
+      if (_dhIsChecked(controller, 'DH_GoldBag_$i')) bags++;
+    }
+    final chest = _dhIsChecked(controller, 'DH_GoldChest');
+    final parts = <String>[
+      if (handfuls > 0) '$handfuls H',
+      if (bags > 0) '$bags B',
+      if (chest) '1 C',
+    ];
+    final summary = parts.isEmpty ? 'Vuoto' : parts.join(' · ');
+
     TextStyle? labelStyle(BuildContext ctx) =>
         Theme.of(ctx).textTheme.labelSmall?.copyWith(
           fontFamily: 'RobotoSlab',
@@ -1058,13 +1370,16 @@ class _GoldBlock extends StatelessWidget {
           fontWeight: FontWeight.w700,
           color: palette.ink.withValues(alpha: .74),
         );
-    return SheetFrameBox(
-      caption: 'Gold',
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+    return _CollapsibleSheetBox(
+      key: const ValueKey('dh-section-gold'),
+      title: 'Gold',
+      summary: summary,
+      expanded: expanded,
+      onToggle: onToggleExpanded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('HANDFULS (9)', style: labelStyle(context)),
+          Text('HANDFULS ($handfuls/9)', style: labelStyle(context)),
           const SizedBox(height: 4),
           _SlotWrap(
             controller: controller,
@@ -1072,9 +1387,10 @@ class _GoldBlock extends StatelessWidget {
             fieldPrefix: 'DH_GoldHandful_',
             labelPrefix: 'Gold Handful',
             shape: _SlotShape.circle,
+            onChanged: onFieldEdited,
           ),
           const SizedBox(height: 8),
-          Text('BAGS (9)', style: labelStyle(context)),
+          Text('BAGS ($bags/9)', style: labelStyle(context)),
           const SizedBox(height: 4),
           _SlotWrap(
             controller: controller,
@@ -1082,6 +1398,7 @@ class _GoldBlock extends StatelessWidget {
             fieldPrefix: 'DH_GoldBag_',
             labelPrefix: 'Gold Bag',
             shape: _SlotShape.box,
+            onChanged: onFieldEdited,
           ),
           const SizedBox(height: 8),
           Row(
@@ -1092,6 +1409,7 @@ class _GoldBlock extends StatelessWidget {
                 dialogLabel: 'Gold Chest',
                 controller: controller,
                 shape: _SlotShape.box,
+                onChanged: onFieldEdited,
               ),
               const SizedBox(width: 6),
               Text('CHEST', style: labelStyle(context)),
@@ -1104,41 +1422,72 @@ class _GoldBlock extends StatelessWidget {
 }
 
 class _ActiveWeaponsBlock extends StatelessWidget {
-  const _ActiveWeaponsBlock({required this.controller});
+  const _ActiveWeaponsBlock({
+    required this.controller,
+    required this.secondaryExpanded,
+    required this.onToggleSecondary,
+    required this.onFieldEdited,
+  });
 
   final SheetController controller;
+  final bool secondaryExpanded;
+  final VoidCallback onToggleSecondary;
+  final VoidCallback onFieldEdited;
 
   @override
-  Widget build(BuildContext context) => SheetTray(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SheetFrameBox(
-          caption: 'Proficiency',
-          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-          child: _SlotWrap(
-            controller: controller,
-            count: 6,
-            fieldPrefix: 'DH_Proficiency_',
-            labelPrefix: 'Proficiency',
-            shape: _SlotShape.circle,
+  Widget build(BuildContext context) {
+    final palette = SheetPalette.of(context);
+    return SheetTray(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SheetFrameBox(
+            caption: 'Proficiency',
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            child: _SlotWrap(
+              controller: controller,
+              count: 6,
+              fieldPrefix: 'DH_Proficiency_',
+              labelPrefix: 'Proficiency',
+              shape: _SlotShape.circle,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        _WeaponCard(
-          caption: 'Active Weapon · Primary',
-          prefix: 'DH_PrimaryWeapon',
-          controller: controller,
-        ),
-        const SizedBox(height: 8),
-        _WeaponCard(
-          caption: 'Active Weapon · Secondary',
-          prefix: 'DH_SecondaryWeapon',
-          controller: controller,
-        ),
-      ],
-    ),
-  );
+          const SizedBox(height: 8),
+          _WeaponCard(
+            caption: 'Active Weapon · Primary',
+            prefix: 'DH_PrimaryWeapon',
+            controller: controller,
+            onFieldEdited: onFieldEdited,
+          ),
+          const SizedBox(height: 8),
+          if (secondaryExpanded)
+            _WeaponCard(
+              caption: 'Active Weapon · Secondary',
+              prefix: 'DH_SecondaryWeapon',
+              controller: controller,
+              onFieldEdited: onFieldEdited,
+            )
+          else if (!controller.locked)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                key: const ValueKey('dh-add-secondary-weapon'),
+                style: TextButton.styleFrom(
+                  foregroundColor: palette.ink,
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: onToggleSecondary,
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text(
+                  'Aggiungi arma secondaria',
+                  style: TextStyle(fontFamily: 'RobotoSlab', fontSize: 11.5),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _WeaponCard extends StatelessWidget {
@@ -1146,17 +1495,22 @@ class _WeaponCard extends StatelessWidget {
     required this.caption,
     required this.prefix,
     required this.controller,
+    required this.onFieldEdited,
     this.showSlotCheckboxes = false,
   });
 
   final String caption;
   final String prefix;
   final SheetController controller;
+  final VoidCallback onFieldEdited;
   final bool showSlotCheckboxes;
 
   @override
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
+    final showFeature2 =
+        _dhHasValue(controller, '${prefix}_Feature') ||
+        _dhHasValue(controller, '${prefix}_Feature2');
     return SheetFrameBox(
       caption: caption,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -1173,6 +1527,7 @@ class _WeaponCard extends StatelessWidget {
                   controller: controller,
                   shape: _SlotShape.box,
                   size: 28,
+                  onChanged: onFieldEdited,
                 ),
                 Text(
                   'PRIMARY',
@@ -1191,6 +1546,7 @@ class _WeaponCard extends StatelessWidget {
                   controller: controller,
                   shape: _SlotShape.box,
                   size: 28,
+                  onChanged: onFieldEdited,
                 ),
                 Text(
                   'SECONDARY',
@@ -1209,6 +1565,7 @@ class _WeaponCard extends StatelessWidget {
             fieldName: '${prefix}_Name',
             caption: 'Name',
             controller: controller,
+            onChanged: onFieldEdited,
           ),
           const SizedBox(height: 6),
           Row(
@@ -1218,6 +1575,7 @@ class _WeaponCard extends StatelessWidget {
                   fieldName: '${prefix}_TraitRange',
                   caption: 'Trait & Range',
                   controller: controller,
+                  onChanged: onFieldEdited,
                 ),
               ),
               const SizedBox(width: 10),
@@ -1226,6 +1584,7 @@ class _WeaponCard extends StatelessWidget {
                   fieldName: '${prefix}_Damage',
                   caption: 'Damage Dice & Type',
                   controller: controller,
+                  onChanged: onFieldEdited,
                 ),
               ),
             ],
@@ -1233,15 +1592,19 @@ class _WeaponCard extends StatelessWidget {
           const SizedBox(height: 6),
           _UnderlinedField(
             fieldName: '${prefix}_Feature',
-            caption: 'Feature (riga 1)',
+            caption: 'Feature',
             controller: controller,
+            onChanged: onFieldEdited,
           ),
-          const SizedBox(height: 4),
-          _UnderlinedField(
-            fieldName: '${prefix}_Feature2',
-            caption: 'Feature (riga 2)',
-            controller: controller,
-          ),
+          if (showFeature2) ...[
+            const SizedBox(height: 4),
+            _UnderlinedField(
+              fieldName: '${prefix}_Feature2',
+              caption: 'Feature (riga 2)',
+              controller: controller,
+              onChanged: onFieldEdited,
+            ),
+          ],
         ],
       ),
     );
@@ -1249,122 +1612,301 @@ class _WeaponCard extends StatelessWidget {
 }
 
 class _ActiveArmorBlock extends StatelessWidget {
-  const _ActiveArmorBlock({required this.controller});
+  const _ActiveArmorBlock({
+    required this.controller,
+    required this.onFieldEdited,
+  });
 
   final SheetController controller;
+  final VoidCallback onFieldEdited;
 
   @override
-  Widget build(BuildContext context) => SheetFrameBox(
-    caption: 'Active Armor',
-    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-    child: Column(
-      children: [
-        _UnderlinedField(
-          fieldName: 'DH_Armor_Name',
-          caption: 'Name',
-          controller: controller,
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
-              child: _UnderlinedField(
-                fieldName: 'DH_Armor_Thresholds',
-                caption: 'Base Thresholds',
-                controller: controller,
-                textAlign: TextAlign.center,
+  Widget build(BuildContext context) {
+    final showFeature2 =
+        _dhHasValue(controller, 'DH_Armor_Feature') ||
+        _dhHasValue(controller, 'DH_Armor_Feature2');
+    return SheetFrameBox(
+      caption: 'Active Armor',
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Column(
+        children: [
+          _UnderlinedField(
+            fieldName: 'DH_Armor_Name',
+            caption: 'Name',
+            controller: controller,
+            onChanged: onFieldEdited,
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: _UnderlinedField(
+                  fieldName: 'DH_Armor_Thresholds',
+                  caption: 'Base Thresholds',
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  onChanged: onFieldEdited,
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _UnderlinedField(
-                fieldName: 'DH_Armor_BaseScore',
-                caption: 'Base Score',
-                controller: controller,
-                textAlign: TextAlign.center,
+              const SizedBox(width: 10),
+              Expanded(
+                child: _UnderlinedField(
+                  fieldName: 'DH_Armor_BaseScore',
+                  caption: 'Base Score',
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  onChanged: onFieldEdited,
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _UnderlinedField(
+            fieldName: 'DH_Armor_Feature',
+            caption: 'Feature',
+            controller: controller,
+            onChanged: onFieldEdited,
+          ),
+          if (showFeature2) ...[
+            const SizedBox(height: 4),
+            _UnderlinedField(
+              fieldName: 'DH_Armor_Feature2',
+              caption: 'Feature (riga 2)',
+              controller: controller,
+              onChanged: onFieldEdited,
             ),
           ],
-        ),
-        const SizedBox(height: 6),
-        _UnderlinedField(
-          fieldName: 'DH_Armor_Feature',
-          caption: 'Feature (riga 1)',
-          controller: controller,
-        ),
-        const SizedBox(height: 4),
-        _UnderlinedField(
-          fieldName: 'DH_Armor_Feature2',
-          caption: 'Feature (riga 2)',
-          controller: controller,
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _InventoryBlock extends StatelessWidget {
-  const _InventoryBlock({required this.controller});
+  const _InventoryBlock({
+    required this.controller,
+    required this.extraRows,
+    required this.onAddRow,
+    required this.onHideEmpty,
+    required this.onFieldEdited,
+  });
 
   final SheetController controller;
-
-  @override
-  Widget build(BuildContext context) => SheetFrameBox(
-    caption: 'Inventory',
-    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-    child: Column(
-      children: [
-        for (var i = 1; i <= 5; i++) ...[
-          if (i > 1) const SizedBox(height: 4),
-          _DhTextField(
-            key: ValueKey('DH_Inventory_$i'),
-            fieldName: 'DH_Inventory_$i',
-            dialogLabel: 'Inventory $i',
-            controller: controller,
-            hintText: 'Oggetto $i',
-            compact: true,
-          ),
-        ],
-      ],
-    ),
-  );
-}
-
-class _InventoryWeaponsBlock extends StatelessWidget {
-  const _InventoryWeaponsBlock({required this.controller});
-
-  final SheetController controller;
-
-  @override
-  Widget build(BuildContext context) => SheetTray(
-    child: Column(
-      children: [
-        _WeaponCard(
-          caption: 'Inventory Weapon 1',
-          prefix: 'DH_InvWeapon1',
-          controller: controller,
-          showSlotCheckboxes: true,
-        ),
-        const SizedBox(height: 8),
-        _WeaponCard(
-          caption: 'Inventory Weapon 2',
-          prefix: 'DH_InvWeapon2',
-          controller: controller,
-          showSlotCheckboxes: true,
-        ),
-      ],
-    ),
-  );
-}
-
-class _RangerCompanionBlock extends StatelessWidget {
-  const _RangerCompanionBlock({required this.controller});
-
-  final SheetController controller;
+  final int extraRows;
+  final VoidCallback onAddRow;
+  final VoidCallback onHideEmpty;
+  final VoidCallback onFieldEdited;
 
   @override
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
+    final filledIndices = <int>[];
+    final emptyIndices = <int>[];
+    for (var i = 1; i <= 5; i++) {
+      if (_dhHasValue(controller, 'DH_Inventory_$i')) {
+        filledIndices.add(i);
+      } else {
+        emptyIndices.add(i);
+      }
+    }
+    final shownEmpty = emptyIndices.take(extraRows).toList();
+    final visible = [...filledIndices, ...shownEmpty]..sort();
+    final remainingEmpty = emptyIndices.length - shownEmpty.length;
+
+    return SheetFrameBox(
+      caption: 'Inventory (${filledIndices.length}/5)',
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (visible.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'Nessun oggetto in inventario',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontFamily: 'RobotoSlab',
+                  color: palette.ink.withValues(alpha: .58),
+                ),
+              ),
+            )
+          else
+            for (var idx = 0; idx < visible.length; idx++) ...[
+              if (idx > 0) const SizedBox(height: 4),
+              _DhTextField(
+                key: ValueKey('DH_Inventory_${visible[idx]}'),
+                fieldName: 'DH_Inventory_${visible[idx]}',
+                dialogLabel: 'Inventory ${visible[idx]}',
+                controller: controller,
+                hintText: 'Oggetto ${visible[idx]}',
+                compact: true,
+                onChanged: onFieldEdited,
+              ),
+            ],
+          if (!controller.locked &&
+              (remainingEmpty > 0 || shownEmpty.isNotEmpty)) ...[
+            const SizedBox(height: 6),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 4,
+              children: [
+                if (shownEmpty.isNotEmpty)
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: palette.ink.withValues(alpha: .72),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: onHideEmpty,
+                    child: const Text(
+                      'Nascondi vuote',
+                      style: TextStyle(fontFamily: 'RobotoSlab', fontSize: 11),
+                    ),
+                  ),
+                if (remainingEmpty > 0)
+                  TextButton.icon(
+                    key: const ValueKey('dh-add-inventory'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: palette.ink,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: onAddRow,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text(
+                      'Aggiungi oggetto',
+                      style: TextStyle(
+                        fontFamily: 'RobotoSlab',
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _InventoryWeaponsBlock extends StatelessWidget {
+  const _InventoryWeaponsBlock({
+    required this.controller,
+    required this.showWeapon1,
+    required this.showWeapon2,
+    required this.onRevealWeapon1,
+    required this.onRevealWeapon2,
+    required this.onFieldEdited,
+  });
+
+  final SheetController controller;
+  final bool showWeapon1;
+  final bool showWeapon2;
+  final VoidCallback onRevealWeapon1;
+  final VoidCallback onRevealWeapon2;
+  final VoidCallback onFieldEdited;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = SheetPalette.of(context);
+    if (!showWeapon1 && !showWeapon2 && controller.locked) {
+      return const SizedBox.shrink();
+    }
+    return SheetTray(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showWeapon1) ...[
+            _WeaponCard(
+              caption: 'Inventory Weapon 1',
+              prefix: 'DH_InvWeapon1',
+              controller: controller,
+              showSlotCheckboxes: true,
+              onFieldEdited: onFieldEdited,
+            ),
+            if (showWeapon2) const SizedBox(height: 8),
+          ],
+          if (showWeapon2)
+            _WeaponCard(
+              caption: 'Inventory Weapon 2',
+              prefix: 'DH_InvWeapon2',
+              controller: controller,
+              showSlotCheckboxes: true,
+              onFieldEdited: onFieldEdited,
+            ),
+          if (!controller.locked && (!showWeapon1 || !showWeapon2))
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                key: const ValueKey('dh-add-inv-weapon'),
+                style: TextButton.styleFrom(
+                  foregroundColor: palette.ink,
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: !showWeapon1 ? onRevealWeapon1 : onRevealWeapon2,
+                icon: const Icon(Icons.add, size: 16),
+                label: Text(
+                  !showWeapon1 && !showWeapon2
+                      ? 'Aggiungi arma in inventario'
+                      : 'Aggiungi seconda arma in inventario',
+                  style: const TextStyle(
+                    fontFamily: 'RobotoSlab',
+                    fontSize: 11.5,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RangerCompanionBlock extends StatelessWidget {
+  const _RangerCompanionBlock({
+    required this.controller,
+    required this.extraExpRows,
+    required this.onAddExpRow,
+    required this.onHideEmptyExp,
+    required this.trainingExpanded,
+    required this.onToggleTraining,
+    required this.onFieldEdited,
+  });
+
+  final SheetController controller;
+  final int extraExpRows;
+  final VoidCallback onAddExpRow;
+  final VoidCallback onHideEmptyExp;
+  final bool trainingExpanded;
+  final VoidCallback onToggleTraining;
+  final VoidCallback onFieldEdited;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = SheetPalette.of(context);
+    final filledExp = <int>[];
+    final emptyExp = <int>[];
+    for (var i = 1; i <= 5; i++) {
+      if (_dhHasValue(controller, 'DH_Comp_Exp_$i') ||
+          _dhHasValue(controller, 'DH_Comp_ExpMod_$i')) {
+        filledExp.add(i);
+      } else {
+        emptyExp.add(i);
+      }
+    }
+    final shownEmptyExp = emptyExp.take(extraExpRows).toList();
+    final visibleExp = [...filledExp, ...shownEmptyExp]..sort();
+    final remainingExp = emptyExp.length - shownEmptyExp.length;
+
+    var trainingChecked = 0;
+    for (final row in _dhCompanionTrainingRows) {
+      for (var i = 1; i <= row.count; i++) {
+        if (_dhIsChecked(controller, 'DH_Comp_Train_${row.key}_$i')) {
+          trainingChecked++;
+        }
+      }
+    }
+
     return SheetTray(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1418,37 +1960,96 @@ class _RangerCompanionBlock extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           SheetFrameBox(
-            caption: 'Companion Experience',
+            caption: 'Companion Experience (${filledExp.length}/5)',
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (var i = 1; i <= 5; i++) ...[
-                  if (i > 1) const SizedBox(height: 4),
-                  Row(
+                if (visibleExp.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      'Nessuna esperienza del compagno',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontFamily: 'RobotoSlab',
+                        color: palette.ink.withValues(alpha: .58),
+                      ),
+                    ),
+                  )
+                else
+                  for (var idx = 0; idx < visibleExp.length; idx++) ...[
+                    if (idx > 0) const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _DhTextField(
+                            key: ValueKey('DH_Comp_Exp_${visibleExp[idx]}'),
+                            fieldName: 'DH_Comp_Exp_${visibleExp[idx]}',
+                            dialogLabel:
+                                'Companion Experience ${visibleExp[idx]}',
+                            controller: controller,
+                            compact: true,
+                            onChanged: onFieldEdited,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 58,
+                          child: _DhTextField(
+                            key: ValueKey('DH_Comp_ExpMod_${visibleExp[idx]}'),
+                            fieldName: 'DH_Comp_ExpMod_${visibleExp[idx]}',
+                            dialogLabel:
+                                'Companion Experience Mod ${visibleExp[idx]}',
+                            controller: controller,
+                            textAlign: TextAlign.center,
+                            style: _FieldStyle.shaded,
+                            hintText: '+2',
+                            compact: true,
+                            onChanged: onFieldEdited,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                if (!controller.locked &&
+                    (remainingExp > 0 || shownEmptyExp.isNotEmpty)) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 4,
                     children: [
-                      Expanded(
-                        child: _DhTextField(
-                          key: ValueKey('DH_Comp_Exp_$i'),
-                          fieldName: 'DH_Comp_Exp_$i',
-                          dialogLabel: 'Companion Experience $i',
-                          controller: controller,
-                          compact: true,
+                      if (shownEmptyExp.isNotEmpty)
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: palette.ink.withValues(alpha: .72),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          onPressed: onHideEmptyExp,
+                          child: const Text(
+                            'Nascondi vuote',
+                            style: TextStyle(
+                              fontFamily: 'RobotoSlab',
+                              fontSize: 11,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 58,
-                        child: _DhTextField(
-                          key: ValueKey('DH_Comp_ExpMod_$i'),
-                          fieldName: 'DH_Comp_ExpMod_$i',
-                          dialogLabel: 'Companion Experience Mod $i',
-                          controller: controller,
-                          textAlign: TextAlign.center,
-                          style: _FieldStyle.shaded,
-                          hintText: '+2',
-                          compact: true,
+                      if (remainingExp > 0)
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            foregroundColor: palette.ink,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          onPressed: onAddExpRow,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text(
+                            'Aggiungi esperienza',
+                            style: TextStyle(
+                              fontFamily: 'RobotoSlab',
+                              fontSize: 11.5,
+                            ),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
@@ -1521,9 +2122,12 @@ class _RangerCompanionBlock extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          SheetFrameBox(
-            caption: 'Companion Training',
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+          _CollapsibleSheetBox(
+            key: const ValueKey('dh-section-comp-training'),
+            title: 'Companion Training',
+            summary: trainingChecked > 0 ? '($trainingChecked)' : null,
+            expanded: trainingExpanded,
+            onToggle: onToggleTraining,
             child: Column(
               children: [
                 for (final row in _dhCompanionTrainingRows)
@@ -1532,6 +2136,7 @@ class _RangerCompanionBlock extends StatelessWidget {
                     fieldPrefix: 'DH_Comp_Train_${row.key}_',
                     count: row.count,
                     label: row.label,
+                    onChanged: onFieldEdited,
                   ),
               ],
             ),
@@ -1628,109 +2233,176 @@ class _ClassFeatureExtrasBlock extends StatelessWidget {
 }
 
 class _GuideQuestionsBlock extends StatelessWidget {
-  const _GuideQuestionsBlock({required this.controller});
+  const _GuideQuestionsBlock({
+    required this.controller,
+    required this.backgroundExpanded,
+    required this.connectionsExpanded,
+    required this.onToggleBackground,
+    required this.onToggleConnections,
+    required this.onFieldEdited,
+  });
 
   final SheetController controller;
+  final bool backgroundExpanded;
+  final bool connectionsExpanded;
+  final VoidCallback onToggleBackground;
+  final VoidCallback onToggleConnections;
+  final VoidCallback onFieldEdited;
 
   @override
-  Widget build(BuildContext context) => SheetTray(
-    child: Column(
-      children: [
-        SheetFrameBox(
-          caption: 'Background Questions',
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          child: Column(
-            children: [
-              for (var i = 1; i <= 3; i++) ...[
-                if (i > 1) const SizedBox(height: 8),
-                _DhTextField(
-                  key: ValueKey('DH_Background_$i'),
-                  fieldName: 'DH_Background_$i',
-                  dialogLabel: 'Background Question $i',
-                  controller: controller,
-                  hintText: 'Risposta background $i',
-                  multiline: true,
-                  minLines: 2,
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        SheetFrameBox(
-          caption: 'Connections',
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          child: Column(
-            children: [
-              for (var i = 1; i <= 3; i++) ...[
-                if (i > 1) const SizedBox(height: 8),
-                _DhTextField(
-                  key: ValueKey('DH_Connection_$i'),
-                  fieldName: 'DH_Connection_$i',
-                  dialogLabel: 'Connection $i',
-                  controller: controller,
-                  hintText: 'Connessione $i',
-                  multiline: true,
-                  minLines: 2,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _LevelUpTiersBlock extends StatelessWidget {
-  const _LevelUpTiersBlock({required this.controller});
-
-  final SheetController controller;
-
-  @override
-  Widget build(BuildContext context) => SheetTray(
-    child: Column(
-      children: [
-        SheetFrameBox(
-          caption: 'Tier 2 · Levels 2–4',
-          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-          child: Column(
-            children: [
-              for (final row in _dhTier2Rows)
-                _CheckboxOptionRow(
-                  controller: controller,
-                  fieldPrefix: 'DH_Tier2_${row.key}_',
-                  count: row.count,
-                  label: row.label,
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        for (final tier in [
-          (num: 3, title: 'Tier 3 · Levels 5–7'),
-          (num: 4, title: 'Tier 4 · Levels 8–10'),
-        ]) ...[
-          if (tier.num == 4) const SizedBox(height: 8),
-          SheetFrameBox(
-            caption: tier.title,
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+  Widget build(BuildContext context) {
+    var bgFilled = 0;
+    var connFilled = 0;
+    for (var i = 1; i <= 3; i++) {
+      if (_dhHasValue(controller, 'DH_Background_$i')) bgFilled++;
+      if (_dhHasValue(controller, 'DH_Connection_$i')) connFilled++;
+    }
+    return SheetTray(
+      child: Column(
+        children: [
+          _CollapsibleSheetBox(
+            key: const ValueKey('dh-section-background'),
+            title: 'Background Questions',
+            summary: bgFilled > 0 ? '($bgFilled/3)' : null,
+            expanded: backgroundExpanded,
+            onToggle: onToggleBackground,
             child: Column(
               children: [
-                for (final row in _dhTierHighRows)
-                  _CheckboxOptionRow(
+                for (var i = 1; i <= 3; i++) ...[
+                  if (i > 1) const SizedBox(height: 8),
+                  _DhTextField(
+                    key: ValueKey('DH_Background_$i'),
+                    fieldName: 'DH_Background_$i',
+                    dialogLabel: 'Background Question $i',
                     controller: controller,
-                    fieldPrefix: 'DH_Tier${tier.num}_${row.key}_',
-                    count: row.count,
-                    label: row.label,
+                    hintText: 'Risposta background $i',
+                    multiline: true,
+                    minLines: 2,
+                    onChanged: onFieldEdited,
                   ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          _CollapsibleSheetBox(
+            key: const ValueKey('dh-section-connections'),
+            title: 'Connections',
+            summary: connFilled > 0 ? '($connFilled/3)' : null,
+            expanded: connectionsExpanded,
+            onToggle: onToggleConnections,
+            child: Column(
+              children: [
+                for (var i = 1; i <= 3; i++) ...[
+                  if (i > 1) const SizedBox(height: 8),
+                  _DhTextField(
+                    key: ValueKey('DH_Connection_$i'),
+                    fieldName: 'DH_Connection_$i',
+                    dialogLabel: 'Connection $i',
+                    controller: controller,
+                    hintText: 'Connessione $i',
+                    multiline: true,
+                    minLines: 2,
+                    onChanged: onFieldEdited,
+                  ),
+                ],
               ],
             ),
           ),
         ],
-      ],
-    ),
-  );
+      ),
+    );
+  }
+}
+
+class _LevelUpTiersBlock extends StatelessWidget {
+  const _LevelUpTiersBlock({
+    required this.controller,
+    required this.expandedTiers,
+    required this.onToggleTier,
+    required this.onFieldEdited,
+  });
+
+  final SheetController controller;
+  final Set<int> expandedTiers;
+  final ValueChanged<int> onToggleTier;
+  final VoidCallback onFieldEdited;
+
+  int _countTierChecked(
+    int tier,
+    List<({String key, int count, String label})> rows,
+  ) {
+    var total = 0;
+    for (final row in rows) {
+      for (var i = 1; i <= row.count; i++) {
+        if (_dhIsChecked(controller, 'DH_Tier${tier}_${row.key}_$i')) {
+          total++;
+        }
+      }
+    }
+    return total;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t2Count = _countTierChecked(2, _dhTier2Rows);
+    return SheetTray(
+      child: Column(
+        children: [
+          _CollapsibleSheetBox(
+            key: const ValueKey('dh-section-tier-2'),
+            title: 'Tier 2 · Levels 2–4',
+            summary: t2Count > 0 ? '($t2Count)' : null,
+            expanded: expandedTiers.contains(2),
+            onToggle: () => onToggleTier(2),
+            child: Column(
+              children: [
+                for (final row in _dhTier2Rows)
+                  _CheckboxOptionRow(
+                    controller: controller,
+                    fieldPrefix: 'DH_Tier2_${row.key}_',
+                    count: row.count,
+                    label: row.label,
+                    onChanged: onFieldEdited,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final tier in [
+            (num: 3, title: 'Tier 3 · Levels 5–7'),
+            (num: 4, title: 'Tier 4 · Levels 8–10'),
+          ]) ...[
+            if (tier.num == 4) const SizedBox(height: 8),
+            Builder(
+              builder: (_) {
+                final count = _countTierChecked(tier.num, _dhTierHighRows);
+                return _CollapsibleSheetBox(
+                  key: ValueKey('dh-section-tier-${tier.num}'),
+                  title: tier.title,
+                  summary: count > 0 ? '($count)' : null,
+                  expanded: expandedTiers.contains(tier.num),
+                  onToggle: () => onToggleTier(tier.num),
+                  child: Column(
+                    children: [
+                      for (final row in _dhTierHighRows)
+                        _CheckboxOptionRow(
+                          controller: controller,
+                          fieldPrefix: 'DH_Tier${tier.num}_${row.key}_',
+                          count: row.count,
+                          label: row.label,
+                          onChanged: onFieldEdited,
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _CheckboxOptionRow extends StatelessWidget {
@@ -1739,12 +2411,14 @@ class _CheckboxOptionRow extends StatelessWidget {
     required this.fieldPrefix,
     required this.count,
     required this.label,
+    this.onChanged,
   });
 
   final SheetController controller;
   final String fieldPrefix;
   final int count;
   final String label;
+  final VoidCallback? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1762,6 +2436,7 @@ class _CheckboxOptionRow extends StatelessWidget {
               controller: controller,
               shape: _SlotShape.box,
               size: 26,
+              onChanged: onChanged,
             ),
           const SizedBox(width: 6),
           Expanded(
@@ -1958,6 +2633,7 @@ class _SlotWrap extends StatelessWidget {
     required this.fieldPrefix,
     required this.labelPrefix,
     required this.shape,
+    this.onChanged,
   });
 
   final SheetController controller;
@@ -1965,6 +2641,7 @@ class _SlotWrap extends StatelessWidget {
   final String fieldPrefix;
   final String labelPrefix;
   final _SlotShape shape;
+  final VoidCallback? onChanged;
 
   @override
   Widget build(BuildContext context) => Wrap(
@@ -1980,6 +2657,7 @@ class _SlotWrap extends StatelessWidget {
           controller: controller,
           shape: shape,
           size: 32,
+          onChanged: onChanged,
         ),
     ],
   );
@@ -1991,12 +2669,14 @@ class _UnderlinedField extends StatelessWidget {
     required this.caption,
     required this.controller,
     this.textAlign = TextAlign.left,
+    this.onChanged,
   });
 
   final String fieldName;
   final String caption;
   final SheetController controller;
   final TextAlign textAlign;
+  final VoidCallback? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -2012,6 +2692,7 @@ class _UnderlinedField extends StatelessWidget {
           textAlign: textAlign,
           style: _FieldStyle.underline,
           compact: true,
+          onChanged: onChanged,
         ),
         const SizedBox(height: 2),
         Text(
@@ -2047,6 +2728,7 @@ class _DhTextField extends StatefulWidget {
     this.textStyle,
     this.compact = false,
     this.style = _FieldStyle.underline,
+    this.onChanged,
   });
 
   final String fieldName;
@@ -2059,6 +2741,7 @@ class _DhTextField extends StatefulWidget {
   final TextStyle? textStyle;
   final bool compact;
   final _FieldStyle style;
+  final VoidCallback? onChanged;
 
   @override
   State<_DhTextField> createState() => _DhTextFieldState();
@@ -2219,6 +2902,7 @@ class _DhTextFieldState extends State<_DhTextField> {
                       onChanged: (value) {
                         setState(() => _value = value);
                         widget.controller.setText(widget.fieldName, value);
+                        widget.onChanged?.call();
                       },
                     )
                   : Container(
@@ -2316,6 +3000,7 @@ class _DhCheckbox extends StatefulWidget {
     this.dialogLabel,
     this.shape = _SlotShape.circle,
     this.size = 32,
+    this.onChanged,
   });
 
   final String fieldName;
@@ -2323,6 +3008,7 @@ class _DhCheckbox extends StatefulWidget {
   final String? dialogLabel;
   final _SlotShape shape;
   final double size;
+  final VoidCallback? onChanged;
 
   @override
   State<_DhCheckbox> createState() => _DhCheckboxState();
@@ -2428,6 +3114,7 @@ class _DhCheckboxState extends State<_DhCheckbox> {
                   _value = _value.next(allowExpertise: false);
                 });
                 widget.controller.setCheckbox(widget.fieldName, _value);
+                widget.onChanged?.call();
               },
         onLongPress: _showComment,
         onSecondaryTapUp: (_) => _showComment(),
