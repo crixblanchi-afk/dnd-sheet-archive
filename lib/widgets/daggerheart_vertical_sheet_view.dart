@@ -862,7 +862,7 @@ class _DefenseAndVitalsBlock extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: _FieldStyle.plain,
                             compact: true,
-                            hintText: '10',
+                            hintText: '${daggerheartClass.startingEvasion}',
                             textStyle: statStyle,
                           ),
                         ),
@@ -975,20 +975,54 @@ class _DefenseAndVitalsBlock extends StatelessWidget {
                 Divider(height: 14, color: palette.ink.withValues(alpha: .18)),
                 _VitalTrackerRow(
                   label: 'HP',
-                  count: 12,
+                  count: _effectiveVitalMax(
+                    controller: controller,
+                    maxFieldName: 'DH_HP_Max',
+                    slotPrefix: 'DH_HP_',
+                    defaultMax: daggerheartClass.startingHp,
+                    hardMax: 12,
+                  ),
+                  hardMax: 12,
                   fieldPrefix: 'DH_HP_',
                   shape: _SlotShape.box,
                   controller: controller,
                   onChanged: onFieldEdited,
+                  decrementKey: const ValueKey('dh-hp-max-dec'),
+                  incrementKey: const ValueKey('dh-hp-max-inc'),
+                  onMaxChanged: (next) => _setVitalMax(
+                    controller: controller,
+                    maxFieldName: 'DH_HP_Max',
+                    slotPrefix: 'DH_HP_',
+                    nextMax: next,
+                    hardMax: 12,
+                    onEdited: onFieldEdited,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 _VitalTrackerRow(
                   label: 'STRESS',
-                  count: 12,
+                  count: _effectiveVitalMax(
+                    controller: controller,
+                    maxFieldName: 'DH_Stress_Max',
+                    slotPrefix: 'DH_Stress_',
+                    defaultMax: daggerheartClass.startingStress,
+                    hardMax: 12,
+                  ),
+                  hardMax: 12,
                   fieldPrefix: 'DH_Stress_',
                   shape: _SlotShape.box,
                   controller: controller,
                   onChanged: onFieldEdited,
+                  decrementKey: const ValueKey('dh-stress-max-dec'),
+                  incrementKey: const ValueKey('dh-stress-max-inc'),
+                  onMaxChanged: (next) => _setVitalMax(
+                    controller: controller,
+                    maxFieldName: 'DH_Stress_Max',
+                    slotPrefix: 'DH_Stress_',
+                    nextMax: next,
+                    hardMax: 12,
+                    onEdited: onFieldEdited,
+                  ),
                 ),
                 Divider(height: 14, color: palette.ink.withValues(alpha: .18)),
                 _VitalTrackerRow(
@@ -1035,6 +1069,46 @@ int _countChecked(SheetController c, String prefix, int count) {
   return total;
 }
 
+int _highestCheckedSlot(SheetController c, String prefix, int hardMax) {
+  var highest = 0;
+  for (var i = 1; i <= hardMax; i++) {
+    if (_dhIsChecked(c, '$prefix$i')) highest = i;
+  }
+  return highest;
+}
+
+int _effectiveVitalMax({
+  required SheetController controller,
+  required String maxFieldName,
+  required String slotPrefix,
+  required int defaultMax,
+  required int hardMax,
+}) {
+  final raw = controller.valueFor(maxFieldName)?.toString().trim();
+  final parsed = raw == null ? null : int.tryParse(raw);
+  final configured = (parsed ?? defaultMax).clamp(1, hardMax);
+  final highest = _highestCheckedSlot(controller, slotPrefix, hardMax);
+  return highest > configured ? highest : configured;
+}
+
+void _setVitalMax({
+  required SheetController controller,
+  required String maxFieldName,
+  required String slotPrefix,
+  required int nextMax,
+  required int hardMax,
+  required VoidCallback onEdited,
+}) {
+  final clamped = nextMax.clamp(1, hardMax);
+  controller.setText(maxFieldName, '$clamped');
+  for (var i = clamped + 1; i <= hardMax; i++) {
+    if (_dhIsChecked(controller, '$slotPrefix$i')) {
+      controller.setCheckbox('$slotPrefix$i', SheetCheckboxValue.unchecked);
+    }
+  }
+  onEdited();
+}
+
 class _VitalTrackerRow extends StatelessWidget {
   const _VitalTrackerRow({
     required this.label,
@@ -1043,6 +1117,10 @@ class _VitalTrackerRow extends StatelessWidget {
     required this.shape,
     required this.controller,
     required this.onChanged,
+    this.hardMax,
+    this.decrementKey,
+    this.incrementKey,
+    this.onMaxChanged,
   });
 
   final String label;
@@ -1051,16 +1129,22 @@ class _VitalTrackerRow extends StatelessWidget {
   final _SlotShape shape;
   final SheetController controller;
   final VoidCallback onChanged;
+  final int? hardMax;
+  final Key? decrementKey;
+  final Key? incrementKey;
+  final ValueChanged<int>? onMaxChanged;
 
   @override
   Widget build(BuildContext context) {
     final palette = SheetPalette.of(context);
     final checked = _countChecked(controller, fieldPrefix, count);
+    final maxAllowed = hardMax ?? count;
+    final showStepper = onMaxChanged != null && !controller.locked;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
-          width: 60,
+          width: 56,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -1104,6 +1188,69 @@ class _VitalTrackerRow extends StatelessWidget {
             ],
           ),
         ),
+        if (showStepper) ...[
+          const SizedBox(width: 4),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: palette.ink.withValues(alpha: .22)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Tooltip(
+                  message: 'Riduci slot $label',
+                  child: InkWell(
+                    key: decrementKey,
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(11),
+                    ),
+                    onTap: count > 1 ? () => onMaxChanged!(count - 1) : null,
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: Icon(
+                        Icons.remove,
+                        size: 13,
+                        color: palette.ink.withValues(
+                          alpha: count > 1 ? .78 : .22,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 12,
+                  color: palette.ink.withValues(alpha: .18),
+                ),
+                Tooltip(
+                  message: 'Aggiungi slot $label',
+                  child: InkWell(
+                    key: incrementKey,
+                    borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(11),
+                    ),
+                    onTap: count < maxAllowed
+                        ? () => onMaxChanged!(count + 1)
+                        : null,
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: Icon(
+                        Icons.add,
+                        size: 13,
+                        color: palette.ink.withValues(
+                          alpha: count < maxAllowed ? .78 : .22,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

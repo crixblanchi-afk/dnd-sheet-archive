@@ -500,6 +500,20 @@ void main() {
     expect(find.text('Compagno'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
+    // Ranger starts with 6 HP and 6 Stress slots; extra slots can be unlocked via + / -.
+    await tester.ensureVisible(find.byKey(const ValueKey('dh-hp-max-inc')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('DH_HP_6')), findsOneWidget);
+    expect(find.byKey(const ValueKey('DH_HP_7')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('dh-hp-max-inc')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('DH_HP_7')), findsOneWidget);
+    expect(character.fields['DH_HP_Max'], '7');
+    await tester.tap(find.byKey(const ValueKey('dh-stress-max-dec')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('DH_Stress_6')), findsNothing);
+    expect(character.fields['DH_Stress_Max'], '5');
+
     // Jump to Tratti: empty experience rows are hidden until added, Gold steppers update checkboxes.
     await tester.ensureVisible(find.text('Tratti'));
     await tester.pumpAndSettle();
