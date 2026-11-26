@@ -277,6 +277,14 @@ class _DaggerheartVerticalSheetViewState
       ),
     ]);
 
+    addSection('Card', [
+      (_) => _SelectedCardsBlock(
+        controller: c,
+        catalog: _catalog,
+        onManageCards: widget.onManageCards,
+      ),
+    ]);
+
     addSection('Zaino', [
       (_) => _InventoryMultilineBlock(
         controller: c,
@@ -332,14 +340,6 @@ class _DaggerheartVerticalSheetViewState
           onFieldEdited: _onFieldEdited,
         ),
       ],
-    ]);
-
-    addSection('Card', [
-      (_) => _SelectedCardsBlock(
-        controller: c,
-        catalog: _catalog,
-        onManageCards: widget.onManageCards,
-      ),
       (_) => const _FooterHint(),
     ]);
 
