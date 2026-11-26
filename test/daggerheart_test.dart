@@ -14,6 +14,7 @@ import 'package:dnd_sheet_archive/screens/sheet_screen.dart';
 import 'package:dnd_sheet_archive/sync/archive_sync_tracker.dart';
 import 'package:dnd_sheet_archive/sync/google_drive_sync_service.dart';
 import 'package:dnd_sheet_archive/widgets/daggerheart_cards_page.dart';
+import 'package:dnd_sheet_archive/widgets/daggerheart_vertical_sheet_view.dart';
 import 'package:dnd_sheet_archive/widgets/sheet_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -277,9 +278,8 @@ void main() {
           daggerheartClass: DaggerheartClass.bard,
         ),
       ))!;
-      // Even if user preference is Vertical (D&D-only), Daggerheart falls back to Pages.
       final viewPrefs = SheetViewPreferences.inMemory(
-        mode: SheetViewMode.vertical,
+        mode: SheetViewMode.pages,
       );
 
       await tester.runAsync(() => SheetDocumentDef.loadFor(character));
@@ -355,10 +355,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('dh-card-core_073')), findsOneWidget);
 
-      // Switch to Scroll view: "Verticale" is hidden and Card toggle button is visible.
+      // Switch to Scroll view and verify Card toggle button works.
       await tester.tap(find.byTooltip('Visualizzazione scheda'));
       await tester.pumpAndSettle();
-      expect(find.text('Verticale'), findsNothing);
+      expect(find.text('Verticale'), findsOneWidget);
       await tester.tap(
         find
             .ancestor(
@@ -383,6 +383,41 @@ void main() {
         findsOneWidget,
       );
 
+      // Switch to Vertical view and verify fields, edits, and Cards access work.
+      await tester.tap(find.byKey(const ValueKey('dh-scroll-cards-toggle')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Visualizzazione scheda'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find
+            .ancestor(
+              of: find.text('Verticale'),
+              matching: find.byWidgetPredicate(
+                (widget) => widget is PopupMenuItem,
+              ),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(DaggerheartVerticalSheetView), findsOneWidget);
+      expect(find.text('lei', findRichText: true), findsOneWidget);
+
+      // Edit Evasion in vertical view and verify it persists.
+      await tester.tap(find.byKey(const ValueKey('DH_Evasion')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '12');
+      await tester.pumpAndSettle();
+      expect(character.fields['DH_Evasion'], '12');
+
+      // Open Cards from vertical view via the top toggle.
+      await tester.tap(find.byKey(const ValueKey('dh-scroll-cards-toggle')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('daggerheart-cards-page-vertical')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('dh-card-core_073')), findsOneWidget);
+
       // Wait for debounced autosave and let Sembast finish writing.
       await tester.pump(const Duration(seconds: 1));
       await tester.runAsync(
@@ -392,6 +427,7 @@ void main() {
         () => repo.getCharacter(character.id),
       );
       expect(persisted?.fields['DH_Pronouns'], 'lei');
+      expect(persisted?.fields['DH_Evasion'], '12');
       expect(persisted?.fields['DH_HP_1'], isTrue);
       expect(persisted?.fields[daggerheartCardFieldKey('core_073')], isTrue);
 
@@ -400,6 +436,68 @@ void main() {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 50)),
       );
+      await tester.pump(const Duration(milliseconds: 50));
+      drive.dispose();
+    },
+  );
+
+  testWidgets(
+    'Daggerheart vertical view renders cleanly on 390x844 phone viewport',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final db = await databaseFactoryMemory.openDatabase(
+        'dh-vertical-phone.db',
+      );
+      addTearDown(db.close);
+      final repo = SembastCharacterRepository(db);
+      final drive = GoogleDriveSyncService(
+        LocalArchiveSyncStore(db),
+        syncTracker: ArchiveSyncTracker.inMemory(),
+      );
+      final character = (await tester.runAsync(
+        () => repo.createCharacter(
+          'Kaelen',
+          system: GameSystem.daggerheart,
+          daggerheartClass: DaggerheartClass.ranger,
+        ),
+      ))!;
+      final viewPrefs = SheetViewPreferences.inMemory(
+        mode: SheetViewMode.vertical,
+      );
+
+      await tester.runAsync(DaggerheartCardDef.loadCatalog);
+      await tester.pumpWidget(
+        SheetViewPreferenceScope(
+          preferences: viewPrefs,
+          child: MaterialApp(
+            home: SheetScreen(
+              character: character,
+              repository: repo,
+              driveSync: drive,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DaggerheartVerticalSheetView), findsOneWidget);
+      expect(find.text('Compagno'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      // Jump to the Card section chip at the end of the sheet.
+      await tester.ensureVisible(find.text('Card'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Card'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('dh-vertical-manage-cards')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 50));
       drive.dispose();
     },

@@ -13,6 +13,7 @@ import '../models/sheet_document.dart';
 import '../sync/google_drive_sync_service.dart';
 import '../theme/sheet_palette.dart';
 import '../widgets/daggerheart_cards_page.dart';
+import '../widgets/daggerheart_vertical_sheet_view.dart';
 import '../widgets/dice_roller_overlay.dart';
 import '../widgets/scrollable_sheet_view.dart';
 import '../widgets/sheet_page.dart';
@@ -46,19 +47,10 @@ class _SheetScreenState extends State<SheetScreen> {
   SheetViewPreferences? _viewPreferences;
   bool _initializedViewMode = false;
   SheetViewMode _viewMode = SheetViewMode.pages;
-  bool _showScrollCards = false;
+  bool _showOverlayCards = false;
   PageController _pageController = PageController();
 
   bool get _isDaggerheart => widget.character.system == GameSystem.daggerheart;
-
-  List<SheetViewMode> get _availableViewModes => _isDaggerheart
-      ? const [SheetViewMode.pages, SheetViewMode.scroll]
-      : SheetViewMode.values;
-
-  SheetViewMode get _effectiveViewMode =>
-      _isDaggerheart && _viewMode == SheetViewMode.vertical
-      ? SheetViewMode.pages
-      : _viewMode;
 
   int get _totalPageCount => _loadedDocument?.totalPageCount ?? 1;
 
@@ -122,14 +114,14 @@ class _SheetScreenState extends State<SheetScreen> {
         (document) {
           _loadedDocument = document;
           if (!mounted) return;
-          if (_effectiveViewMode != SheetViewMode.vertical) {
+          if (_viewMode != SheetViewMode.vertical) {
             _precacheArtwork();
             setState(() {});
           }
         },
         onError: (Object error) {
           _fieldsError = error;
-          if (mounted && _effectiveViewMode != SheetViewMode.vertical) {
+          if (mounted && _viewMode != SheetViewMode.vertical) {
             setState(() {});
           }
         },
@@ -151,17 +143,14 @@ class _SheetScreenState extends State<SheetScreen> {
     final viewPreferences = SheetViewPreferenceScope.maybeOf(context);
     _viewPreferences = viewPreferences;
     if (viewPreferences != null && _viewMode != viewPreferences.mode) {
-      final previousEffective = _effectiveViewMode;
-      _viewMode = viewPreferences.mode;
-      if (_initializedViewMode &&
-          previousEffective != SheetViewMode.pages &&
-          _effectiveViewMode == SheetViewMode.pages) {
+      if (_initializedViewMode && viewPreferences.mode == SheetViewMode.pages) {
         _pageController.dispose();
         _pageController = PageController(initialPage: _pageIndex);
       }
+      _viewMode = viewPreferences.mode;
     }
     _initializedViewMode = true;
-    if (_effectiveViewMode != SheetViewMode.vertical) {
+    if (_viewMode != SheetViewMode.vertical) {
       _precacheArtwork();
     }
   }
@@ -310,14 +299,14 @@ class _SheetScreenState extends State<SheetScreen> {
     );
   }
 
-  Widget _scrollCardsToggleButton() {
+  Widget _cardsToggleButton() {
     final theme = Theme.of(context);
     return ListenableBuilder(
       listenable: _sheetController,
       builder: (context, _) {
         final count = _sheetController.selectedCardCount;
         return Material(
-          color: _showScrollCards
+          color: _showOverlayCards
               ? theme.colorScheme.primaryContainer
               : theme.colorScheme.surface,
           elevation: 2,
@@ -329,7 +318,7 @@ class _SheetScreenState extends State<SheetScreen> {
             customBorder: const StadiumBorder(),
             onTap: () {
               FocusScope.of(context).unfocus();
-              setState(() => _showScrollCards = !_showScrollCards);
+              setState(() => _showOverlayCards = !_showOverlayCards);
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -337,14 +326,14 @@ class _SheetScreenState extends State<SheetScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    _showScrollCards
+                    _showOverlayCards
                         ? Icons.description_outlined
                         : Icons.style_outlined,
                     size: 18,
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    _showScrollCards ? 'Scheda' : 'Card ($count)',
+                    _showOverlayCards ? 'Scheda' : 'Card ($count)',
                     style: theme.textTheme.labelLarge,
                   ),
                 ],
@@ -359,16 +348,15 @@ class _SheetScreenState extends State<SheetScreen> {
   Future<void> _setViewMode(SheetViewMode mode) async {
     if (_viewMode != mode) {
       FocusScope.of(context).unfocus();
-      final previousEffective = _effectiveViewMode;
+      final previousMode = _viewMode;
       _viewMode = mode;
-      final nextEffective = _effectiveViewMode;
-      if (nextEffective == SheetViewMode.pages) {
-        _showScrollCards = false;
+      if (mode == SheetViewMode.pages) {
+        _showOverlayCards = false;
         _pageController.dispose();
         _pageController = PageController(initialPage: _pageIndex);
       }
-      if (previousEffective == SheetViewMode.vertical &&
-          nextEffective != SheetViewMode.vertical) {
+      if (previousMode == SheetViewMode.vertical &&
+          mode != SheetViewMode.vertical) {
         _precacheArtwork();
       }
       setState(() {});
@@ -393,18 +381,18 @@ class _SheetScreenState extends State<SheetScreen> {
     elevation: 2,
     child: PopupMenuButton<SheetViewMode>(
       tooltip: 'Visualizzazione scheda',
-      initialValue: _effectiveViewMode,
-      icon: Icon(switch (_effectiveViewMode) {
+      initialValue: _viewMode,
+      icon: Icon(switch (_viewMode) {
         SheetViewMode.pages => Icons.view_carousel_outlined,
         SheetViewMode.scroll => Icons.view_day_outlined,
         SheetViewMode.vertical => Icons.smartphone_outlined,
       }),
       onSelected: _setViewMode,
       itemBuilder: (_) => [
-        for (final mode in _availableViewModes)
+        for (final mode in SheetViewMode.values)
           CheckedPopupMenuItem(
             value: mode,
-            checked: _effectiveViewMode == mode,
+            checked: _viewMode == mode,
             child: Text(mode.label),
           ),
       ],
@@ -431,8 +419,8 @@ class _SheetScreenState extends State<SheetScreen> {
     if (document == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_effectiveViewMode == SheetViewMode.scroll) {
-      if (document.hasCardsPage && _showScrollCards) {
+    if (_viewMode == SheetViewMode.scroll) {
+      if (document.hasCardsPage && _showOverlayCards) {
         return DaggerheartCardsPage(
           key: const ValueKey('daggerheart-cards-page-scroll'),
           controller: _sheetController,
@@ -466,6 +454,30 @@ class _SheetScreenState extends State<SheetScreen> {
     );
   }
 
+  Widget _buildVerticalBody(bool compactLayout) {
+    if (!_isDaggerheart) {
+      return VerticalSheetView(
+        controller: _sheetController,
+        compactLayout: compactLayout,
+      );
+    }
+    if (_showOverlayCards) {
+      return DaggerheartCardsPage(
+        key: const ValueKey('daggerheart-cards-page-vertical'),
+        controller: _sheetController,
+        compactLayout: compactLayout,
+      );
+    }
+    return DaggerheartVerticalSheetView(
+      controller: _sheetController,
+      compactLayout: compactLayout,
+      onManageCards: () {
+        FocusScope.of(context).unfocus();
+        setState(() => _showOverlayCards = true);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: _allowPop,
@@ -482,11 +494,8 @@ class _SheetScreenState extends State<SheetScreen> {
               fit: StackFit.expand,
               children: [
                 Positioned.fill(
-                  child: _effectiveViewMode == SheetViewMode.vertical
-                      ? VerticalSheetView(
-                          controller: _sheetController,
-                          compactLayout: compactLayout,
-                        )
+                  child: _viewMode == SheetViewMode.vertical
+                      ? _buildVerticalBody(compactLayout)
                       : _buildPdfSheetBody(context, compactLayout),
                 ),
                 Padding(
@@ -508,8 +517,8 @@ class _SheetScreenState extends State<SheetScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (_isDaggerheart &&
-                              _effectiveViewMode == SheetViewMode.scroll) ...[
-                            _scrollCardsToggleButton(),
+                              _viewMode != SheetViewMode.pages) ...[
+                            _cardsToggleButton(),
                             const SizedBox(width: 8),
                           ],
                           _viewModeButton(),
@@ -550,7 +559,7 @@ class _SheetScreenState extends State<SheetScreen> {
                     child: const DiceRollerOverlay(),
                   ),
                 ),
-                if (_effectiveViewMode == SheetViewMode.pages && !compactLayout)
+                if (_viewMode == SheetViewMode.pages && !compactLayout)
                   Positioned(
                     right: 16,
                     bottom: 16,
