@@ -220,4 +220,102 @@ void main() {
     final d12Bounds = silhouettes[12]!.getBounds();
     expect(d12Bounds.width / d12Bounds.height, inInclusiveRange(.95, 1.05));
   });
+
+  testWidgets(
+    'duality roll shows Hope and Fear outcomes and supports adding advantage d6',
+    (tester) async {
+      final random = _SequenceRandom([
+        8, // Hope = 9
+        3, // Fear = 4 -> 13 con Hope
+        4, // Advantage d6 = 5 -> 18 con Hope
+        2, // Hope = 3
+        10, // Fear = 11 -> 14 con Fear
+        6, // Hope = 7
+        6, // Fear = 7 -> Critico! 14
+      ]);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: DiceRollerOverlay(
+              random: random,
+              showDualityRoll: true,
+              revealDuration: const Duration(milliseconds: 100),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('dice-menu-fab')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('dice-button-duality')), findsOneWidget);
+
+      // 1) Roll with Hope (9 + 4 = 13)
+      await tester.tap(find.byKey(const ValueKey('dice-button-duality')));
+      await tester.pump();
+      expect(find.text('Hope'), findsOneWidget);
+      expect(find.text('Fear'), findsOneWidget);
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('dice-total-value')))
+            .data,
+        'Totale: …',
+      );
+      await tester.pump(const Duration(milliseconds: 110));
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('dice-total-value')))
+            .data,
+        '13 · con Hope',
+      );
+
+      // Adding a d6 (5) sums onto the active duality roll while preserving outcome.
+      await tester.tap(find.byKey(const ValueKey('dice-button-6')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 110));
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('dice-total-value')))
+            .data,
+        '18 · con Hope',
+      );
+
+      // 2) Rolling duality again replaces the previous rolls (3 + 11 = 14 con Fear).
+      await tester.tap(find.byKey(const ValueKey('dice-button-duality')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 110));
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('dice-total-value')))
+            .data,
+        '14 · con Fear',
+      );
+
+      // 3) Matching Hope and Fear yields a Critical (7 + 7 = Critico! 14).
+      await tester.tap(find.byKey(const ValueKey('dice-button-duality')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 110));
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('dice-total-value')))
+            .data,
+        'Critico! 14',
+      );
+    },
+  );
+}
+
+class _SequenceRandom implements Random {
+  _SequenceRandom(this._values);
+
+  final List<int> _values;
+  var _index = 0;
+
+  @override
+  int nextInt(int max) => _values[_index++] % max;
+
+  @override
+  bool nextBool() => nextInt(2) == 0;
+
+  @override
+  double nextDouble() => 0;
 }

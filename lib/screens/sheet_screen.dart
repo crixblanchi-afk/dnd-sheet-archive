@@ -556,7 +556,7 @@ class _SheetScreenState extends State<SheetScreen> {
                   height: compactLayout ? 240 : constraints.maxHeight,
                   child: Offstage(
                     offstage: compactLayout,
-                    child: const DiceRollerOverlay(),
+                    child: DiceRollerOverlay(showDualityRoll: _isDaggerheart),
                   ),
                 ),
                 if (_viewMode == SheetViewMode.pages && !compactLayout)

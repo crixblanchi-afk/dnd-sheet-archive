@@ -9,11 +9,13 @@ class DiceRollerOverlay extends StatefulWidget {
     this.random,
     this.rollLifetime = const Duration(seconds: 30),
     this.revealDuration = const Duration(milliseconds: 650),
+    this.showDualityRoll = false,
   });
 
   final Random? random;
   final Duration rollLifetime;
   final Duration revealDuration;
+  final bool showDualityRoll;
 
   @override
   State<DiceRollerOverlay> createState() => _DiceRollerOverlayState();
@@ -35,10 +37,37 @@ class _DiceRollerOverlayState extends State<DiceRollerOverlay> {
   void _toggleMenu() => setState(() => _menuOpen = !_menuOpen);
 
   void _rollDie(int sides) {
+    final roll = _createRoll(sides: sides, role: _DieRole.standard);
+    setState(() {
+      _rolls.add(roll);
+      while (_rolls.length > _maxVisibleRolls) {
+        _discardRoll(_rolls.removeAt(0).id);
+      }
+    });
+  }
+
+  void _rollDuality() {
+    for (final timer in _expiryTimers.values) {
+      timer.cancel();
+    }
+    _expiryTimers.clear();
+    _revealedRollIds.clear();
+    final hopeRoll = _createRoll(sides: 12, role: _DieRole.hope);
+    final fearRoll = _createRoll(sides: 12, role: _DieRole.fear);
+    setState(() {
+      _rolls
+        ..clear()
+        ..add(hopeRoll)
+        ..add(fearRoll);
+    });
+  }
+
+  _DieRoll _createRoll({required int sides, required _DieRole role}) {
     final roll = _DieRoll(
       id: _nextRollId++,
       sides: sides,
       result: _random.nextInt(sides) + 1,
+      role: role,
     );
     _expiryTimers[roll.id] = Timer(widget.rollLifetime, () {
       _expiryTimers.remove(roll.id);
@@ -48,12 +77,21 @@ class _DiceRollerOverlayState extends State<DiceRollerOverlay> {
         _revealedRollIds.remove(roll.id);
       });
     });
-    setState(() {
-      _rolls.add(roll);
-      while (_rolls.length > _maxVisibleRolls) {
-        _discardRoll(_rolls.removeAt(0).id);
-      }
-    });
+    return roll;
+  }
+
+  _DualityOutcome? _currentDualityOutcome() {
+    _DieRoll? hope;
+    _DieRoll? fear;
+    for (final roll in _rolls) {
+      if (roll.role == _DieRole.hope) hope = roll;
+      if (roll.role == _DieRole.fear) fear = roll;
+    }
+    if (hope == null || fear == null) return null;
+    if (hope.result == fear.result) return _DualityOutcome.critical;
+    return hope.result > fear.result
+        ? _DualityOutcome.hope
+        : _DualityOutcome.fear;
   }
 
   void _discardRoll(int rollId) {
@@ -118,7 +156,7 @@ class _DiceRollerOverlayState extends State<DiceRollerOverlay> {
         curve: Curves.easeOut,
         left: 0,
         right: 0,
-        bottom: _menuOpen ? 210 : 76,
+        bottom: _menuOpen ? (widget.showDualityRoll ? 258 : 210) : 76,
         child: IgnorePointer(
           child: SafeArea(
             top: false,
@@ -133,6 +171,9 @@ class _DiceRollerOverlayState extends State<DiceRollerOverlay> {
                                 0,
                                 (total, roll) => total + roll.result,
                               )
+                            : null,
+                        dualityOutcome: _revealedRollIds.length == _rolls.length
+                            ? _currentDualityOutcome()
                             : null,
                       )
                     : const SizedBox.shrink(key: ValueKey('dice-total-hidden')),
@@ -173,19 +214,29 @@ class _DiceRollerOverlayState extends State<DiceRollerOverlay> {
                             padding: const EdgeInsets.all(10),
                             child: SizedBox(
                               width: 200,
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  for (final sides in _dice)
-                                    _DieButton(
-                                      sides: sides,
-                                      onPressed: () => _rollDie(sides),
-                                    ),
-                                  _ClearRollsButton(
-                                    onPressed: _rolls.isEmpty
-                                        ? null
-                                        : _clearRolls,
+                                  if (widget.showDualityRoll) ...[
+                                    _DualityRollButton(onPressed: _rollDuality),
+                                    const SizedBox(height: 8),
+                                  ],
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      for (final sides in _dice)
+                                        _DieButton(
+                                          sides: sides,
+                                          onPressed: () => _rollDie(sides),
+                                        ),
+                                      _ClearRollsButton(
+                                        onPressed: _rolls.isEmpty
+                                            ? null
+                                            : _clearRolls,
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -301,30 +352,135 @@ class _ClearRollsButton extends StatelessWidget {
   );
 }
 
-class _DiceTotalBadge extends StatelessWidget {
-  const _DiceTotalBadge({super.key, required this.total});
+class _DualityRollButton extends StatelessWidget {
+  const _DualityRollButton({required this.onPressed});
 
-  final int? total;
+  final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) => Material(
-    elevation: 4,
-    color: Theme.of(
-      context,
-    ).colorScheme.tertiaryContainer.withValues(alpha: .92),
-    borderRadius: BorderRadius.circular(22),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-      child: Text(
-        total == null ? 'Totale: …' : 'Totale: $total',
-        key: const ValueKey('dice-total-value'),
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontFamily: 'RobotoSlab',
-          fontWeight: FontWeight.w800,
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hopeColor = isDark
+        ? const Color(0xFFF4C44E)
+        : const Color(0xFFB57C00);
+    final fearColor = isDark
+        ? const Color(0xFFC39BF0)
+        : const Color(0xFF5B328A);
+    return Tooltip(
+      message: 'Lancia i Dadi della Dualità (Hope + Fear)',
+      child: Semantics(
+        button: true,
+        label: 'Lancia tiro duale 2d12',
+        child: Material(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            key: const ValueKey('dice-button-duality'),
+            borderRadius: BorderRadius.circular(16),
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _MiniDiamond(color: hopeColor),
+                  const SizedBox(width: 4),
+                  _MiniDiamond(color: fearColor),
+                  const SizedBox(width: 7),
+                  Flexible(
+                    child: Text(
+                      'Tiro duale',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontFamily: 'RobotoSlab',
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _MiniDiamond extends StatelessWidget {
+  const _MiniDiamond({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Transform.rotate(
+    angle: pi / 4,
+    child: Container(
+      width: 9,
+      height: 9,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(1.5),
       ),
     ),
   );
+}
+
+class _DiceTotalBadge extends StatelessWidget {
+  const _DiceTotalBadge({super.key, required this.total, this.dualityOutcome});
+
+  final int? total;
+  final _DualityOutcome? dualityOutcome;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final (bg, fg) = switch (dualityOutcome) {
+      _DualityOutcome.critical => (
+        isDark ? const Color(0xFF5C4308) : const Color(0xFFFFE599),
+        isDark ? const Color(0xFFFFF4CC) : const Color(0xFF4A2E00),
+      ),
+      _DualityOutcome.hope => (
+        isDark ? const Color(0xFF4A370A) : const Color(0xFFFAE6B1),
+        isDark ? const Color(0xFFFFF2CC) : const Color(0xFF4A2E00),
+      ),
+      _DualityOutcome.fear => (
+        isDark ? const Color(0xFF3B205C) : const Color(0xFFE0D1F5),
+        isDark ? const Color(0xFFF3E8FF) : const Color(0xFF2B1047),
+      ),
+      null => (
+        Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: .92),
+        Theme.of(context).colorScheme.onTertiaryContainer,
+      ),
+    };
+    final label = total == null
+        ? 'Totale: …'
+        : switch (dualityOutcome) {
+            _DualityOutcome.critical => 'Critico! $total',
+            _DualityOutcome.hope => '$total · con Hope',
+            _DualityOutcome.fear => '$total · con Fear',
+            null => 'Totale: $total',
+          };
+    return Material(
+      elevation: 4,
+      color: bg,
+      borderRadius: BorderRadius.circular(22),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+        child: Text(
+          label,
+          key: const ValueKey('dice-total-value'),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontFamily: 'RobotoSlab',
+            fontWeight: FontWeight.w800,
+            color: fg,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _AnimatedDieResult extends StatefulWidget {
@@ -380,54 +536,92 @@ class _AnimatedDieResultState extends State<_AnimatedDieResult>
           ),
         );
       },
-      child: SizedBox.square(
-        dimension: 96,
-        child: Padding(
-          padding: const EdgeInsets.all(3),
-          child: PhysicalShape(
-            key: ValueKey('dice-result-shape-${widget.roll.id}'),
-            clipper: _DieSilhouetteClipper(widget.roll.sides),
-            clipBehavior: Clip.antiAlias,
-            color: Theme.of(
-              context,
-            ).colorScheme.primaryContainer.withValues(alpha: .84),
-            elevation: 5,
-            shadowColor: const Color(0x66000000),
-            child: CustomPaint(
-              painter: _DieFramePainter(
-                sides: widget.roll.sides,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              child: Center(
-                child: Transform.translate(
-                  offset: Offset(0, widget.roll.sides == 4 ? 11 : 0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'd${widget.roll.sides}',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              fontFamily: 'RobotoSlab',
-                              fontWeight: FontWeight.w700,
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final (
+            fill,
+            border,
+            textColor,
+            dieLabel,
+          ) = switch (widget.roll.role) {
+            _DieRole.hope => (
+              (isDark ? const Color(0xFF5C4308) : const Color(0xFFF6DC8B))
+                  .withValues(alpha: .92),
+              isDark ? const Color(0xFFF4C44E) : const Color(0xFFB57C00),
+              isDark ? const Color(0xFFFFF4CC) : const Color(0xFF4A2E00),
+              'Hope',
+            ),
+            _DieRole.fear => (
+              (isDark ? const Color(0xFF3B205C) : const Color(0xFFD2BFF0))
+                  .withValues(alpha: .92),
+              isDark ? const Color(0xFFC39BF0) : const Color(0xFF5B328A),
+              isDark ? const Color(0xFFF3E8FF) : const Color(0xFF26103D),
+              'Fear',
+            ),
+            _DieRole.standard => (
+              Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: .84),
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.onPrimaryContainer,
+              'd${widget.roll.sides}',
+            ),
+          };
+          return SizedBox.square(
+            dimension: 96,
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: PhysicalShape(
+                key: ValueKey('dice-result-shape-${widget.roll.id}'),
+                clipper: _DieSilhouetteClipper(widget.roll.sides),
+                clipBehavior: Clip.antiAlias,
+                color: fill,
+                elevation: 5,
+                shadowColor: const Color(0x66000000),
+                child: CustomPaint(
+                  painter: _DieFramePainter(
+                    sides: widget.roll.sides,
+                    color: border,
+                  ),
+                  child: Center(
+                    child: Transform.translate(
+                      offset: Offset(0, widget.roll.sides == 4 ? 11 : 0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            dieLabel,
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                                  fontFamily: 'RobotoSlab',
+                                  fontWeight: FontWeight.w700,
+                                  color: textColor,
+                                ),
+                          ),
+                          Text(
+                            _controller.isCompleted
+                                ? '${widget.roll.result}'
+                                : '?',
+                            key: ValueKey(
+                              'dice-result-value-${widget.roll.id}',
                             ),
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(
+                                  fontFamily: 'RobotoSlab',
+                                  fontWeight: FontWeight.w800,
+                                  color: textColor,
+                                ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        _controller.isCompleted ? '${widget.roll.result}' : '?',
-                        key: ValueKey('dice-result-value-${widget.roll.id}'),
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(
-                              fontFamily: 'RobotoSlab',
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     ),
   );
@@ -637,10 +831,20 @@ Path _dieInternalPath(int sides, Size size, {double inset = 0}) {
   return path;
 }
 
+enum _DieRole { standard, hope, fear }
+
+enum _DualityOutcome { hope, fear, critical }
+
 class _DieRoll {
-  const _DieRoll({required this.id, required this.sides, required this.result});
+  const _DieRoll({
+    required this.id,
+    required this.sides,
+    required this.result,
+    this.role = _DieRole.standard,
+  });
 
   final int id;
   final int sides;
   final int result;
+  final _DieRole role;
 }
