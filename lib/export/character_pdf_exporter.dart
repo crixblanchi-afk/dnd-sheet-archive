@@ -2,11 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:image/image.dart' as img;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../models/character.dart';
+import '../models/daggerheart_card.dart';
+import '../models/game_system.dart';
 import '../models/image_payload.dart';
+import '../models/sheet_document.dart';
 import '../models/sheet_field.dart';
 import '../models/sheet_layout.dart';
 import 'export_progress.dart';
@@ -52,26 +56,49 @@ class CharacterPdfExporter {
     }
     // Copia prima degli await: l'export rappresenta una singola istantanea.
     final copies = characters.map((character) => character.copy()).toList();
-    final fields = await SheetFieldDef.loadByPage();
-    final backgrounds = <ByteData>[];
-    for (var page = 1; page <= sheetPageCount; page++) {
-      backgrounds.add(await rootBundle.load('assets/sheet/page-$page.png'));
-    }
-    final font = await rootBundle.load('assets/fonts/RobotoSlab-Regular.ttf');
-    // Le immagini stanno nell'archivio dei blob, che l'isolate non può
-    // interrogare: vengono risolte qui, una volta per contenuto anche quando
-    // più schede mostrano la stessa.
+    final documents = <SheetDocumentDef>[];
+    final backgrounds = <String, ByteData>{};
     final images = <String, Uint8List>{};
+    final cardAssets = <String, ByteData>{};
+    List<DaggerheartCardDef>? cardCatalog;
+
     for (final character in copies) {
-      for (final field in sheetImageFields) {
-        final value = character.fields[field.name];
-        if (value is! String || value.isEmpty || images.containsKey(value)) {
-          continue;
+      final document = await SheetDocumentDef.loadFor(character);
+      documents.add(document);
+      for (final page in document.pages) {
+        if (!backgrounds.containsKey(page.lightAsset)) {
+          backgrounds[page.lightAsset] = await rootBundle.load(page.lightAsset);
         }
-        final bytes = await _readImage(value);
-        if (bytes != null) images[value] = bytes;
+        for (final field in page.imageFields) {
+          final value = character.fields[field.name];
+          if (value is! String || value.isEmpty || images.containsKey(value)) {
+            continue;
+          }
+          final bytes = await _readImage(value);
+          if (bytes != null) images[value] = bytes;
+        }
+      }
+      if (document.hasCardsPage) {
+        final selected = selectedDaggerheartCardsFromFields(character.fields);
+        if (selected.isNotEmpty) {
+          cardCatalog ??= await DaggerheartCardDef.loadCatalog();
+          for (final card in cardCatalog) {
+            if (selected.containsKey(card.id) &&
+                !cardAssets.containsKey(card.asset)) {
+              cardAssets[card.asset] = await rootBundle.load(card.asset);
+            }
+          }
+        }
       }
     }
+
+    final font = await rootBundle.load('assets/fonts/RobotoSlab-Regular.ttf');
+    final cardOrder = cardCatalog == null
+        ? const <String>[]
+        : [for (final card in cardCatalog) card.id];
+    final cardAssetById = cardCatalog == null
+        ? const <String, String>{}
+        : {for (final card in cardCatalog) card.id: card.asset};
 
     final progress = openExportProgress(
       onProgress == null ? null : (done) => onProgress(done, copies.length),
@@ -79,7 +106,17 @@ class CharacterPdfExporter {
     try {
       return await compute(
         _buildPdf,
-        _ExportData(copies, fields, backgrounds, font, images, progress.token),
+        _ExportData(
+          copies,
+          documents,
+          backgrounds,
+          font,
+          images,
+          cardAssets,
+          cardOrder,
+          cardAssetById,
+          progress.token,
+        ),
         debugLabel: 'character-pdf-export',
       );
     } finally {
@@ -88,12 +125,23 @@ class CharacterPdfExporter {
   }
 
   static String filenameFor(List<Character> characters) {
-    if (characters.length != 1) return 'schede-dnd.pdf';
-    var name = characters.single.name
+    if (characters.length != 1) {
+      final systems = characters.map((c) => c.system).toSet();
+      if (systems.length == 1 && systems.single == GameSystem.daggerheart) {
+        return 'schede-daggerheart.pdf';
+      }
+      return 'schede-dnd.pdf';
+    }
+    final single = characters.single;
+    var name = single.name
         .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1f]'), '_')
         .trim()
         .replaceAll(RegExp(r'[. ]+$'), '');
-    if (name.isEmpty) name = 'scheda-dnd';
+    if (name.isEmpty) {
+      name = single.system == GameSystem.daggerheart
+          ? 'scheda-daggerheart'
+          : 'scheda-dnd';
+    }
     if (RegExp(
       r'^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)',
       caseSensitive: false,
@@ -108,20 +156,28 @@ class CharacterPdfExporter {
 class _ExportData {
   const _ExportData(
     this.characters,
-    this.fields,
+    this.documents,
     this.backgrounds,
     this.font,
     this.images,
+    this.cardAssets,
+    this.cardOrder,
+    this.cardAssetById,
     this.progressToken,
   );
 
   final List<Character> characters;
-  final List<List<SheetFieldDef>> fields;
-  final List<ByteData> backgrounds;
+  final List<SheetDocumentDef> documents;
+  final Map<String, ByteData> backgrounds;
   final ByteData font;
 
   /// Valore del campo immagine -> byte dell'immagine.
   final Map<String, Uint8List> images;
+
+  /// Asset path -> byte WebP della card Daggerheart.
+  final Map<String, ByteData> cardAssets;
+  final List<String> cardOrder;
+  final Map<String, String> cardAssetById;
 
   final Object? progressToken;
 }
@@ -131,43 +187,45 @@ Future<Uint8List> _buildPdf(_ExportData data) async {
   PdfInfo(
     document,
     title: data.characters.map((c) => c.name).join(', '),
-    creator: 'Archivio schede D&D 5e',
+    creator: 'Archivio Schede',
   );
   final font = PdfTtfFont(document, data.font);
   // Font standard per l'editing: i lettori PDF possono rigenerare l'aspetto
   // senza dipendere dalla codifica CID del font incorporato nelle anteprime.
   final formFont = PdfFont.helvetica(document);
   final appearanceFont = _AppearanceFont(font);
-  final backgrounds = [
-    for (final bytes in data.backgrounds)
-      PdfImage.file(
+  final backgrounds = <String, PdfImage>{
+    for (final entry in data.backgrounds.entries)
+      entry.key: PdfImage.file(
         document,
-        bytes: bytes.buffer.asUint8List(
-          bytes.offsetInBytes,
-          bytes.lengthInBytes,
+        bytes: entry.value.buffer.asUint8List(
+          entry.value.offsetInBytes,
+          entry.value.lengthInBytes,
         ),
       ),
-  ];
+  };
   // Una sola copia per immagine anche quando più schede la mostrano: il PDF
   // la referenzia da ogni pagina invece di incorporarla ogni volta.
   final images = <String, PdfImage>{};
+  final cardImages = <String, PdfImage>{};
+
   for (var index = 0; index < data.characters.length; index++) {
     final character = data.characters[index];
-    for (var pageIndex = 0; pageIndex < sheetPageCount; pageIndex++) {
+    final sheetDoc = data.documents[index];
+    for (var pageIndex = 0; pageIndex < sheetDoc.pages.length; pageIndex++) {
+      final pageSpec = sheetDoc.pages[pageIndex];
       final page = PdfPage(
         document,
         pageFormat: const PdfPageFormat(sheetPageWidth, sheetPageHeight),
       );
       page.getGraphics().drawImage(
-        backgrounds[pageIndex],
+        backgrounds[pageSpec.lightAsset]!,
         0,
         0,
         sheetPageWidth,
         sheetPageHeight,
       );
-      for (final imageField in sheetImageFields.where(
-        (field) => field.page == pageIndex,
-      )) {
+      for (final imageField in pageSpec.imageFields) {
         final value = character.fields[imageField.name];
         final bytes = value is String ? data.images[value] : null;
         if (bytes != null) {
@@ -190,7 +248,7 @@ Future<Uint8List> _buildPdf(_ExportData data) async {
           );
         }
       }
-      for (final field in data.fields[pageIndex]) {
+      for (final field in pageSpec.fields) {
         final rect = PdfRect(
           field.x,
           sheetPageHeight - field.y - field.height,
@@ -322,6 +380,50 @@ Future<Uint8List> _buildPdf(_ExportData data) async {
         }
       }
     }
+
+    if (sheetDoc.hasCardsPage) {
+      final selected = selectedDaggerheartCardsFromFields(character.fields);
+      final selectedAssets = <String>[
+        for (final cardId in data.cardOrder)
+          if (selected.containsKey(cardId) &&
+              data.cardAssetById.containsKey(cardId))
+            data.cardAssetById[cardId]!,
+      ];
+      // Griglia 3x3 Print-and-Play (180x252 pt per card su pagina Letter).
+      const cardW = 180.0;
+      const cardH = 252.0;
+      const marginX = 36.0;
+      const marginY = 18.0;
+      for (var offset = 0; offset < selectedAssets.length; offset += 9) {
+        final page = PdfPage(
+          document,
+          pageFormat: const PdfPageFormat(sheetPageWidth, sheetPageHeight),
+        );
+        final graphics = page.getGraphics();
+        final slice = selectedAssets.skip(offset).take(9).toList();
+        for (var slot = 0; slot < slice.length; slot++) {
+          final asset = slice[slot];
+          final pdfImage = cardImages.putIfAbsent(asset, () {
+            final raw = data.cardAssets[asset]!;
+            final bytes = raw.buffer.asUint8List(
+              raw.offsetInBytes,
+              raw.lengthInBytes,
+            );
+            final decoded = img.decodeWebP(bytes);
+            final jpeg = decoded == null
+                ? bytes
+                : Uint8List.fromList(img.encodeJpg(decoded, quality: 86));
+            return PdfImage.file(document, bytes: jpeg);
+          });
+          final col = slot % 3;
+          final row = slot ~/ 3;
+          final x = marginX + col * cardW;
+          final y = sheetPageHeight - marginY - (row + 1) * cardH;
+          graphics.drawImage(pdfImage, x, y, cardW, cardH);
+        }
+      }
+    }
+
     reportExportProgress(data.progressToken, index + 1);
   }
   return document.save();

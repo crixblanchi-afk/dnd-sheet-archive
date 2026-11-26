@@ -3,12 +3,17 @@ import 'dart:typed_data';
 
 import '../models/character.dart';
 import '../models/character_version.dart';
+import '../models/game_system.dart';
 import '../models/image_payload.dart';
 
 abstract class CharacterRepository {
   Stream<List<CharacterSummary>> watchCharacters();
   Future<Character?> getCharacter(String id);
-  Future<Character> createCharacter(String name);
+  Future<Character> createCharacter(
+    String name, {
+    GameSystem system = GameSystem.dnd5e,
+    DaggerheartClass? daggerheartClass,
+  });
   Future<void> saveCharacter(Character character);
   Future<Character> saveCharacterEdits(
     Character character,

@@ -182,7 +182,7 @@ class DndSheetArchiveApp extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: themePreferences,
     builder: (context, _) => MaterialApp(
-      title: 'Schede D&D 5e',
+      title: 'Archivio Schede',
       debugShowCheckedModeBanner: false,
       theme: _appTheme(
         Brightness.light,

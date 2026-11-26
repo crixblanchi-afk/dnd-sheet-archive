@@ -1,0 +1,2638 @@
+[
+  {
+    "id": "core_055",
+    "coreNumber": 55,
+    "title": "Simiah",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_055.webp",
+    "searchText": "SIMIAH Simiah resemble anthropomorphic monkeys and apes with long limbs and prehensile feet. Natural Climber: You have advantage on Agility Rolls that involve balancing and climbing. Nimble: Gain a permanent +1 bonus to "
+  },
+  {
+    "id": "core_056",
+    "coreNumber": 56,
+    "title": "Clank",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_056.webp",
+    "searchText": "CLANK Clanks are sentient mechanical beings built from a variety of materials, including metal, wood, and stone. Purposeful Design: Decide who made you and for what purpose. At character creation, choose one of your Expe"
+  },
+  {
+    "id": "core_057",
+    "coreNumber": 57,
+    "title": "Drakona",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_057.webp",
+    "searchText": "DRAKONA ANCESTRY Drakona resemble wingless dragons in humanoid form and possess a powerful elemental breath. Scales: Your scales act as natural protection. When you would take Severe damage, you can mark a Stress to mark"
+  },
+  {
+    "id": "core_058",
+    "coreNumber": 58,
+    "title": "Dwarf",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_058.webp",
+    "searchText": "DWARF Dwarves are most easily recognized as short humanoids with square frames, dense musculature, and thick hair. Thick Skin: When you take Minor damage, you can mark 2 Stress instead of marking a Hit Point. Increased F"
+  },
+  {
+    "id": "core_059",
+    "coreNumber": 59,
+    "title": "Elf",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_059.webp",
+    "searchText": "E LF ANCESTRY Elves are typically tall humanoids with pointed ears and acutely attuned senses. Quick Reactions: Mark a Stress to gain advantage onareactionroll. Celestial Trance: During a rest, you can drop into a trance"
+  },
+  {
+    "id": "core_060",
+    "coreNumber": 60,
+    "title": "Faerie",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_060.webp",
+    "searchText": "FAERIE Faeries are winged humanoid creatures with insectile features. Luckbender: Once per session, after youor a willing ally within Close range makes an action roll, you can spend 3 Hope to reroll the Duality Dice. Win"
+  },
+  {
+    "id": "core_061",
+    "coreNumber": 61,
+    "title": "Firbolg",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_061.webp",
+    "searchText": "FIRBOLG Firbolgs are bovine humanoids typically recognized by their broad noses and long, drooping ears. Charge: When you succeed on an Agility Roll to move from Far or Very Far range into Melee range with one or more ta"
+  },
+  {
+    "id": "core_062",
+    "coreNumber": 62,
+    "title": "Fungril",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_062.webp",
+    "searchText": "FUNGRIL Fungril resemble humanoid mushrooms. Fungril Network: Make an Instinct Roll (12) to use your mycelial array to speak with others of your ancestry. On a success, you can communicate across any distance. Death Conn"
+  },
+  {
+    "id": "core_063",
+    "coreNumber": 63,
+    "title": "Faun",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_063.webp",
+    "searchText": "F AU N ANCESTRY Fauns resemble humanoid goats with curving horns, square pupils, and cloven hooves. Caprine Leap: You can leap anywhere within Close range as though you were using normal movement, allowing you to vault o"
+  },
+  {
+    "id": "core_064",
+    "coreNumber": 64,
+    "title": "Galapa",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_064.webp",
+    "searchText": "GALAPA Galapa resemble anthropomorphic turtles with large, domed shells into which they can retract. Shell: Gain a bonus to your damage thresholds equal to your Proficiency. Retract: Mark a Stress to retract into your sh"
+  },
+  {
+    "id": "core_065",
+    "coreNumber": 65,
+    "title": "Giant",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_065.webp",
+    "searchText": "GIANT Giants are towering humanoids with broad shoulders, long arms, and one to three eyes. Endurance: Gain an additional Hit Point slot at character creation. Reach: Treat any weapon, ability, spell, or other feature th"
+  },
+  {
+    "id": "core_066",
+    "coreNumber": 66,
+    "title": "Goblin",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_066.webp",
+    "searchText": "GOBLIN ANCESTRY Goblins are small humanoids easily recognizable by their large eyes and massive membranous ears. Surefooted: You ignore disadvantage on Agqility Rolls. Danger Sense: Once per rest, mark a Stress to force "
+  },
+  {
+    "id": "core_067",
+    "coreNumber": 67,
+    "title": "Halfling",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_067.webp",
+    "searchText": "HALFLING i Halflings are small humanoids with large hairy feet and prominent rounded ears. Luckbringer: At the start of each session, everyone in your party gains a Hope. Internal Compass: When youroll a1onyour Hope Die,"
+  },
+  {
+    "id": "core_068",
+    "coreNumber": 68,
+    "title": "Human",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_068.webp",
+    "searchText": "HUMAN ANCESTRY Humans are most easily recognized by their dexterous hands, rounded ears, and bodies built for endurance. High Stamina: Gain an additional Stress slot at character creation. Adaptability: When you fail a r"
+  },
+  {
+    "id": "core_069",
+    "coreNumber": 69,
+    "title": "Infernis",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_069.webp",
+    "searchText": "INFERNIS Infernis are humanoids who possess sharp canine teeth, pointed ears, and horns. They are the descendants of demons from the Circles Below. Fearless: When you roll with Fear, you can mark 2 Stress tochange itinto"
+  },
+  {
+    "id": "core_070",
+    "coreNumber": 70,
+    "title": "Katari",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_070.webp",
+    "searchText": "KATARI Katari are feline humanoids with retractable claws, vertically slit pupils, and high, triangular ears. Feline Instincts: When you make an Agility Roll, you can spend 2 Hope to reroll your Hope Die. Retracting Claw"
+  },
+  {
+    "id": "core_071",
+    "coreNumber": 71,
+    "title": "Orc",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_071.webp",
+    "searchText": "o Rc ANCESTRY Orcs are humanoids most easily recognized by their square features and boar-like tusks that protrude from their lower jaw. Sturdy:When you have 1 Hit Point remaining, attacks against you have disadvantage. "
+  },
+  {
+    "id": "core_072",
+    "coreNumber": 72,
+    "title": "Ribbet",
+    "category": "ancestry",
+    "asset": "assets/daggerheart/cards/core_072.webp",
+    "searchText": "RIBBET Ribbets resemble anthropomorphic frogs with protruding eyes and webbed hands and feet. Amphibious: You can breathe and move naturally underwater. Long Tongue: You can use your long tongue to grab onto things withi"
+  },
+  {
+    "id": "core_073",
+    "coreNumber": 73,
+    "title": "Highborne",
+    "category": "community",
+    "asset": "assets/daggerheart/cards/core_073.webp",
+    "searchText": "HIGHBORNE Being part of @ highborne community means you're accustomed to a life of elegance, opulence, and prestige within the upper echelons of society. Privilege: You have advantage on rolls to consort with nobles, neg"
+  },
+  {
+    "id": "core_074",
+    "coreNumber": 74,
+    "title": "Loreborne",
+    "category": "community",
+    "asset": "assets/daggerheart/cards/core_074.webp",
+    "searchText": "LOREBORNE Being part of a loreborne community means you're from a society that favors strong academic or political prowess. Well-Read: You have advantage on rolls that involve the history, culture, or politics of a promi"
+  },
+  {
+    "id": "core_075",
+    "coreNumber": 75,
+    "title": "Orderborne",
+    "category": "community",
+    "asset": "assets/daggerheart/cards/core_075.webp",
+    "searchText": "ORDERBORNE Being part of an orderborne community means you're from a collective that focuses on discipline or faith, and you uphold a set of principles that reflect your experience there. Dedicated: Record three sayings "
+  },
+  {
+    "id": "core_076",
+    "coreNumber": 76,
+    "title": "Ridgeborne",
+    "category": "community",
+    "asset": "assets/daggerheart/cards/core_076.webp",
+    "searchText": "RIDGEBORNE Being part of a ridgeborne community means you've called the rocky peaks and sharp cliffs of the mountainside home. Steady: You have advantage on rolls to traverse dangerous cliffs and ledges, navigate harsh e"
+  },
+  {
+    "id": "core_077",
+    "coreNumber": 77,
+    "title": "Seaborne",
+    "category": "community",
+    "asset": "assets/daggerheart/cards/core_077.webp",
+    "searchText": "Being part of a seaborne community means you lived on or near a large body of water. Know the Tide: You can sense the ebb and flow of life. When you roll with Fear, place a token on this card. You can hold a number of to"
+  },
+  {
+    "id": "core_078",
+    "coreNumber": 78,
+    "title": "Slyborne",
+    "category": "community",
+    "asset": "assets/daggerheart/cards/core_078.webp",
+    "searchText": "SLYBORNE Being part of a slyborne community means you come from a group that operates outside the law, including all manner of criminals, grifters, and con artists. Scoundrel: You have advantage on rolls to negotiate wit"
+  },
+  {
+    "id": "core_079",
+    "coreNumber": 79,
+    "title": "Underborne",
+    "category": "community",
+    "asset": "assets/daggerheart/cards/core_079.webp",
+    "searchText": "Being part of an underborne community means you're from a subterranean society. Low-Light Living: When you’re in an area with low light or heavy shadow, you have advantage on rolls to hide, investigate, or perceive detai"
+  },
+  {
+    "id": "core_080",
+    "coreNumber": 80,
+    "title": "Wanderborne",
+    "category": "community",
+    "asset": "assets/daggerheart/cards/core_080.webp",
+    "searchText": "WANDERBORNE Being part of a wanderborne community means you've lived as a nomad, forgoing a permanent home and experiencing a wide variety of cultures. Nomadic Pack: Add a Nomadic Pack to your inventory. Once per session"
+  },
+  {
+    "id": "core_081",
+    "coreNumber": 81,
+    "title": "Wildborne",
+    "category": "community",
+    "asset": "assets/daggerheart/cards/core_081.webp",
+    "searchText": "Being part of a wildborne community means you lived deep within the forest. Lightfoot: Your movement is naturally silent. You have advantage on rolls to move without being heard."
+  },
+  {
+    "id": "core_001",
+    "coreNumber": 1,
+    "title": "Troubadour",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_001.webp",
+    "searchText": "TROUBADOUR Foundation SPELLCAST TRAIT: PRESENCE Gifted Performer:Describe how you perform for others. You can play each song once per long rest: * Relaxing Song: You and all allies within Close range clear a Hit Point. «",
+    "className": "bard",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_004",
+    "coreNumber": 4,
+    "title": "Wordsmith",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_004.webp",
+    "searchText": "WORDSMITH Foundation SPELLCAST TRAIT: PRESENCE Rousing Speech: Once per long rest, you can give a heartfelt, inspiring speech. All allies within Far range clear 2 Stress. Heart of a Poet: After you make an action roll to",
+    "className": "bard",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_002",
+    "coreNumber": 2,
+    "title": "Troubadour",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_002.webp",
+    "searchText": "TROUBADOUR Specialization Maestro: Your rallying songs steel the courage of those who listen. When you give a Rally Die to an ally, they can gain a Hope or clear a Stress.",
+    "className": "bard",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_005",
+    "coreNumber": 5,
+    "title": "Wordsmith",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_005.webp",
+    "searchText": "WORDSMITH Specialization Eloguent: Your moving words boost morale. Once per session, when you encourage an ally, you can do one of the following: * Allow them to find a mundane object or tool they need. * Help an Ally wi",
+    "className": "bard",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_003",
+    "coreNumber": 3,
+    "title": "Troubadour",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_003.webp",
+    "searchText": "TROUBADOUR Mastery Virtuoso: You are among the greatest of your craft and your skill is boundless. You can perform each of your “Gifted Performer” feature’s songs twice instead of once per long rest.",
+    "className": "bard",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_006",
+    "coreNumber": 6,
+    "title": "Wordsmith",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_006.webp",
+    "searchText": "WORDSMITH Mastery Epic Poetry: Your Rally Die increases to a d10. Additionally, when you Help an Ally, you can narrate the moment as if you were writing the tale of their heroism in a memoir. When you do, roll a d10 as y",
+    "className": "bard",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_007",
+    "coreNumber": 7,
+    "title": "Warden Of The Elements",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_007.webp",
+    "searchText": "WARDEN OF THE ELEMENTS Foundation SPELLCAST TRAIT: INSTINCT Elemental Incarnation: Mark a Stress to Channel one of the following elements until you take Severe damage or until your next rest: « Fire:When an adversary wit",
+    "className": "druid",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_010",
+    "coreNumber": 10,
+    "title": "Warden Of Renewal",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_010.webp",
+    "searchText": "WARDEN OF RENEWAL Foundation SPELLCAST TRAIT: INSTINCT Clarity of Nature: Once per long rest, you can create a space of natural serenity within Close range. When you spend a few minutes resting within the space, clear St",
+    "className": "druid",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_008",
+    "coreNumber": 8,
+    "title": "Warden Of The Elements",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_008.webp",
+    "searchText": "WARDEN OF THE ELEMENTS Specialization Elemental Aura: Once per rest while Channeling, you can assume an aura matching your element. The aura affects targets within Close range until your Channeling ends. * Fire:When an a",
+    "className": "druid",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_011",
+    "coreNumber": 11,
+    "title": "Warden Of Renewal",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_011.webp",
+    "searchText": "WARDEN OF RENEWAL Specialization Regenerative Reach: You can target creatures within Very Close range with your “Regeneration” feature. Warden’s Protection: Once per long rest, spend 2 Hope to clear 2 Hit Points on 1d4 a",
+    "className": "druid",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_009",
+    "coreNumber": 9,
+    "title": "Warden Of The Elements",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_009.webp",
+    "searchText": "WARDEN OF THE ELEMENTS Mastery Elemental Dominion: You further embody your element. While Channeling, you gain the following benefit: * Fire:You gain a +1 bonus to your Proficiency for attacks and spells that deal damage",
+    "className": "druid",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_012",
+    "coreNumber": 12,
+    "title": "Warden Of Renewal",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_012.webp",
+    "searchText": "WARDEN OF RENEWAL Mastery Defender: Your animal transformation embodies a healing guardian spirit. When you’re in Beastform and an ally within Close range marks 2 or more Hit Points, you can mark a Stress to reduce the n",
+    "className": "druid",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_013",
+    "coreNumber": 13,
+    "title": "Stalwart",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_013.webp",
+    "searchText": "STALWART Foundation Unwavering: Gain a permanent +1 bonus to your damage thresholds. Iron Will: When you take physical damage, you can mark an additional Armor Slot to reduce the severity.",
+    "className": "guardian",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_016",
+    "coreNumber": 16,
+    "title": "Vengeance",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_016.webp",
+    "searchText": "VENGEANCE Foundation At Ease: Gain an additional Stress slot. Revenge: When an adversary within Melee range succeeds on an attack against you, you can mark 2 Stress to force the attacker to mark a Hit Point.",
+    "className": "guardian",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_014",
+    "coreNumber": 14,
+    "title": "Stalwart",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_014.webp",
+    "searchText": "STALWART Specialization Unrelenting: Gain a permanent +2 bonus to your damage thresholds. Partners-in-Arms: When an ally within Very Close range takes damage, you can mark an Armor Slot toreduce the severity by one thres",
+    "className": "guardian",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_017",
+    "coreNumber": 17,
+    "title": "Vengeance",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_017.webp",
+    "searchText": "VENGEANCE Specialization Act of Reprisal: When an adversary damages an ally within Melee range, you gain a +1 bonus to your Proficiency for the next successful attack you make against that adversary.",
+    "className": "guardian",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_015",
+    "coreNumber": 15,
+    "title": "Stalwart",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_015.webp",
+    "searchText": "STALWART Mastery Undaunted: Gain a permanent +3 bonus to your damage thresholds. Loyal Protector: When an ally within Close range has 2 or fewer Hit Points and would take damage, you can mark a Stress to sprint to their ",
+    "className": "guardian",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_018",
+    "coreNumber": 18,
+    "title": "Vengeance",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_018.webp",
+    "searchText": "VENGEANCE Mastery Nemesis: Spend 2 Hope to Prioritize an adversary until your next rest. When you make an attack against your Prioritized adversary, you can swap the results of your Hope and Fear Dice. You can only Prior",
+    "className": "guardian",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_019",
+    "coreNumber": 19,
+    "title": "Beastbound",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_019.webp",
+    "searchText": "BEASTBOUND Foundation SPELLCAST TRAIT: AGILITY Companion: You have an animal companion of your choice (at the GM’s discretion). They stay by your side unless you tell them otherwise. Take the Ranger Companion sheet. When",
+    "className": "ranger",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_022",
+    "coreNumber": 22,
+    "title": "Wayfinder",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_022.webp",
+    "searchText": "WAYFINDER Foundation SPELLCAST TRAIT: AGILITY Ruthless Predator: When you make a damage roll, you can mark a Stress to gain a +1 bonus to your Proficiency. Additionally, when you deal Severe damage to an adversary, they ",
+    "className": "ranger",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_020",
+    "coreNumber": 20,
+    "title": "Beastbound",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_020.webp",
+    "searchText": "BEASTBOUND Specialization Expert Training: Choose an additional level-up option for your companion. Battle-Bonded: When an adversary attacks you while they’re within your companion’s Melee range, you gain a +2 bonus to y",
+    "className": "ranger",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_023",
+    "coreNumber": 23,
+    "title": "Wayfinder",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_023.webp",
+    "searchText": "WAYFINDER Specialization Elusive Predator: When your Focus makes an attack against you, you gain a +2 bonus to your Evasion against the attack.",
+    "className": "ranger",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_021",
+    "coreNumber": 21,
+    "title": "Beastbound",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_021.webp",
+    "searchText": "BEASTBOUND Mastery Advanced Training: Choose two additional level-up options for your companion. Loyal Friend: Once per long rest, when the damage from an attack would mark your companion’s last Stress or your last Hit P",
+    "className": "ranger",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_024",
+    "coreNumber": 24,
+    "title": "Wayfinder",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_024.webp",
+    "searchText": "WAYFINDER Mastery Apex Predator: Before you make an attack roll against your Focus, you can spend a Hope.On a successful attack, you remove a Fear from the GM'’s Fear pool.",
+    "className": "ranger",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_025",
+    "coreNumber": 25,
+    "title": "Nightwalker",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_025.webp",
+    "searchText": "NIGHTWALKER Foundation SPELLCAST TRAIT: FINESSE Shadow Stepper: You can move from shadow to shadow. When you move into an area of darkness or a shadow cast by another creature or object, you can mark a Stress to disappea",
+    "className": "rogue",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_028",
+    "coreNumber": 28,
+    "title": "Syndicate",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_028.webp",
+    "searchText": "SYNDICATE Foundation SPELLCAST TRAIT: FINESSE Well-Connected: When you arrive in a prominent town or environment, you know somebody who calls this place home. Give them a name, note how you think they could be useful, an",
+    "className": "rogue",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_026",
+    "coreNumber": 26,
+    "title": "Nightwalker",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_026.webp",
+    "searchText": "NIGHTWALKER Specialization Dark Cloud: Make a Spellcast Roll (15). On a success, create a temporary dark cloud that covers any area within Close range. Anyone in this cloud can’t see outside of it, and anyone outside of ",
+    "className": "rogue",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_029",
+    "coreNumber": 29,
+    "title": "Syndicate",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_029.webp",
+    "searchText": "SYNDICATE Specialization Contacts Everywhere: Once per session, you can briefly call on a shady contact. Choose one of the following benefits and describe what brought them here to help you in this moment: * They provide",
+    "className": "rogue",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_027",
+    "coreNumber": 27,
+    "title": "Nightwalker",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_027.webp",
+    "searchText": "NIGHTWALKER Mastery Fleeting Shadow: Gain a permanent +1 bonus to your Evasion. You can use your “Shadow Stepper” feature to move within Very Far range. Vanishing Act: Mark a Stress to become Cloaked at any time. When Cl",
+    "className": "rogue",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_030",
+    "coreNumber": 30,
+    "title": "Syndicate",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_030.webp",
+    "searchText": "SYNDICATE Mastery Reliable Backup: You can use your “Contacts Everywhere” feature three times per session. The following options are added to the list of benefits you can choose from when you use that feature: * When you",
+    "className": "rogue",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_031",
+    "coreNumber": 31,
+    "title": "Divine Wielder",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_031.webp",
+    "searchText": "DIVINE WIELDER Foundation SPELLCAST TRAIT: STRENGTH Spirit Weapon: When you have an equipped weapon with a range of Melee or Very Close, it can fly from your hand to attack an adversary within Close range and then return",
+    "className": "seraph",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_034",
+    "coreNumber": 34,
+    "title": "Winged Sentinel",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_034.webp",
+    "searchText": "WINGED SENTINEL Foundation SPELLCAST TRAIT: STRENGTH Wings of Light: You can fly. While flying, you can do the following: * Mark a Stress to pick up and carry another willing creature approximately your size or smaller. ",
+    "className": "seraph",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_032",
+    "coreNumber": 32,
+    "title": "Divine Wielder",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_032.webp",
+    "searchText": "DIVINE WIELDER Specialization Devout: When you roll your Prayer Dice, you can roll an additional die and discard the lowest result. Additionally, you can use your “Sparing Touch” feature twice instead of once per long re",
+    "className": "seraph",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_035",
+    "coreNumber": 35,
+    "title": "Winged Sentinel",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_035.webp",
+    "searchText": "WINGED SENTINEL Specialization Ethereal Visage: Your supernatural visage strikes awe and fear. While flying, you have advantage on Presence Rolls. When you succeed with Hope on a Presence Roll, you can remove a Fear from",
+    "className": "seraph",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_033",
+    "coreNumber": 33,
+    "title": "Divine Wielder",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_033.webp",
+    "searchText": "DIVINE WIELDER Mastery Sacred Resonance: When you roll damage for your “Spirit Weapon” feature, if any of the die results match, double the value of each matching die. For example, if you roll two 5s, they count as two 1",
+    "className": "seraph",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_036",
+    "coreNumber": 36,
+    "title": "Winged Sentinel",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_036.webp",
+    "searchText": "WINGED SENTINEL Mastery Ascendant: Gain a permanent +4 bonus to your Severe damage threshold. Power of the Gods: While flying, you deal an extra 1d12 damage instead of 1d8 from your “Wings of Light” feature.",
+    "className": "seraph",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_037",
+    "coreNumber": 37,
+    "title": "Elemental Origin",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_037.webp",
+    "searchText": "ELEMENTAL ORIGIN Foundation SPELLCAST TRAIT: INSTINCT Elementalist: Choose one of the following elements at character creation: AIR-EARTH:FIRE - LIGHTNING : WATER You can shape this element into harmless effects. Additio",
+    "className": "sorcerer",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_040",
+    "coreNumber": 40,
+    "title": "Primal Origin",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_040.webp",
+    "searchText": "PRIMAL ORIGIN Foundation SPELLCAST TRAIT: INSTINCT Manipulate Magic: Your primal origin allows you to modify the essence of magic itself. After you cast a spell or make an attack using a weapon that deals magic damage, y",
+    "className": "sorcerer",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_038",
+    "coreNumber": 38,
+    "title": "Elemental Origin",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_038.webp",
+    "searchText": "ELEMENTAL ORIGIN Specialization Natural Evasion: You can call forth your element to protect you from harm. When an attack roll against you succeeds, you can mark a Stress and describe how you use your element to defend y",
+    "className": "sorcerer",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_041",
+    "coreNumber": 41,
+    "title": "Primal Origin",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_041.webp",
+    "searchText": "PRIMAL ORIGIN Specialization Enchanted Aid: You can enhance the magic of others with your essence. When you Help an Ally with a Spellcast Roll, you canroll a d8 as your advantage die. Once per long rest, after an ally ha",
+    "className": "sorcerer",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_039",
+    "coreNumber": 39,
+    "title": "Elemental Origin",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_039.webp",
+    "searchText": "ELEMENTAL ORIGIN Mastery Transcendence: Once per long rest, you can transform into a physical manifestation of your element. When you do, describe your transformation and choose two of the following benefits to gain unti",
+    "className": "sorcerer",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_042",
+    "coreNumber": 42,
+    "title": "Primal Origin",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_042.webp",
+    "searchText": "PRIMAL ORIGIN Mastery Arcane Charge: You can gather magical energy to enhance your capabilities. When you take magic damage, you become Charged. Alternatively, you can spend 2 Hope to become Charged. When you successfull",
+    "className": "sorcerer",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_043",
+    "coreNumber": 43,
+    "title": "Call Of The Brave",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_043.webp",
+    "searchText": "CALL OF THE BRAVE Foundation Courage: When you fail a roll with Fear, you gain a Hope. Battle Ritual: Once per long rest, before you attempt something incredibly dangerous or face off against a foe who clearly outmatches",
+    "className": "warrior",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_046",
+    "coreNumber": 46,
+    "title": "Call Of The Slayer",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_046.webp",
+    "searchText": "CALL OF THE SLAYER Foundation Slayer:You gain a pool of dice called Slayer Dice. On aroll with Hope, you can place a d6 on this card instead of gaining a Hope, adding the die to the pool. You can store a number of Slayer",
+    "className": "warrior",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_044",
+    "coreNumber": 44,
+    "title": "Call Of The Brave",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_044.webp",
+    "searchText": "CALL OF THE BRAVE Specialization Rise to the Challenge: You are vigilant in the face of mounting danger. While you have 2 or fewer Hit Points unmarked, you can roll a d20 as your Hope Die.",
+    "className": "warrior",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_047",
+    "coreNumber": 47,
+    "title": "Call Of The Slayer",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_047.webp",
+    "searchText": "CALL OF THE SLAYER Specialization Weapon Specialist: You can wield multiple weapons with dangerous ease. When you succeed on an attack, you can spend a Hope to add one of the damage dice from your secondary weapon to the",
+    "className": "warrior",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_045",
+    "coreNumber": 45,
+    "title": "Call Of The Brave",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_045.webp",
+    "searchText": "CALL OF THE BRAVE Mastery Camaraderie: Your unwavering bravery is a rallying point for your allies. You can initiate a Tag Team Roll one additional time per session. Additionally, when an ally initiates a Tag Team Roll w",
+    "className": "warrior",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_048",
+    "coreNumber": 48,
+    "title": "Call Of The Slayer",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_048.webp",
+    "searchText": "CALL OF THE SLAYER Mastery Martial Preparation: You’re an inspirational warrior to all who travel with you. Your party gains access to the Martial Preparation downtime move. To use this move during a rest, describe how y",
+    "className": "warrior",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_049",
+    "coreNumber": 49,
+    "title": "School Of Knowledge",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_049.webp",
+    "searchText": "SCHOOL OF KNOWLEDGE Foundation SPELLCAST TRAIT: KNOWLEDGE Prepared: Take an additional domain card of your level or lower from a domain you have access to. Adept: When you Utilize an Experience, you can mark a Stress ins",
+    "className": "wizard",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_052",
+    "coreNumber": 52,
+    "title": "School Of War",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_052.webp",
+    "searchText": "SCHOOL OF WAR Foundation SPELLCAST TRAIT: KNOWLEDGE Battlemage: You've focused your studies on becoming an unconquerable force on the battlefield. Gain an additional Hit Point slot. Face Your Fear: When you succeed with ",
+    "className": "wizard",
+    "tier": "foundation"
+  },
+  {
+    "id": "core_050",
+    "coreNumber": 50,
+    "title": "School Of Knowledge",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_050.webp",
+    "searchText": "SCHOOL OF KNOWLEDGE Specialization Accomplished: Take an additional domain card of your level or lower from a domain you have access to. Perfect Recall: Once per rest, when you recall adomain card in your vault, you can ",
+    "className": "wizard",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_053",
+    "coreNumber": 53,
+    "title": "School Of War",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_053.webp",
+    "searchText": "SCHOOL OF WAR Specialization Conjure Shield: You can maintain a protective barrier of magic. While you have at least 2 Hope, you add your Proficiency to your Evasion. Fueled by Fear: The extra magic damage from your “Fac",
+    "className": "wizard",
+    "tier": "specialization"
+  },
+  {
+    "id": "core_051",
+    "coreNumber": 51,
+    "title": "School Of Knowledge",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_051.webp",
+    "searchText": "SCHOOL OF KNOWLEDGE Mastery Brilliant: Take an additional domain card of your level or lower from a domain you have access to. Honed Expertise: When you use an Experience, rolladé.On aresult of 5 or higher, you can use i",
+    "className": "wizard",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_054",
+    "coreNumber": 54,
+    "title": "School Of War",
+    "category": "subclass",
+    "asset": "assets/daggerheart/cards/core_054.webp",
+    "searchText": "SCHOOL OF WAR Mastery Thrive in Chaos: When you succeed on an attack, you can mark a Stress after rolling damage to force the target to mark an additional Hit Point. Have No Fear: The extra magic damage from your “Face Y",
+    "className": "wizard",
+    "tier": "mastery"
+  },
+  {
+    "id": "core_082",
+    "coreNumber": 82,
+    "title": "Rune Ward",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_082.webp",
+    "searchText": "RUNE WARD You have a deeply personal trinket that can be infused with protective magic and held as award by you or an ally. Describe what it isand why it’s important to you. The ward’s holder can spend a Hope to reduce i",
+    "domain": "arcana",
+    "level": 1
+  },
+  {
+    "id": "core_083",
+    "coreNumber": 83,
+    "title": "Unleash Chaos",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_083.webp",
+    "searchText": "UNLEASH CHAOS At the beginning of a session, place a number of tokens equal to your Spellcast trait on this card. Make a Spellcast Roll against a target within Far range and spend any number of tokens to channel raw ener",
+    "domain": "arcana",
+    "level": 1
+  },
+  {
+    "id": "core_084",
+    "coreNumber": 84,
+    "title": "Wall Walk",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_084.webp",
+    "searchText": "WALL WALK Spend a Hope to allow a creature you can touch to climb on walls and ceilings as easily as walking on the ground. This lasts until the end of the scene or you cast Wall Walk again.",
+    "domain": "arcana",
+    "level": 1
+  },
+  {
+    "id": "core_085",
+    "coreNumber": 85,
+    "title": "Cinder Grasp",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_085.webp",
+    "searchText": "CINDER GRASP Make a Spellcast Roll against a target within Melee range. On asuccess, the target instantly bursts into flames, takes 1d20+3 magic damage, and is temporarily lit On Fire. When a creature acts while On Fire,",
+    "domain": "arcana",
+    "level": 2
+  },
+  {
+    "id": "core_086",
+    "coreNumber": 86,
+    "title": "Floating Eye",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_086.webp",
+    "searchText": "FLOATING EYE Spend a Hope to create a single, small floating orb that you can move anywhere within Very Far range. While this spell is active, you can see through the orb as though you’re looking out from its position. Y",
+    "domain": "arcana",
+    "level": 2
+  },
+  {
+    "id": "core_087",
+    "coreNumber": 87,
+    "title": "Counterspell",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_087.webp",
+    "searchText": "COUNTERSPELL You can interrupt a magical effect taking place by making a reaction roll using your Spellcast trait. On asuccess, the effect stops and any consequences are avoided, and this card is placed in your vault.",
+    "domain": "arcana",
+    "level": 3
+  },
+  {
+    "id": "core_088",
+    "coreNumber": 88,
+    "title": "Flight",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_088.webp",
+    "searchText": "FLIGHT Make a Spellcast Roll (15). On a success, place a number of tokens equal to your Agility on this card (minimum 1). When you make an action roll while flying, spend a token from this card. After the action that spe",
+    "domain": "arcana",
+    "level": 3
+  },
+  {
+    "id": "core_089",
+    "coreNumber": 89,
+    "title": "Blink Out",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_089.webp",
+    "searchText": "BLINK OUT Make a Spellcast Roll (12). Ona success,spend a Hope to teleport to another point you can see within Far range. If any willing creatures are within Very Close range, spend an additional Hope for each creature t",
+    "domain": "arcana",
+    "level": 4
+  },
+  {
+    "id": "core_090",
+    "coreNumber": 90,
+    "title": "Preservation Blast",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_090.webp",
+    "searchText": "PRESERVATION BLAST Make a Spellcast Roll against all targets within Melee range. Targets you succeed against are forced back to Far range and take d8+3 magic damage using your Spellcast trait.",
+    "domain": "arcana",
+    "level": 4
+  },
+  {
+    "id": "core_091",
+    "coreNumber": 91,
+    "title": "Chain Lightning",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_091.webp",
+    "searchText": "CHAIN LIGHTNING Mark 2 Stress to make a Spellcast Roll, unleashing lightning on all targets within Close range. Targets you succeed against must make areaction roll with a Difficulty equal to the result of your Spellcast",
+    "domain": "arcana",
+    "level": 5
+  },
+  {
+    "id": "core_092",
+    "coreNumber": 92,
+    "title": "Premonition",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_092.webp",
+    "searchText": "PREMONITION You can channel arcane energy to have visions of the future. Once per long rest,immediately after the GM conveys the consequences of a roll you made, you can rescind the move and consequences like they never ",
+    "domain": "arcana",
+    "level": 5
+  },
+  {
+    "id": "core_093",
+    "coreNumber": 93,
+    "title": "Rift Walker",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_093.webp",
+    "searchText": "RIFT WALKER Make a Spellcast Roll (15). On a success, you place an arcane marking on the ground where you currently stand. The next time you successfully cast Rift Walker, arift in space opens up, providing safe passage ",
+    "domain": "arcana",
+    "level": 6
+  },
+  {
+    "id": "core_094",
+    "coreNumber": 94,
+    "title": "Telekinesis",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_094.webp",
+    "searchText": "TELEKINESIS Make a Spellcast Roll against a target within Far range. On a success, you can use your mind to move them anywhere within Far range of their original position. You can throw the lifted target as an attack by ",
+    "domain": "arcana",
+    "level": 6
+  },
+  {
+    "id": "core_095",
+    "coreNumber": 95,
+    "title": "Arcana-Touched",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_095.webp",
+    "searchText": "ARCANA-TOUCHED When 4 or more of the domain cards in your loadout are from the Arcana domain, gain the following benefits: = +1 bonus to your Spellcast Rolls » Once perrest, you can switch the results of your Hope and Fe",
+    "domain": "arcana",
+    "level": 7
+  },
+  {
+    "id": "core_096",
+    "coreNumber": 96,
+    "title": "Cloaking Blast",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_096.webp",
+    "searchText": "CLOAKING BLAST When you make a successful Spellcast Roll to cast adifferent spell, you can spend a Hope to become Cloaked. While Cloaked, you remain unseen if you are stationary when an adversary moves to where they woul",
+    "domain": "arcana",
+    "level": 7
+  },
+  {
+    "id": "core_097",
+    "coreNumber": 97,
+    "title": "Arcane Reflection",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_097.webp",
+    "searchText": "ARCANE REFLECTION When you would take magic damage, you can spend any number of Hope to roll that many dés. If any roll a 6, the attack is reflected back to the caster, dealing the damage to them instead.",
+    "domain": "arcana",
+    "level": 8
+  },
+  {
+    "id": "core_098",
+    "coreNumber": 98,
+    "title": "Confusing Aura",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_098.webp",
+    "searchText": "CONFUSING AURA Make a Spellcast Roll (14). Once per long rest on asuccess, you create alayer of illusion over your body that makes it hard to tell exactly where you are.Mark any number of Stress to make that many additio",
+    "domain": "arcana",
+    "level": 8
+  },
+  {
+    "id": "core_099",
+    "coreNumber": 99,
+    "title": "Earthquake",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_099.webp",
+    "searchText": "EARTHQUAKE Make a Spellcast Roll (16). Once perrestona success, all targets within Very Far range who aren’t flying must make a Reaction Roll (18). Targets who fail take 3d10+8 physical damage and are temporarily Vulnera",
+    "domain": "arcana",
+    "level": 9
+  },
+  {
+    "id": "core_100",
+    "coreNumber": 100,
+    "title": "Sensory Projection",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_100.webp",
+    "searchText": "SENSORY PROJECTION Once perrest, make a Spellcast Roll (15).On a success, drop into a vision that lets you clearly see and hear any place you have been before as though you are standing there in this moment. You can move",
+    "domain": "arcana",
+    "level": 9
+  },
+  {
+    "id": "core_101",
+    "coreNumber": 101,
+    "title": "Adjust Reality",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_101.webp",
+    "searchText": "ADJUST REALITY After you or a willing ally make any roll, you can spend 5 Hope to change the numerical result of that roll to aresult of your choice instead. The result must be plausible within the range of the dice.",
+    "domain": "arcana",
+    "level": 10
+  },
+  {
+    "id": "core_102",
+    "coreNumber": 102,
+    "title": "Falling Sky",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_102.webp",
+    "searchText": "FALLING SKY Make a Spellcast Roll against all adversaries within Far range. Mark any number of Stress to make shards of arcana rain down from above. Targets you succeed against take 1d20+2 magic damage for each Stress ma",
+    "domain": "arcana",
+    "level": 10
+  },
+  {
+    "id": "core_103",
+    "coreNumber": 103,
+    "title": "Get Back Up",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_103.webp",
+    "searchText": "GET BACK UP When you take Severe damage, you can mark a Stress to reduce the severity by one threshold.",
+    "domain": "blade",
+    "level": 1
+  },
+  {
+    "id": "core_104",
+    "coreNumber": 104,
+    "title": "Not Good Enough",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_104.webp",
+    "searchText": "NOT GOOD ENOUGH When you roll your damage dice, you can reroll any 1sor2s.",
+    "domain": "blade",
+    "level": 1
+  },
+  {
+    "id": "core_106",
+    "coreNumber": 106,
+    "title": "A Soldier S Bond",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_106.webp",
+    "searchText": "A SOLDIER’S BOND Once per long rest, when you compliment someone or ask them about something they’re good at, you can both gain 3 Hope.",
+    "domain": "blade",
+    "level": 2
+  },
+  {
+    "id": "core_107",
+    "coreNumber": 107,
+    "title": "Reckless",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_107.webp",
+    "searchText": "RECKLESS Mark a Stress to gain advantage on an attack.",
+    "domain": "blade",
+    "level": 2
+  },
+  {
+    "id": "core_108",
+    "coreNumber": 108,
+    "title": "Scramble",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_108.webp",
+    "searchText": "SCRAMBLE Once perrest, when a creature within Melee range would deal damage to you, you can avoid the attack and safely move out of Melee range of the enemy.",
+    "domain": "blade",
+    "level": 3
+  },
+  {
+    "id": "core_109",
+    "coreNumber": 109,
+    "title": "Versatile Fighter",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_109.webp",
+    "searchText": "VERSATILE FIGHTER You can use adifferent character trait for an equipped weapon, rather than the trait the weapon calls for. When you deal damage, you can mark a Stress to use the maximum result of one of your damage dic",
+    "domain": "blade",
+    "level": 3
+  },
+  {
+    "id": "core_110",
+    "coreNumber": 110,
+    "title": "Deadly Focus",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_110.webp",
+    "searchText": "DEADLY FOCUS Once perrest, you can apply all your focus toward atarget of your choice. Until you attack another creature, you defeat the target, or the battle ends, gaina +1 bonus to your Proficiency.",
+    "domain": "blade",
+    "level": 4
+  },
+  {
+    "id": "core_111",
+    "coreNumber": 111,
+    "title": "Fortified Armor",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_111.webp",
+    "searchText": "FORTIFIED ARMOR While you are wearing armor, gain a +2 bonus to your damage thresholds.",
+    "domain": "blade",
+    "level": 4
+  },
+  {
+    "id": "core_112",
+    "coreNumber": 112,
+    "title": "Champion' S Edge",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_112.webp",
+    "searchText": "CHAMPION’S EDGE When you critically succeed on an attack, you can spend up to 3 Hope and choose one of the following options for each Hope spent: * You clear a Hit Point. * You clear an Armor Slot. * The target must mark",
+    "domain": "blade",
+    "level": 5
+  },
+  {
+    "id": "core_113",
+    "coreNumber": 113,
+    "title": "Vitality",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_113.webp",
+    "searchText": "VITALITY When you choose this card, permanently gain two of the following benefits: * One Stress slot * One Hit Point slot » +2 bonus to your damage thresholds Then place this card in your vault permanently.",
+    "domain": "blade",
+    "level": 5
+  },
+  {
+    "id": "core_114",
+    "coreNumber": 114,
+    "title": "Battle-Hardened",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_114.webp",
+    "searchText": "BATTLE-HARDENED Once per long rest when you would make a Death Move, you can spend a Hope to clear a Hit Point instead.",
+    "domain": "blade",
+    "level": 6
+  },
+  {
+    "id": "core_115",
+    "coreNumber": 115,
+    "title": "Rage Up",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_115.webp",
+    "searchText": "RAGE UP Before you make an attack, you can mark a Stress to gain a bonus to your damage roll equal to twice your Strength. You can Rage Up twice per attack.",
+    "domain": "blade",
+    "level": 6
+  },
+  {
+    "id": "core_116",
+    "coreNumber": 116,
+    "title": "Blade-Touched",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_116.webp",
+    "searchText": "BLADE-TOUCHED When 4 or more of the domain cards in your loadout are from the Blade domain, gain the following benefits: » +2 bonus to your attack rolls * +4 bonus to your Severe damage threshold",
+    "domain": "blade",
+    "level": 7
+  },
+  {
+    "id": "core_117",
+    "coreNumber": 117,
+    "title": "Glancing Blow",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_117.webp",
+    "searchText": "GLANCING BLOW When you fail an attack, you can mark a Stress to deal weapon damage using half your Proficiency.",
+    "domain": "blade",
+    "level": 7
+  },
+  {
+    "id": "core_118",
+    "coreNumber": 118,
+    "title": "Battle Cry",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_118.webp",
+    "searchText": "BATTLE CRY Once per long rest, while you’re charging into danger, you can muster a rousing call that inspires your allies. All allies who can hear you each clear a Stress and gain a Hope. Additionally, your allies gain a",
+    "domain": "blade",
+    "level": 8
+  },
+  {
+    "id": "core_119",
+    "coreNumber": 119,
+    "title": "Frenzy",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_119.webp",
+    "searchText": "FRENZY Once per long rest, you can go into a Frenzy until there are no more adversaries within sight. While Frenzied, you can’t use Armor Slots, and you gaina +10 bonus to your damage rolls and a +8 bonus to your Severe ",
+    "domain": "blade",
+    "level": 8
+  },
+  {
+    "id": "core_120",
+    "coreNumber": 120,
+    "title": "Gore And Glory",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_120.webp",
+    "searchText": "GORE AND GLORY When you critically succeed on a weapon attack, gain an additional Hope or clear an additional Stress. Additionally, when you deal enough damage to defeat an enemy, gain a Hope or clear a Stress.",
+    "domain": "blade",
+    "level": 9
+  },
+  {
+    "id": "core_121",
+    "coreNumber": 121,
+    "title": "Reaper S Strike",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_121.webp",
+    "searchText": "REAPER’S STRIKE Once per long rest, spend a Hope to make an attack roll. The GM tells you which targets within range it would succeed against. Choose one of these targets and force them to mark 5 Hit Points.",
+    "domain": "blade",
+    "level": 9
+  },
+  {
+    "id": "core_122",
+    "coreNumber": 122,
+    "title": "Battle Monster",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_122.webp",
+    "searchText": "BATTLE MONSTER When you make a successful attack against an adversary, you can mark 4 Stress to force the target to mark a number of Hit Points equal to the number of Hit Points you currently have marked instead of rolli",
+    "domain": "blade",
+    "level": 10
+  },
+  {
+    "id": "core_123",
+    "coreNumber": 123,
+    "title": "Onslaught",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_123.webp",
+    "searchText": "ONSLAUGHT When you successfully make an attack with your weapon, you never deal damage beneath a target’s Major damage threshold (the target always marks a minimum of 2 Hit Points). Additionally, when a creature within y",
+    "domain": "blade",
+    "level": 10
+  },
+  {
+    "id": "core_124",
+    "coreNumber": 124,
+    "title": "Deft Maneuvers",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_124.webp",
+    "searchText": "DEFT MANEUVERS Once perrest, mark a Stress to sprint anywhere within Far range without making an Agility Roll to getthere. If you end this movement within Melee range of an adversary and immediately make an attack agains",
+    "domain": "bone",
+    "level": 1
+  },
+  {
+    "id": "core_125",
+    "coreNumber": 125,
+    "title": "See It Coming",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_125.webp",
+    "searchText": "| SEE IT COMING When you'’re targeted by an attack made from beyond Melee range, you can mark a Stress to roll ad4 and gain a bonus to your Evasion equal to the result against the attack.",
+    "domain": "bone",
+    "level": 1
+  },
+  {
+    "id": "core_126",
+    "coreNumber": 126,
+    "title": "Untouchable",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_126.webp",
+    "searchText": "UNTOUCHABLE Gain abonus to your Evasion equal to half your Agility.",
+    "domain": "bone",
+    "level": 1
+  },
+  {
+    "id": "core_127",
+    "coreNumber": 127,
+    "title": "Ferocity",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_127.webp",
+    "searchText": "FEROCITY When you cause an adversary to mark 1 or more Hit Points, you can spend 2 Hope to increase your Evasion by the number of Hit Points they marked. This bonus lasts until after the next attack made against you.",
+    "domain": "bone",
+    "level": 2
+  },
+  {
+    "id": "core_128",
+    "coreNumber": 128,
+    "title": "Strategic Approach",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_128.webp",
+    "searchText": "STRATEGIC APPROACH After a long rest, place a number of tokens equal to your Knowledge on this card (minimum 1). The first time you move within Close range of an adversary and make an attack against them, you can spend o",
+    "domain": "bone",
+    "level": 2
+  },
+  {
+    "id": "core_129",
+    "coreNumber": 129,
+    "title": "Brace",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_129.webp",
+    "searchText": "BRACE When you mark an Armor Slot to reduce incoming damage, you can mark a Stress to mark an additional Armor Slot.",
+    "domain": "bone",
+    "level": 3
+  },
+  {
+    "id": "core_130",
+    "coreNumber": 130,
+    "title": "Tactician",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_130.webp",
+    "searchText": "TACTICIAN When you Help an Ally, they can spend a Hope to add one of your Experiences to their roll alongside your advantage die. When making a Tag Team Roll, you can roll a d20 as your Hope Die.",
+    "domain": "bone",
+    "level": 3
+  },
+  {
+    "id": "core_131",
+    "coreNumber": 131,
+    "title": "Boost",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_131.webp",
+    "searchText": "BOOST Mark a Stress to boost off a willing ally within Close range, fling yourself into the air,and perform an aerial attack against a target within Far range. You have advantage on the attack,add a d10 to the damage rol",
+    "domain": "bone",
+    "level": 4
+  },
+  {
+    "id": "core_132",
+    "coreNumber": 132,
+    "title": "Redirect",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_132.webp",
+    "searchText": "REDIRECT When an attack made against you from beyond Melee range fails, roll a number of d6és equal to your Proficiency. If any roll a 6, you can mark a Stress to redirect the attack to damage an adversary within Very Cl",
+    "domain": "bone",
+    "level": 4
+  },
+  {
+    "id": "core_133",
+    "coreNumber": 133,
+    "title": "Know Thy Enemy",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_133.webp",
+    "searchText": "KNOW THY ENEMY When observing a creature, you can make an Instinct Roll against them. On a success, spend aHope and ask the GM for one set of information about the target from the following options: » Their unmarked Hit ",
+    "domain": "bone",
+    "level": 5
+  },
+  {
+    "id": "core_134",
+    "coreNumber": 134,
+    "title": "Signature Move",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_134.webp",
+    "searchText": "SIGNATURE MOVE Name and describe your signature combat move. Once per rest, when you perform this signature move as part of an action you’re taking, you can roll ad20 as your Hope Die. On a success, clear a Stress.",
+    "domain": "bone",
+    "level": 5
+  },
+  {
+    "id": "core_135",
+    "coreNumber": 135,
+    "title": "Rapid Riposte",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_135.webp",
+    "searchText": "RAPID RIPOSTE When an attack made against you from within Melee range fails, you can mark a Stress and seize the opportunity to deal the weapon damage of one of your active weapons to the attacker.",
+    "domain": "bone",
+    "level": 6
+  },
+  {
+    "id": "core_136",
+    "coreNumber": 136,
+    "title": "Recovery",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_136.webp",
+    "searchText": "RECOVERY During ashort rest, you can choose along rest downtime move instead. You can spend a Hope to letan ally do the same.",
+    "domain": "bone",
+    "level": 6
+  },
+  {
+    "id": "core_137",
+    "coreNumber": 137,
+    "title": "Bone-Touched",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_137.webp",
+    "searchText": "BONE-TOUCHED When 4 or more of the domain cards in your loadout are from the Bone domain, gain the following benefits: = +1 bonus to Agility * Once perrest, you can spend 3 Hope to cause an attack that succeeded against ",
+    "domain": "bone",
+    "level": 7
+  },
+  {
+    "id": "core_138",
+    "coreNumber": 138,
+    "title": "Cruel Precision",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_138.webp",
+    "searchText": "CRUEL PRECISION When you make a successful attack with a weapon, gain a bonus to your damage roll equal to either your Finesse or Agility.",
+    "domain": "bone",
+    "level": 7
+  },
+  {
+    "id": "core_139",
+    "coreNumber": 139,
+    "title": "Breaking Blow",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_139.webp",
+    "searchText": "BREAKING BLOW When you make a successful attack, you can mark a Stress to make the next successful attack against that same target deal an extra 2d12 damage.",
+    "domain": "bone",
+    "level": 8
+  },
+  {
+    "id": "core_140",
+    "coreNumber": 140,
+    "title": "Wrangle",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_140.webp",
+    "searchText": "WRANGLE Make an Agility Roll against all targets within Close range. Spend a Hope to move targets you succeed against, and any willing allies within Close range, to another point within Close range.",
+    "domain": "bone",
+    "level": 8
+  },
+  {
+    "id": "core_141",
+    "coreNumber": 141,
+    "title": "On The Brink",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_141.webp",
+    "searchText": "ON THE BRINK When you have 2 or fewer Hit Points unmarked, you don’t take Minor damage.",
+    "domain": "bone",
+    "level": 9
+  },
+  {
+    "id": "core_142",
+    "coreNumber": 142,
+    "title": "Splintering Strike",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_142.webp",
+    "searchText": "SPLINTERING STRIKE Spend a Hope and make an attack against all adversaries within your weapon’s range. Once per long rest, on a success against any targets, add up the damage dealt, then redistribute that damage however ",
+    "domain": "bone",
+    "level": 9
+  },
+  {
+    "id": "core_143",
+    "coreNumber": 143,
+    "title": "Deathrun",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_143.webp",
+    "searchText": "DEATHRUN Spend 3 Hope to run a straight path through the battlefield to a point within Far range, making an attack against all adversaries within your weapon’s range along that path. Choose the order in which you deal da",
+    "domain": "bone",
+    "level": 10
+  },
+  {
+    "id": "core_144",
+    "coreNumber": 144,
+    "title": "Swift Step",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_144.webp",
+    "searchText": "SWIFT STEP When an attack made against you fails, clear a Stress. If you can’t clear a Stress, gain a Hope.",
+    "domain": "bone",
+    "level": 10
+  },
+  {
+    "id": "core_145",
+    "coreNumber": 145,
+    "title": "Book Of Ava",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_145.webp",
+    "searchText": "BOOK OF AVA Power Push: Make a Spellcast Roll against a target within Melee range. On a success, they’re knocked back to Far range and take d10+2 magic damage using your Proficiency. Tava’s Armor: Spend a Hope to give a ",
+    "domain": "codex",
+    "level": 1
+  },
+  {
+    "id": "core_146",
+    "coreNumber": 146,
+    "title": "Book Of Illiat",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_146.webp",
+    "searchText": "BOOK OF ILLIAT Slumber: Make a Spellcast Roll against a target within Very Close range. On asuccess, they're Asleep until they take damage or the GM spends a Fear on their turn to clear this condition. Arcane Barrage: On",
+    "domain": "codex",
+    "level": 1
+  },
+  {
+    "id": "core_147",
+    "coreNumber": 147,
+    "title": "Book Of Tyfar",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_147.webp",
+    "searchText": "BOOK OF TYFAR Wild Flame: Make a Spellcast Roll against up to three adversaries within Melee range. Targets you succeed against take 2d6 magic damage and must mark a Stress as flames erupt from your hand. Magic Hand: You",
+    "domain": "codex",
+    "level": 1
+  },
+  {
+    "id": "core_148",
+    "coreNumber": 148,
+    "title": "Book Of Sitil",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_148.webp",
+    "searchText": "BOOK OF SITIL Adjust Appearance: You magically shift your appearance and clothing to avoid recognition. Parallela: Spend 2 Hope to cast this spell on yourself or an ally within Close range. The next time the target makes",
+    "domain": "codex",
+    "level": 2
+  },
+  {
+    "id": "core_149",
+    "coreNumber": 149,
+    "title": "Book Of Vagras",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_149.webp",
+    "searchText": "BOOK OF VAGRAS Runic Lock: Make a Spellcast Roll (15) on an object you’re touching that can close (such as a lock, chest, or box). Once per rest on a success, you can lock the object so it can only be opened by creatures",
+    "domain": "codex",
+    "level": 2
+  },
+  {
+    "id": "core_150",
+    "coreNumber": 150,
+    "title": "Book Of Korvax",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_150.webp",
+    "searchText": "BOOK OF KORVAX Levitation: Make a Spellcast Roll to temporarily lift atarget you can see up into the air and move them within Close range of their original position. Recant: Spend a Hope to force a target within Melee ra",
+    "domain": "codex",
+    "level": 3
+  },
+  {
+    "id": "core_151",
+    "coreNumber": 151,
+    "title": "Book Of Norai",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_151.webp",
+    "searchText": "BOOK OF NORAI Mystic Tether: Make a Spellcast Roll against a target within Far range. On a success, they’re temporarily Restrained and must mark a Stress. If you target a flying creature, this spell grounds and temporari",
+    "domain": "codex",
+    "level": 3
+  },
+  {
+    "id": "core_152",
+    "coreNumber": 152,
+    "title": "Book Of Exota",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_152.webp",
+    "searchText": "BOOK OF EXOTA Repudiate: You can interrupt a magical effect taking place. Make a reaction roll using your Spellcast trait. Once per rest on asuccess, the effect stops and any consequences are avoided. Create Construct: S",
+    "domain": "codex",
+    "level": 4
+  },
+  {
+    "id": "core_153",
+    "coreNumber": 153,
+    "title": "Book Of Grynn",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_153.webp",
+    "searchText": "BOOK OF GRYNN Arcane Deflection: Once per long rest, spend a Hope to negate the damage of an attack targeting you or an ally within Very Close range. Time Lock: Target an object within Far range. That object stopsin time",
+    "domain": "codex",
+    "level": 4
+  },
+  {
+    "id": "core_154",
+    "coreNumber": 154,
+    "title": "Manifest Wall",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_154.webp",
+    "searchText": "MANIFEST WALL Make a Spellcast Roll (15). Once perrestona success, spend a Hope to create atemporary magical wall between two points within Far range. It can be up to 50 feet high and form at any angle. Creatures or obje",
+    "domain": "codex",
+    "level": 5
+  },
+  {
+    "id": "core_155",
+    "coreNumber": 155,
+    "title": "Teleport",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_155.webp",
+    "searchText": "TELEPORT Once per long rest, you can instantly teleport yourself and any number of willing targets within Close range to a place you’ve been before. Choose one of the following options, then make a Spellcast Roll (16): *",
+    "domain": "codex",
+    "level": 5
+  },
+  {
+    "id": "core_156",
+    "coreNumber": 156,
+    "title": "Banish",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_156.webp",
+    "searchText": "BANISH Make a Spellcast Roll against a target within Close range. On a success, rolla number of d20s equal to your Spellcast trait. The target must make a reaction roll with a Difficulty equal to your highest result. On ",
+    "domain": "codex",
+    "level": 6
+  },
+  {
+    "id": "core_157",
+    "coreNumber": 157,
+    "title": "Sigil Of Retribution",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_157.webp",
+    "searchText": "SIGIL OF RETRIBUTION Mark an adversary within Close range with a sigil of retribution. The GM gains a Fear. When the marked adversary deals damage to you or your allies, place ad8 on this card. You can hold a number of d",
+    "domain": "codex",
+    "level": 6
+  },
+  {
+    "id": "core_158",
+    "coreNumber": 158,
+    "title": "Book Of Homet",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_158.webp",
+    "searchText": "BOOK OF HOMET Pass Through: Make a Spellcast Roll (13). Once per rest on asuccess, you and all creatures touching you can pass through a wall or door within Close range. The effect ends once everyone is on the other side",
+    "domain": "codex",
+    "level": 7
+  },
+  {
+    "id": "core_159",
+    "coreNumber": 159,
+    "title": "Codex-Touched",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_159.webp",
+    "searchText": "CODEX-TOUCHED When 4 or more of the domain cards in your loadout are from the Codex domain, gain the following benefits: * You can mark a Stress to add your Proficiency to a Spellcast Roll. * Once per rest, replace this ",
+    "domain": "codex",
+    "level": 7
+  },
+  {
+    "id": "core_160",
+    "coreNumber": 160,
+    "title": "Book Of Vyola",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_160.webp",
+    "searchText": "BOOK OF VYOLA Memory Delve: Make a Spellcast Roll against a target within Far range. On a success, peerinto the target’s mind and ask the GM a question. The GM describes any memories the target has pertaining to the answ",
+    "domain": "codex",
+    "level": 8
+  },
+  {
+    "id": "core_161",
+    "coreNumber": 161,
+    "title": "Safe Haven",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_161.webp",
+    "searchText": "SAFE HAVEN When you have a few minutes of calm to focus, you can spend 2 Hope to summon your Safe Haven, a large interdimensional home where you and your allies can take shelter. When you do, a magical door appears somew",
+    "domain": "codex",
+    "level": 8
+  },
+  {
+    "id": "core_162",
+    "coreNumber": 162,
+    "title": "Book Of Ronin",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_162.webp",
+    "searchText": "BOOK OF RONIN Transform: Make a Spellcast Roll (15). On a success, transforminto an inanimate object no larger than twice your normal size. You can remain in this shape until you take damage. Eternal Enervation: Once per",
+    "domain": "codex",
+    "level": 9
+  },
+  {
+    "id": "core_163",
+    "coreNumber": 163,
+    "title": "Disintegration Wave",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_163.webp",
+    "searchText": "DISINTEGRATION WAVE Make a Spellcast Roll (18). Once perlongrestona success, the GM tells you which adversaries within Far range have a Difficulty of 18 or lower. Mark a Stress for each one you wish to hit with this spel",
+    "domain": "codex",
+    "level": 9
+  },
+  {
+    "id": "core_164",
+    "coreNumber": 164,
+    "title": "Book Of Yarrow",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_164.webp",
+    "searchText": "BOOK OF YARROW Timejammer: Make a Spellcast Roll (18). On asuccess, time temporarily slows to a halt for everyone within Far range except for you. It resumes the next time you make an action roll that targets another cre",
+    "domain": "codex",
+    "level": 10
+  },
+  {
+    "id": "core_165",
+    "coreNumber": 165,
+    "title": "Transcendent Union",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_165.webp",
+    "searchText": "TRANSCENDENT UNION Once per long rest, spend 5 Hope to cast this spell ontwo or more willing creatures. Until your next rest, when a creature connected by this union would mark Stress or Hit Points, the connected creatur",
+    "domain": "codex",
+    "level": 10
+  },
+  {
+    "id": "core_166",
+    "coreNumber": 166,
+    "title": "Deft Deceiver",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_166.webp",
+    "searchText": "DEFT DECEIVER Spend a Hope to gain advantage on a roll to deceive or trick someone into believing a lie you tell them.",
+    "domain": "grace",
+    "level": 1
+  },
+  {
+    "id": "core_167",
+    "coreNumber": 167,
+    "title": "Enrapture",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_167.webp",
+    "searchText": "ENRAPTURE Make a Spellcast Roll against a target within Close range. On a success, they become temporarily Enraptured. While Enraptured, a target’s attention is fixed on you, narrowing their field of view and drowning ou",
+    "domain": "grace",
+    "level": 1
+  },
+  {
+    "id": "core_168",
+    "coreNumber": 168,
+    "title": "Inspirational Words",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_168.webp",
+    "searchText": "INSPIRATIONAL WORDS Your speechisimbued with power. After a long rest, place a number of tokens on this card equal to your Presence. When you speak with an ally, you can spend a token from this card to give them one bene",
+    "domain": "grace",
+    "level": 1
+  },
+  {
+    "id": "core_169",
+    "coreNumber": 169,
+    "title": "Tell No Lies",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_169.webp",
+    "searchText": "TELL NO LIES Make a Spellcast Roll against a target within Very Close range. On a success, they can’t lie to you while they remain within Close range, but they are not compelled to speak. If you ask them a question and t",
+    "domain": "grace",
+    "level": 2
+  },
+  {
+    "id": "core_170",
+    "coreNumber": 170,
+    "title": "Troublemaker",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_170.webp",
+    "searchText": "TROUBLEMAKER When you taunt or provoke a target within Far range, make a Presence Roll against them. Once per rest on a success, roll a number of d4s equal to your Proficiency. The target must mark Stress equal to the hi",
+    "domain": "grace",
+    "level": 2
+  },
+  {
+    "id": "core_171",
+    "coreNumber": 171,
+    "title": "Hypnotic Shimmer",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_171.webp",
+    "searchText": "HYPNOTIC SHIMMER Make a Spellcast Roll against all adversaries in front of you within Close range. Once per rest on asuccess, create anillusion of flashing colors and lights that temporarily Stuns targets you succeed aga",
+    "domain": "grace",
+    "level": 3
+  },
+  {
+    "id": "core_172",
+    "coreNumber": 172,
+    "title": "Invisibility",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_172.webp",
+    "searchText": "INVISIBILITY Make a Spellcast Roll (10). Onasuccess, mark a Stress and choose yourself or an ally within Melee range to become Invisible. An Invisible creature can’t be seen except through magical means and attack rolls ",
+    "domain": "grace",
+    "level": 3
+  },
+  {
+    "id": "core_173",
+    "coreNumber": 173,
+    "title": "Soothing Speech",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_173.webp",
+    "searchText": "SOOTHING SPEECH During ashort rest, when you take the time to comfort another character while using the Tend to Wounds downtime move on them, clear an additional Hit Point on that character. When you do, you also clear 2",
+    "domain": "grace",
+    "level": 4
+  },
+  {
+    "id": "core_174",
+    "coreNumber": 174,
+    "title": "Through Your Eyes",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_174.webp",
+    "searchText": "THROUGH YOUR EYES Choose a target within Very Far range. You can see through their eyes and hear through their ears. You can transition between using your own senses or the target’s freely until you cast another spell or",
+    "domain": "grace",
+    "level": 4
+  },
+  {
+    "id": "core_175",
+    "coreNumber": 175,
+    "title": "Thought Delver",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_175.webp",
+    "searchText": "THOUGHT DELVER You can peek into the minds of others. Spend a Hope to read the vague surface thoughts of a target within Far range. Make a Spellcast Roll against the target to delve for deeper, more hidden thoughts. On a",
+    "domain": "grace",
+    "level": 5
+  },
+  {
+    "id": "core_176",
+    "coreNumber": 176,
+    "title": "Words Of Discord",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_176.webp",
+    "searchText": "WORDS OF DISCORD Whisper words of discord to an adversary within Melee range and make a Spellcast Roll (13).Ona success, the target must mark a Stress and make an attack against another adversary instead of against you o",
+    "domain": "grace",
+    "level": 5
+  },
+  {
+    "id": "core_177",
+    "coreNumber": 177,
+    "title": "Never Upstaged",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_177.webp",
+    "searchText": "NEVER UPSTAGED When you mark 1 or more Hit Points from an attack, you can mark a Stress to place anumber of tokens equal to the number of Hit Points you marked on this card. On your next successful attack, gaina +5 bonus",
+    "domain": "grace",
+    "level": 6
+  },
+  {
+    "id": "core_178",
+    "coreNumber": 178,
+    "title": "Share The Burden",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_178.webp",
+    "searchText": "SHARE THE BURDEN Once perrest, take on the Stress from a willing creature within Melee range. The target describes what intimate knowledge or emotions telepathically leak from their mind in this moment between you. Trans",
+    "domain": "grace",
+    "level": 6
+  },
+  {
+    "id": "core_179",
+    "coreNumber": 179,
+    "title": "Endless Charisma",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_179.webp",
+    "searchText": "ENDLESS CHARISMA After you make an actionroll to persuade, lie, or garner favor, you can spend a Hope to reroll the Hope or Fear Die.",
+    "domain": "grace",
+    "level": 7
+  },
+  {
+    "id": "core_180",
+    "coreNumber": 180,
+    "title": "Grace-Touched",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_180.webp",
+    "searchText": "GRACE-TOUCHED When 4 or more of the domain cards in your loadout are from the Grace domain, gain the following benefits: * You can mark an Armor Slot instead of marking a Stress. * When you would force a target to mark a",
+    "domain": "grace",
+    "level": 7
+  },
+  {
+    "id": "core_181",
+    "coreNumber": 181,
+    "title": "Astral Projection",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_181.webp",
+    "searchText": "ASTRAL PROJECTION Once per long rest, mark a Stress to create a projected copy of yourself that can appear anywhere you’ve been before. You can see and hear through the projection as though it were you and affect the wor",
+    "domain": "grace",
+    "level": 8
+  },
+  {
+    "id": "core_182",
+    "coreNumber": 182,
+    "title": "Mass Enrapture",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_182.webp",
+    "searchText": "MASS ENRAPTURE Make a Spellcast Roll against all targets within Far range. Targets you succeed against become temporarily Enraptured. While Enraptured, atarget’s attention is fixed on you, narrowing their field of view a",
+    "domain": "grace",
+    "level": 8
+  },
+  {
+    "id": "core_183",
+    "coreNumber": 183,
+    "title": "Copycat",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_183.webp",
+    "searchText": "COPYCAT Once per long rest, this card can mimic the features of another domain card of level 8 or lower in another player’s loadout. Spend Hope equal to half the card’s level to gain access to the feature. It lasts until",
+    "domain": "grace",
+    "level": 9
+  },
+  {
+    "id": "core_184",
+    "coreNumber": 184,
+    "title": "Master Of The Craft",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_184.webp",
+    "searchText": "MASTER OF THE CRAFT Gain apermanent +2 bonus to two of your Experiences or a permanent +3 bonus to one of your Experiences. Then place this card in your vault permanently.",
+    "domain": "grace",
+    "level": 9
+  },
+  {
+    "id": "core_185",
+    "coreNumber": 185,
+    "title": "Encore",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_185.webp",
+    "searchText": "ENCORE When an ally within Close range deals damage to an adversary, you can make a Spellcast Roll against that same target. On a success, you deal the same damage to the target that your ally dealt. If your Spellcast Ro",
+    "domain": "grace",
+    "level": 10
+  },
+  {
+    "id": "core_186",
+    "coreNumber": 186,
+    "title": "Notorious",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_186.webp",
+    "searchText": "NOTORIOUS People know who you are and what you’ve done, and they treat you differently because of it. When you leverage your notoriety to get what you want, you can mark a Stress before you roll to gain a +10 bonus to th",
+    "domain": "grace",
+    "level": 10
+  },
+  {
+    "id": "core_187",
+    "coreNumber": 187,
+    "title": "Pick And Pull",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_187.webp",
+    "searchText": "PICK AND PULL You have advantage on action rolls to pick nonmagical locks, disarm nonmagical traps, or steal items from a target (either through stealth or by force).",
+    "domain": "midnight",
+    "level": 1
+  },
+  {
+    "id": "core_188",
+    "coreNumber": 188,
+    "title": "Rain Of Blades",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_188.webp",
+    "searchText": "RAIN OF BLADES Spend a Hope to make a Spellcast Roll and conjure throwing blades that strike out at all targets within Very Close range. Targets you succeed against take d8+2 magic damage using your Proficiency. If a tar",
+    "domain": "midnight",
+    "level": 1
+  },
+  {
+    "id": "core_189",
+    "coreNumber": 189,
+    "title": "Uncanny Disguise",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_189.webp",
+    "searchText": "UNCANNY DISGUISE When you have a few minutes to prepare, you can mark a Stress to don the facade of any humanoid you can picture clearly in your mind. While disquised, you have advantage on Presence Rolls to avoid scruti",
+    "domain": "midnight",
+    "level": 1
+  },
+  {
+    "id": "core_190",
+    "coreNumber": 190,
+    "title": "Midnight Spirit",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_190.webp",
+    "searchText": "MIDNIGHT SPIRIT Spend a Hope to summon a humanoid-sized spirit that can move or carry things for you until your next rest. You can also send it to attack an adversary. When you do, make a Spellcast Roll against a target ",
+    "domain": "midnight",
+    "level": 2
+  },
+  {
+    "id": "core_191",
+    "coreNumber": 191,
+    "title": "Shadowbind",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_191.webp",
+    "searchText": "SHADOWBIND Make a Spellcast Roll against all adversaries within Very Close range. Targets you succeed against are temporarily Restrained as their shadow binds them in place.",
+    "domain": "midnight",
+    "level": 2
+  },
+  {
+    "id": "core_192",
+    "coreNumber": 192,
+    "title": "Chokehold",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_192.webp",
+    "searchText": "CHOKEHOLD When you position yourself behind a creature who's about your size, you can mark a Stress to pull them into a chokehold, making them temporarily Vulnerable. When a creature attacks a target who is Vulnerable in",
+    "domain": "midnight",
+    "level": 3
+  },
+  {
+    "id": "core_193",
+    "coreNumber": 193,
+    "title": "Veil Of Night",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_193.webp",
+    "searchText": "VEIL OF NIGHT Make a Spellcast Roll (13). On a success, you can create a temporary curtain of darkness between two points within Far range. Only you can see through this darkness. You're considered Hidden to adversaries ",
+    "domain": "midnight",
+    "level": 3
+  },
+  {
+    "id": "core_194",
+    "coreNumber": 194,
+    "title": "Stealth Expertise",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_194.webp",
+    "searchText": "STEALTH EXPERTISE When you roll with Fear while attempting to move unnoticed through a dangerous area, you can mark a Stress toroll with Hope instead. If an ally within Close range is also attempting to move unnoticed an",
+    "domain": "midnight",
+    "level": 4
+  },
+  {
+    "id": "core_195",
+    "coreNumber": 195,
+    "title": "Glyph Of Nightfall",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_195.webp",
+    "searchText": "GLYPH OF NIGHTFALL Make a Spellcast Roll against a target within Very Close range. On a success, spend a Hope to conjure adark glyph upon their body that exposes their weak points, temporarily reducing the target’s Diffi",
+    "domain": "midnight",
+    "level": 4
+  },
+  {
+    "id": "core_196",
+    "coreNumber": 196,
+    "title": "Hush",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_196.webp",
+    "searchText": "HUSH Make a Spellcast Roll against a target within Close range. On a success, spend a Hope to conjure suppressive magic around the target that encompasses everything within Very Close range of them and follows them as th",
+    "domain": "midnight",
+    "level": 5
+  },
+  {
+    "id": "core_197",
+    "coreNumber": 197,
+    "title": "Phantom Retreat",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_197.webp",
+    "searchText": "PHANTOM RETREAT Spend a Hope to activate Phantom Retreat where you’re currently standing. Spend another Hope at any time before your next rest to disappear from where you are and reappear where you were standing when you",
+    "domain": "midnight",
+    "level": 5
+  },
+  {
+    "id": "core_198",
+    "coreNumber": 198,
+    "title": "Dark Whispers",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_198.webp",
+    "searchText": "DARK WHISPERS You can speak into the mind of any person with whom you’ve made physical contact. Once you've opened a channel with them, they can speak back into your mind. Additionally, you can mark a Stress to make a Sp",
+    "domain": "midnight",
+    "level": 6
+  },
+  {
+    "id": "core_199",
+    "coreNumber": 199,
+    "title": "Mass Disguise",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_199.webp",
+    "searchText": "MASS DISGUISE When you have a few minutes of silence to focus, you can mark a Stress to change the appearance of all willing creatures within Close range. Their new forms must share a general body structure and size, and",
+    "domain": "midnight",
+    "level": 6
+  },
+  {
+    "id": "core_200",
+    "coreNumber": 200,
+    "title": "Midnight-Touched",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_200.webp",
+    "searchText": "MIDNIGHT-TOUCHED When 4 or more of the domain cards in your loadout are from the Midnight domain, gain the following benefits: » Once per rest, when you have 0 Hope and the GM would gain a Fear, you can gain a Hope inste",
+    "domain": "midnight",
+    "level": 7
+  },
+  {
+    "id": "core_201",
+    "coreNumber": 201,
+    "title": "Vanishing Dodge",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_201.webp",
+    "searchText": "VANISHING DODGE When an attack made against you that would deal physical damage fails, you can spend a Hope to envelop yourself in shadow, becoming Hidden and teleporting to a point within Close range of the attacker. Yo",
+    "domain": "midnight",
+    "level": 7
+  },
+  {
+    "id": "core_202",
+    "coreNumber": 202,
+    "title": "Shadowhunter",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_202.webp",
+    "searchText": "SHADOWHUNTER Your prowess is enhanced under the cover of shadow. While you’re shrouded in low light or darkness, you gain a +1 bonus to your Evasion and make attack rolls with advantage.",
+    "domain": "midnight",
+    "level": 8
+  },
+  {
+    "id": "core_203",
+    "coreNumber": 203,
+    "title": "Spellcharge",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_203.webp",
+    "searchText": "SPELLCHARGE When you take magic damage, place tokens equal to the number of Hit Points you marked on this card. You can store a number of tokens equal to your Spellcast trait. When you make a successful attack against a ",
+    "domain": "midnight",
+    "level": 8
+  },
+  {
+    "id": "core_204",
+    "coreNumber": 204,
+    "title": "Night Terror",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_204.webp",
+    "searchText": "NIGHT TERROR Once per long rest, choose any targets within Very Close range to perceive you as a nightmarish horror. The targets must succeed on a Reaction Roll (16) or become temporarily Horrified. While Horrified, they",
+    "domain": "midnight",
+    "level": 9
+  },
+  {
+    "id": "core_205",
+    "coreNumber": 205,
+    "title": "Twilight Toll",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_205.webp",
+    "searchText": "TWILIGHT TOLL Choose a target within Far range. When you succeed onan action roll against them that doesn’t result in making a damage roll, place a token on this card. When you deal damage to this target, spend any numbe",
+    "domain": "midnight",
+    "level": 9
+  },
+  {
+    "id": "core_206",
+    "coreNumber": 206,
+    "title": "Eclipse",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_206.webp",
+    "searchText": "ECLIPSE Make a Spellcast Roll (16). Once per long rest on asuccess, plunge the entire area within Far range into complete darkness only you and your allies can see through. Attack rolls have disadvantage when targeting y",
+    "domain": "midnight",
+    "level": 10
+  },
+  {
+    "id": "core_207",
+    "coreNumber": 207,
+    "title": "Specter Of The Dark",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_207.webp",
+    "searchText": "SPECTER OF THE DARK Mark a Stress to become Spectraluntil you make an action roll targeting another creature. While Spectral, you’re immune to physical damage and can float and pass through solid objects. Other creatures",
+    "domain": "midnight",
+    "level": 10
+  },
+  {
+    "id": "core_208",
+    "coreNumber": 208,
+    "title": "Gifted Tracker",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_208.webp",
+    "searchText": "GIFTED TRACKER When you’re tracking a specific creature or group of creatures based on signs of their passage, you can spend any humber of Hope and ask the GM that many questions from the following list. » What direction",
+    "domain": "sage",
+    "level": 1
+  },
+  {
+    "id": "core_209",
+    "coreNumber": 209,
+    "title": "Nature S Tongue",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_209.webp",
+    "searchText": "NATURE’S TONGUE You can speak the language of the natural world. When you want to speak to the plants and animals around you, make an Instinct Roll (12).On a success, they’ll give you the information they know. On aroll ",
+    "domain": "sage",
+    "level": 1
+  },
+  {
+    "id": "core_210",
+    "coreNumber": 210,
+    "title": "Vicious Entangle",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_210.webp",
+    "searchText": "VICIOUS ENTANGLE Make a Spellcast Roll against a target within Far range. On a success, roots and vines reach out from the ground, dealing 1d8+1 physical damage and temporarily Restraining the target. Additionally on a s",
+    "domain": "sage",
+    "level": 1
+  },
+  {
+    "id": "core_211",
+    "coreNumber": 211,
+    "title": "Conjure Swarm",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_211.webp",
+    "searchText": "CONJURE SWARM Tekaira Armored Beetles: Mark a Stress to conjure armored beetles that encircle you. When you next take damage, reduce the severity by one threshold. You can spend a Hope to keep the beetles conjured after ",
+    "domain": "sage",
+    "level": 2
+  },
+  {
+    "id": "core_212",
+    "coreNumber": 212,
+    "title": "Natural Familiar",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_212.webp",
+    "searchText": "NATURAL FAMILIAR Spend a Hope to summon a small nature spirit or forest critter to your side until your next rest, you cast Natural Familiar again, or the familiar is targeted by an attack. If you spend an additional Hop",
+    "domain": "sage",
+    "level": 2
+  },
+  {
+    "id": "core_213",
+    "coreNumber": 213,
+    "title": "Corrosive Projectile",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_213.webp",
+    "searchText": "CORROSIVE PROJECTILE Make a Spellcast Roll against a target within Far range. On a success, deal d6+4 magic damage using your Proficiency. Additionally, mark 2 or more Stress to make them permanently Corroded. While a ta",
+    "domain": "sage",
+    "level": 3
+  },
+  {
+    "id": "core_214",
+    "coreNumber": 214,
+    "title": "Towering Stalk",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_214.webp",
+    "searchText": "TOWERING STALK Once perrest, you can conjure a thick, twisting stalk within Close range that can be easily climbed. Its height can grow up to Far range. Mark a Stress to use this spell as an attack. Make a Spellcast Roll",
+    "domain": "sage",
+    "level": 3
+  },
+  {
+    "id": "core_215",
+    "coreNumber": 215,
+    "title": "Death Grip",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_215.webp",
+    "searchText": "DEATH GRIP Make a Spellcast Roll against a target within Close range and choose one of the following options: * You pull the target into Melee range or pull yourself into Melee range of them. * You constrict the target a",
+    "domain": "sage",
+    "level": 4
+  },
+  {
+    "id": "core_216",
+    "coreNumber": 216,
+    "title": "Healing Field",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_216.webp",
+    "searchText": "HEALING FIELD Once per long rest, you can conjure a field of healing plants around you. Everywhere within Close range of you bursts to life with vibrant nature, allowing you and all allies in the areato clear a Hit Point",
+    "domain": "sage",
+    "level": 4
+  },
+  {
+    "id": "core_217",
+    "coreNumber": 217,
+    "title": "Thorn Skin",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_217.webp",
+    "searchText": "THORN SKIN Once perrest, spend a Hope to sprout thorns all over your body. When you do, place a number of tokens equal to your Spellcast trait on this card. When you take damage, you can spend any number of tokens to rol",
+    "domain": "sage",
+    "level": 5
+  },
+  {
+    "id": "core_218",
+    "coreNumber": 218,
+    "title": "Wild Fortress",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_218.webp",
+    "searchText": "WILD FORTRESS Make a Spellcast Roll (13). On asuccess, spend 2 Hope to grow a natural barricade in the shape of a dome that you and one ally can take cover within. While inside the dome, a creature can’t be targeted by a",
+    "domain": "sage",
+    "level": 5
+  },
+  {
+    "id": "core_219",
+    "coreNumber": 219,
+    "title": "Conjured Steeds",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_219.webp",
+    "searchText": "CONJURED STEEDS Spend any number of Hope to conjure that many magical steeds (such as horses, camels, or elephants) that you and your allies can ride until your next long rest or the steeds take any damage. The steeds do",
+    "domain": "sage",
+    "level": 6
+  },
+  {
+    "id": "core_220",
+    "coreNumber": 220,
+    "title": "Forager",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_220.webp",
+    "searchText": "FORAGER As an additional downtime move you can choose, roll a d6 to see what you forage. Work with the GMtodescribe it and add it to your inventory as a consumable. Your party can carry up to five foraged consumables at ",
+    "domain": "sage",
+    "level": 6
+  },
+  {
+    "id": "core_221",
+    "coreNumber": 221,
+    "title": "Sage-Touched",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_221.webp",
+    "searchText": "SAGE-TOUCHED When 4 or more of the domain cards in your loadout are from the Sage domain, gain the following benefits: » While you’re in a natural environment, you gain a +2 bonus to your Spellcast Rolls. * Once per rest",
+    "domain": "sage",
+    "level": 7
+  },
+  {
+    "id": "core_222",
+    "coreNumber": 222,
+    "title": "Wild Surge",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_222.webp",
+    "searchText": "WILD SURGE Once per long rest, mark a Stress to channel the natural world around you and enhance yourself. Describe how your appearance changes, then place a dé6 on this card with the 1 value facing up. While the Wild Su",
+    "domain": "sage",
+    "level": 7
+  },
+  {
+    "id": "core_223",
+    "coreNumber": 223,
+    "title": "Forest Sprites",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_223.webp",
+    "searchText": "FOREST SPRITES Make a Spellcast Roll (13). On a success, spend any number of Hope to create an equal number of small forest sprites who appear at points you choose within Far range, providing the following benefits: * Yo",
+    "domain": "sage",
+    "level": 8
+  },
+  {
+    "id": "core_224",
+    "coreNumber": 224,
+    "title": "Rejuvenation Barrier",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_224.webp",
+    "searchText": "REJUVENATION BARRIER Make a Spellcast Roll (15). Once perrestona success, create a temporary barrier of protective energy around you at Very Close range. You and all allies within the barrier when this spell is cast clea",
+    "domain": "sage",
+    "level": 8
+  },
+  {
+    "id": "core_225",
+    "coreNumber": 225,
+    "title": "Fane Of The Wilds",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_225.webp",
+    "searchText": "FANE OF THE WILDS After along rest, place a number of tokens equal to the number of Sage domain cards in your loadout and vault on this card. When you would make a Spellcast Roll, you can spend any number of tokens after",
+    "domain": "sage",
+    "level": 9
+  },
+  {
+    "id": "core_226",
+    "coreNumber": 226,
+    "title": "Plant Dominion",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_226.webp",
+    "searchText": "PLANT DOMINION Make a Spellcast Roll (18). Once per longreston a success, you reshape the natural world, changing the surrounding plant life anywhere within Far range of you. For example, you can grow trees instantly, cl",
+    "domain": "sage",
+    "level": 9
+  },
+  {
+    "id": "core_227",
+    "coreNumber": 227,
+    "title": "Force Of Nature",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_227.webp",
+    "searchText": "FORCE OF NATURE Mark a Stress to transform into a hulking nature spirit, gaining the following benefits: * When you succeed on an attack or Spellcast Roll, gain a +10 bonus to the damage roll. * When you deal enough dama",
+    "domain": "sage",
+    "level": 10
+  },
+  {
+    "id": "core_228",
+    "coreNumber": 228,
+    "title": "Tempest",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_228.webp",
+    "searchText": "TEMPEST Choose one of the following tempests and make a Spellcast Roll against all targets within Far range. Targets you succeed against experience its effects until the GM spends a Fear on their turn to end this spell. ",
+    "domain": "sage",
+    "level": 10
+  },
+  {
+    "id": "core_229",
+    "coreNumber": 229,
+    "title": "Bolt Beacon",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_229.webp",
+    "searchText": "BOLT BEACON Make a Spellcast Roll against a target within Far range.On asuccess, spend a Hope to send a bolt of shimmering light toward them, dealing d8+2 magic damage using your Proficiency. The target becomes temporari",
+    "domain": "splendor",
+    "level": 1
+  },
+  {
+    "id": "core_230",
+    "coreNumber": 230,
+    "title": "Mending Touch",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_230.webp",
+    "searchText": "MENDING TOUCH You lay your hands upon a creature and channel healing magic to close their wounds. When you can take a few minutes to focus on the target you’re helping, you can spend 2 Hope to clear a Hit Point ora Stres",
+    "domain": "splendor",
+    "level": 1
+  },
+  {
+    "id": "core_231",
+    "coreNumber": 231,
+    "title": "Reassurance",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_231.webp",
+    "searchText": "REASSURANCE Once perrest, after an ally attempts an actionroll but before the consequences take place, you can offer assistance or words of support. When you do, your ally can reroll their dice.",
+    "domain": "splendor",
+    "level": 1
+  },
+  {
+    "id": "core_232",
+    "coreNumber": 232,
+    "title": "Final Words",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_232.webp",
+    "searchText": "FINAL WORDS You can infuse a corpse with a moment of life to speak with it. Make a Spellcast Roll (13). On asuccess with Hope, the corpse answers up to three questions. On a success with Fear, the corpse answers one ques",
+    "domain": "splendor",
+    "level": 2
+  },
+  {
+    "id": "core_233",
+    "coreNumber": 233,
+    "title": "Healing Hands",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_233.webp",
+    "searchText": "HEALING HANDS Make a Spellcast Roll (13) and target a creature other than yourself within Melee range.On a success, mark a Stress to clear 2 Hit Pointsor 2 Stress on the target. On a failure, mark a Stress to clear a Hit",
+    "domain": "splendor",
+    "level": 2
+  },
+  {
+    "id": "core_234",
+    "coreNumber": 234,
+    "title": "Second Wind",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_234.webp",
+    "searchText": "SECOND WIND Once perrest, when you succeed on an attack against an adversary, you canclear 3 Stressora Hit Point. On a success with Hope, you also clear 3 Stress or a Hit Point on an ally within Close range of you.",
+    "domain": "splendor",
+    "level": 3
+  },
+  {
+    "id": "core_235",
+    "coreNumber": 235,
+    "title": "Voice Of Reason",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_235.webp",
+    "searchText": "VOICE OF REASON You speak with an unmatched power and authority. You have advantage on action rolls to de-escalate violent situations or convince someone to follow your lead. Additionally, you're emboldened in moments of",
+    "domain": "splendor",
+    "level": 3
+  },
+  {
+    "id": "core_236",
+    "coreNumber": 236,
+    "title": "Divination",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_236.webp",
+    "searchText": "DIVINATION Once per long rest, spend 3 Hope to reach out to the forces beyond and ask one “yes or no” question about an event, person, place, or situation in the near future. For a moment, the present falls away and you ",
+    "domain": "splendor",
+    "level": 4
+  },
+  {
+    "id": "core_237",
+    "coreNumber": 237,
+    "title": "Life Ward",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_237.webp",
+    "searchText": "LIFE WARD Spend 3 Hope and choose an ally within Close range. They are marked with a glowing sigil of protection. When this ally would make a death move, they clear a Hit Point instead. This effect ends when it saves the",
+    "domain": "splendor",
+    "level": 4
+  },
+  {
+    "id": "core_238",
+    "coreNumber": 238,
+    "title": "Shape Material",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_238.webp",
+    "searchText": "SHAPE MATERIAL Spend a Hope to shape a section of natural material you’re touching (such as stone, ice, or wood) to suit your purpose. The area of the material can be no larger than you. For example, you can form a rudim",
+    "domain": "splendor",
+    "level": 5
+  },
+  {
+    "id": "core_239",
+    "coreNumber": 239,
+    "title": "Smite",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_239.webp",
+    "searchText": "SMITE Once perrest, spend 3 Hope to charge your powerful smite. When you next successfully attack with a weapon, double the result of your damage roll. This attack deals magic damage regardless of the weapon’s damage typ",
+    "domain": "splendor",
+    "level": 5
+  },
+  {
+    "id": "core_240",
+    "coreNumber": 240,
+    "title": "Restoration",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_240.webp",
+    "searchText": "RESTORATION After along rest, place a number of tokens equal to your Spellcast trait on this card. Touch a creature and spend any number of tokens to clear 2 Hit Points or 2 Stress for each token spent. You can also spen",
+    "domain": "splendor",
+    "level": 6
+  },
+  {
+    "id": "core_241",
+    "coreNumber": 241,
+    "title": "Zone Of Protection",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_241.webp",
+    "searchText": "ZONE OF PROTECTION Make a Spellcast Roll (16). Once per longrestona success, choose a point within Far range and create a visible zone of protection there for all allies within Very Close range of that point. When you do",
+    "domain": "splendor",
+    "level": 6
+  },
+  {
+    "id": "core_242",
+    "coreNumber": 242,
+    "title": "Healing Strike",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_242.webp",
+    "searchText": "HEALING STRIKE When you deal damage to an adversary, you can spend 2 Hope to clear a Hit Point on an ally within Closerange.",
+    "domain": "splendor",
+    "level": 7
+  },
+  {
+    "id": "core_243",
+    "coreNumber": 243,
+    "title": "Splendor-Touched",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_243.webp",
+    "searchText": "SPLENDOR-TOUCHED When 4 or more of the domain cards in your loadout are from the Splendor domain, gain the following benefits: » +3 bonus to your Severe damage threshold * Once per long rest, when incoming damage would r",
+    "domain": "splendor",
+    "level": 7
+  },
+  {
+    "id": "core_244",
+    "coreNumber": 244,
+    "title": "Shield Aura",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_244.webp",
+    "searchText": "SHIELD AURA Mark a Stress to cast a protective aura on a target within Very Close range. When the target marks an Armor Slot, they reduce the severity of the attack by an additional threshold. If this spell causes a crea",
+    "domain": "splendor",
+    "level": 8
+  },
+  {
+    "id": "core_245",
+    "coreNumber": 245,
+    "title": "Stunning Sunlight",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_245.webp",
+    "searchText": "STUNNING SUNLIGHT Make a Spellcast Roll to unleash powerful rays of burning sunlight against all adversaries in front of you within Far range. On a success, spend any number of Hope and force that many targets you succee",
+    "domain": "splendor",
+    "level": 8
+  },
+  {
+    "id": "core_246",
+    "coreNumber": 246,
+    "title": "Overwhelming Aura",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_246.webp",
+    "searchText": "OVERWHELMING AURA Make a Spellcast Roll (15) to magically empower your aura. On asuccess, spend 2 Hope to make your Presence equal to your Spellcast trait until your next long rest. While this spell is active, an adversa",
+    "domain": "splendor",
+    "level": 9
+  },
+  {
+    "id": "core_247",
+    "coreNumber": 247,
+    "title": "Salvation Beam",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_247.webp",
+    "searchText": "SALVATION BEAM Make a Spellcast Roll (16). On a success, mark any number of Stress to target a line of allies within Far range. You can clear Hit Points on the targets equal to the number of Stress marked, divided among ",
+    "domain": "splendor",
+    "level": 9
+  },
+  {
+    "id": "core_248",
+    "coreNumber": 248,
+    "title": "Invigoration",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_248.webp",
+    "searchText": "INVIGORATION When you or an ally within Close range has used a feature that has an exhaustion limit (such as once per rest or once per session), you can spend any number of Hope and roll that many dés. If any roll a 6,th",
+    "domain": "splendor",
+    "level": 10
+  },
+  {
+    "id": "core_249",
+    "coreNumber": 249,
+    "title": "Resurrection",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_249.webp",
+    "searchText": "RESURRECTION Make a Spellcast Roll (20). On a success, restore one creature who has been dead no longer than 100 years to full strength. Thenrollad6.0na result of 5 or lower, place this card in your vault permanently. On",
+    "domain": "splendor",
+    "level": 10
+  },
+  {
+    "id": "core_250",
+    "coreNumber": 250,
+    "title": "Bare Bones",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_250.webp",
+    "searchText": "BARE BONES When you choose not to equip armor, you have a base Armor Score of 3 + your Strength and use the following as your base damage thresholds: e Tier1:9/19 * Tier2:11/24 * Tier 3:13/31 * Tier4:15/38",
+    "domain": "valor",
+    "level": 1
+  },
+  {
+    "id": "core_251",
+    "coreNumber": 251,
+    "title": "Forceful Push",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_251.webp",
+    "searchText": "FORCEFUL PUSH Make an attack with your primary weapon against atarget within Melee range. On a success, you deal damage and knock them back to Closerange. Ona success with Hope, add a d6 to your damage roll. Additionally",
+    "domain": "valor",
+    "level": 1
+  },
+  {
+    "id": "core_252",
+    "coreNumber": 252,
+    "title": "Am Your Shield",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_252.webp",
+    "searchText": "| AM YOUR SHIELD When an ally within Very Close range would take damage, you can mark a Stress to stand in the way and make yourself the target of the attack instead. When you take damage from this attack, you can mark a",
+    "domain": "valor",
+    "level": 1
+  },
+  {
+    "id": "core_253",
+    "coreNumber": 253,
+    "title": "Body Basher",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_253.webp",
+    "searchText": "BODY BASHER You use the full force of your body in a fight. On asuccessful attack using a weapon with a Melee range, gain a bonus to your damage roll equal to your Strength.",
+    "domain": "valor",
+    "level": 2
+  },
+  {
+    "id": "core_254",
+    "coreNumber": 254,
+    "title": "Bold Presence",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_254.webp",
+    "searchText": "BOLD PRESENCE When you make a Presence Roll, you can spend a Hope to add your Strength to the roll. Additionally, once per rest when you would gain a condition, you can describe how your bold presence aids you in the sit",
+    "domain": "valor",
+    "level": 2
+  },
+  {
+    "id": "core_255",
+    "coreNumber": 255,
+    "title": "Critical Inspiration",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_255.webp",
+    "searchText": "CRITICAL INSPIRATION Once perrest, when you critically succeed onan attack, all allies within Very Close range can clear a Stress or gain a Hope.",
+    "domain": "valor",
+    "level": 3
+  },
+  {
+    "id": "core_256",
+    "coreNumber": 256,
+    "title": "Lean On Me",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_256.webp",
+    "searchText": "LEAN ON ME Once per long rest, when you console or inspire an ally who failed an action roll, you can both clear 2 Stress.",
+    "domain": "valor",
+    "level": 3
+  },
+  {
+    "id": "core_257",
+    "coreNumber": 257,
+    "title": "Goad Them On",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_257.webp",
+    "searchText": "GOAD THEM ON Describe how you taunt a target within Close range, then make a Presence Roll against them. On asuccess, the target must mark a Stress, and the next time the GM spotlights them, they must target you with an ",
+    "domain": "valor",
+    "level": 4
+  },
+  {
+    "id": "core_258",
+    "coreNumber": 258,
+    "title": "Support Tank",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_258.webp",
+    "searchText": "SUPPORT TANK When an ally within Close range fails a roll, you can spend 2 Hope to allow them to reroll either their Hope or Fear Die.",
+    "domain": "valor",
+    "level": 4
+  },
+  {
+    "id": "core_259",
+    "coreNumber": 259,
+    "title": "Armorer",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_259.webp",
+    "searchText": "ARMORER While you’re wearing armor, gain a +1 bonus to your Armor Score. During arest, when you choose to repair your armor as adowntime move, your allies also clear an Armor Slot.",
+    "domain": "valor",
+    "level": 5
+  },
+  {
+    "id": "core_260",
+    "coreNumber": 260,
+    "title": "Rousing Strike",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_260.webp",
+    "searchText": "ROUSING STRIKE Once perrest, when you critically succeed onan attack, you and all allies who can see or hear you can clear a Hit Point or 1d4 Stress.",
+    "domain": "valor",
+    "level": 5
+  },
+  {
+    "id": "core_261",
+    "coreNumber": 261,
+    "title": "Inevitable",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_261.webp",
+    "searchText": "INEVITABLE When you fail an action roll, your next action roll has advantage.",
+    "domain": "valor",
+    "level": 6
+  },
+  {
+    "id": "core_262",
+    "coreNumber": 262,
+    "title": "Rise Up",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_262.webp",
+    "searchText": "RISE UP Gain abonusto your Severe threshold equal to your Proficiency. When you mark 1 or more Hit Points from an attack, clear a Stress.",
+    "domain": "valor",
+    "level": 6
+  },
+  {
+    "id": "core_263",
+    "coreNumber": 263,
+    "title": "Shrug It Off",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_263.webp",
+    "searchText": "SHRUG IT OFF When you would take damage, you can mark a Stress to reduce the severity of the damage by one threshold. When you do, roll ad6. On aresult of 3 or lower, place this card in your vault.",
+    "domain": "valor",
+    "level": 7
+  },
+  {
+    "id": "core_264",
+    "coreNumber": 264,
+    "title": "Valor-Touched",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_264.webp",
+    "searchText": "VALOR-TOUCHED When 4 or more of the domain cards in your loadout are from the Valor domain, gain the following benefits: » +1 bonus to your Armor Score * When you mark 1 or more Hit Points without marking an Armor Slot, ",
+    "domain": "valor",
+    "level": 7
+  },
+  {
+    "id": "core_265",
+    "coreNumber": 265,
+    "title": "Full Surge",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_265.webp",
+    "searchText": "FULL SURGE Once per long rest, mark 3 Stress to push your body to its limits. Gain a +2 bonus to all of your character traits until your next rest.",
+    "domain": "valor",
+    "level": 8
+  },
+  {
+    "id": "core_266",
+    "coreNumber": 266,
+    "title": "Ground Pound",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_266.webp",
+    "searchText": "GROUND POUND Spend 2 Hope to strike the ground where you stand and make a Strength Roll against all targets within Very Close range. Targets you succeed against are thrown back to Far range and must make a Reaction Roll ",
+    "domain": "valor",
+    "level": 8
+  },
+  {
+    "id": "core_267",
+    "coreNumber": 267,
+    "title": "Hold The Line",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_267.webp",
+    "searchText": "HOLD THE LINE Describe the defensive stance you take and spend a Hope. If an adversary moves within Very Close range, they’re pulled into Melee range and Restrained. This condition lasts until you move or fail a roll wit",
+    "domain": "valor",
+    "level": 9
+  },
+  {
+    "id": "core_268",
+    "coreNumber": 268,
+    "title": "Lead By Example",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_268.webp",
+    "searchText": "LEAD BY EXAMPLE When you deal damage to an adversary, you can mark a Stress and describe how you encourage your allies. The next PC to make an attack against that adversary can clear a Stress or gain a Hope.",
+    "domain": "valor",
+    "level": 9
+  },
+  {
+    "id": "core_269",
+    "coreNumber": 269,
+    "title": "Unbreakable",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_269.webp",
+    "searchText": "UNBREAKABLE When you mark your last Hit Point, instead of making a death move, you canroll adé and clear a number of Hit Points equal to the result. Then place this card in your vault.",
+    "domain": "valor",
+    "level": 10
+  },
+  {
+    "id": "core_270",
+    "coreNumber": 270,
+    "title": "Unyielding Armor",
+    "category": "domain",
+    "asset": "assets/daggerheart/cards/core_270.webp",
+    "searchText": "UNYIELDING ARMOR When you would mark an Armor Slot, roll a number of d6és equal to your Proficiency. If any roll a 6, reduce the severity by one threshold without marking an Armor Slot.",
+    "domain": "valor",
+    "level": 10
+  }
+]

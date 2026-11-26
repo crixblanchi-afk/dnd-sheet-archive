@@ -24,7 +24,7 @@ class _CharacterExportDialogState extends State<CharacterExportDialog> {
         children: [
           const Text(
             'Seleziona una o più schede. Verranno salvate in un unico PDF '
-            'compilabile, con tre pagine per personaggio.',
+            'compilabile.',
           ),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
@@ -48,6 +48,7 @@ class _CharacterExportDialogState extends State<CharacterExportDialog> {
               key: ValueKey('export-${item.id}'),
               contentPadding: EdgeInsets.zero,
               title: Text(item.name),
+              subtitle: Text(item.systemSubtitle),
               value: _selected.contains(item.id),
               onChanged: (checked) => setState(() {
                 if (checked == true) {

@@ -14,7 +14,12 @@ const sheetArtworkPixelWidth = 1700;
 /// Spazio fra una pagina e la successiva nella colonna scorrevole.
 const sheetPageGap = 12.0;
 
-/// Altezza complessiva delle pagine impilate, spazi compresi.
+/// Altezza complessiva di [pageCount] pagine impilate, spazi compresi.
+double sheetContentHeightForPageCount(int pageCount) => pageCount <= 0
+    ? 0
+    : pageCount * sheetPageHeight + (pageCount - 1) * sheetPageGap;
+
+/// Altezza complessiva delle pagine D&D 5e impilate, spazi compresi.
 const sheetContentHeight =
     sheetPageCount * sheetPageHeight + (sheetPageCount - 1) * sheetPageGap;
 

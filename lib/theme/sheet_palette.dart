@@ -131,22 +131,35 @@ class SheetPalette extends ThemeExtension<SheetPalette> {
 }
 
 class SheetArtwork extends StatelessWidget {
-  const SheetArtwork({super.key, required this.pageIndex});
+  const SheetArtwork({
+    super.key,
+    required this.pageIndex,
+    this.lightAsset,
+    this.darkAsset,
+  });
 
   final int pageIndex;
+  final String? lightAsset;
+  final String? darkAsset;
 
   /// L'immagine dell'artwork così come la disegna [build], da precaricare.
   ///
   /// La chiave deve coincidere con quella di `Image.asset`, altrimenti il
   /// precaricamento riempirebbe la cache con un'immagine che nessuno usa.
-  static ImageProvider imageFor(BuildContext context, int pageIndex) {
+  static ImageProvider imageFor(
+    BuildContext context,
+    int pageIndex, {
+    String? lightAsset,
+    String? darkAsset,
+  }) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final assetPath = dark
+        ? (darkAsset ?? 'assets/sheet/page-${pageIndex + 1}-dark.png')
+        : (lightAsset ?? 'assets/sheet/page-${pageIndex + 1}.png');
     return ResizeImage.resizeIfNeeded(
       _cacheWidth(context),
       null,
-      AssetImage(
-        'assets/sheet/page-${pageIndex + 1}${dark ? '-dark' : ''}.png',
-      ),
+      AssetImage(assetPath),
     );
   }
 
@@ -173,7 +186,12 @@ class SheetArtwork extends StatelessWidget {
     return ColoredBox(
       color: palette.paper,
       child: Image(
-        image: imageFor(context, pageIndex),
+        image: imageFor(
+          context,
+          pageIndex,
+          lightAsset: lightAsset,
+          darkAsset: darkAsset,
+        ),
         fit: BoxFit.fill,
         filterQuality: FilterQuality.medium,
       ),

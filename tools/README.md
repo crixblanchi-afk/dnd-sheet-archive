@@ -12,6 +12,18 @@ pdftoppm -png -r 200 dnd_5e_charactersheet_formfillable.pdf assets/sheet/page
 
 Poppler names the images `page-1.png` through `page-3.png`.
 
+## Daggerheart sheets and cards
+
+Regenerate the Daggerheart sheet artwork (light & dark), field layout, and card
+catalog from the source PDFs with:
+
+```sh
+uv run --with pymupdf --with pillow --with numpy python3 \
+  tools/generate_daggerheart_assets.py <daggerheart_sheets_dir>
+uv run --with pymupdf --with pillow --with numpy python3 \
+  tools/generate_daggerheart_cards.py Daggerheart-Print-and-Play-Cards-05-20-2025.pdf
+```
+
 ## Editable PDF exports
 
 The runtime builds AcroForms in Dart using the page artwork and field geometry.

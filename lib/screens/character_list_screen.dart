@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../data/character_repository.dart';
 import '../export/character_pdf_exporter.dart';
 import '../models/character.dart';
+import '../models/daggerheart_card.dart';
+import '../models/game_system.dart';
 import '../sync/google_drive_sync_service.dart';
 import '../widgets/character_export_dialog.dart';
 import '../widgets/version_history_sheet.dart';
@@ -98,9 +100,16 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
   }
 
   Future<void> _create(BuildContext context) async {
-    final name = await _askName(context, title: 'Nuovo personaggio');
-    if (name == null || !context.mounted) return;
-    final character = await repository.createCharacter(name);
+    final draft = await showDialog<_NewCharacterDraft>(
+      context: context,
+      builder: (_) => const _CreateCharacterDialog(),
+    );
+    if (draft == null || !context.mounted) return;
+    final character = await repository.createCharacter(
+      draft.name,
+      system: draft.system,
+      daggerheartClass: draft.daggerheartClass,
+    );
     if (context.mounted) await _open(context, character);
   }
 
@@ -364,7 +373,7 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Schede D&D 5e'),
+      title: const Text('Archivio Schede'),
       actions: [_exportAction(), const ThemeModeButton(), _driveAction()],
     ),
     body: StreamBuilder<List<CharacterSummary>>(
@@ -392,11 +401,17 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
             final item = characters[index];
             return ListTile(
               leading: CircleAvatar(
-                child: Icon(item.locked ? Icons.lock : Icons.person),
+                child: Icon(
+                  item.locked
+                      ? Icons.lock
+                      : item.system == GameSystem.daggerheart
+                      ? Icons.style_outlined
+                      : Icons.person,
+                ),
               ),
               title: Text(item.name),
               subtitle: Text(
-                'Modificato il '
+                '${item.systemSubtitle} · Modificato il '
                 '${_updatedAtFormat.format(item.updatedAt.toLocal())}',
               ),
               onTap: () async {
@@ -438,4 +453,128 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
       child: const Icon(Icons.add),
     ),
   );
+}
+
+class _NewCharacterDraft {
+  const _NewCharacterDraft({
+    required this.name,
+    required this.system,
+    this.daggerheartClass,
+  });
+
+  final String name;
+  final GameSystem system;
+  final DaggerheartClass? daggerheartClass;
+}
+
+class _CreateCharacterDialog extends StatefulWidget {
+  const _CreateCharacterDialog();
+
+  @override
+  State<_CreateCharacterDialog> createState() => _CreateCharacterDialogState();
+}
+
+class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
+  final _nameController = TextEditingController();
+  GameSystem _system = GameSystem.dnd5e;
+  DaggerheartClass _daggerheartClass = DaggerheartClass.bard;
+
+  void _submit() {
+    final trimmed = _nameController.text.trim();
+    if (trimmed.isEmpty) return;
+    Navigator.pop(
+      context,
+      _NewCharacterDraft(
+        name: trimmed,
+        system: _system,
+        daggerheartClass: _system == GameSystem.daggerheart
+            ? _daggerheartClass
+            : null,
+      ),
+    );
+  }
+
+  String _classMenuLabel(DaggerheartClass cls) {
+    if (cls.domains.isEmpty) return cls.label;
+    final domains = cls.domains
+        .map((d) => daggerheartDomainLabels[d] ?? d)
+        .join(' & ');
+    return '${cls.label} ($domains)';
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Nuovo personaggio'),
+    content: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SegmentedButton<GameSystem>(
+            key: const ValueKey('new-character-system'),
+            segments: const [
+              ButtonSegment<GameSystem>(
+                value: GameSystem.dnd5e,
+                label: Text('D&D 5e'),
+                icon: Icon(Icons.shield_outlined),
+              ),
+              ButtonSegment<GameSystem>(
+                value: GameSystem.daggerheart,
+                label: Text('Daggerheart'),
+                icon: Icon(Icons.style_outlined),
+              ),
+            ],
+            selected: {_system},
+            onSelectionChanged: (selection) {
+              setState(() => _system = selection.first);
+            },
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            key: const ValueKey('new-character-name'),
+            controller: _nameController,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(labelText: 'Nome'),
+            onSubmitted: (_) => _submit(),
+          ),
+          if (_system == GameSystem.daggerheart) ...[
+            const SizedBox(height: 16),
+            DropdownButtonFormField<DaggerheartClass>(
+              key: const ValueKey('new-character-dh-class'),
+              initialValue: _daggerheartClass,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Scheda di classe'),
+              items: [
+                for (final cls in DaggerheartClass.values)
+                  DropdownMenuItem<DaggerheartClass>(
+                    value: cls,
+                    child: Text(
+                      _classMenuLabel(cls),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _daggerheartClass = value);
+              },
+            ),
+          ],
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Annulla'),
+      ),
+      FilledButton(onPressed: _submit, child: const Text('Salva')),
+    ],
+  );
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 }

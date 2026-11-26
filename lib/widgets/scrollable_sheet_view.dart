@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../controllers/sheet_controller.dart';
+import '../models/sheet_document.dart';
 import '../models/sheet_field.dart';
 import '../models/sheet_layout.dart';
 import 'sheet_page.dart';
@@ -9,17 +10,19 @@ import 'transformation_scrollbar.dart';
 
 const _scaleEpsilon = .001;
 
-/// Le tre pagine in una colonna continua, con pan e zoom.
+/// Le pagine della scheda in una colonna continua, con pan e zoom.
 class ScrollableSheetView extends StatefulWidget {
   const ScrollableSheetView({
     super.key,
     required this.controller,
     required this.fields,
+    this.pages,
     this.initialPage = 0,
   });
 
   final SheetController controller;
   final List<List<SheetFieldDef>> fields;
+  final List<SheetPageSpec>? pages;
   final int initialPage;
 
   @override
@@ -49,7 +52,9 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
   double _lastScale = 1;
   bool _applyingZoomAnimation = false;
 
-  static const _sheetSize = Size(sheetPageWidth, sheetContentHeight);
+  int get _pageCount => widget.pages?.length ?? widget.fields.length;
+  double get _contentHeight => sheetContentHeightForPageCount(_pageCount);
+  Size get _sheetSize => Size(sheetPageWidth, _contentHeight);
 
   /// La colonna delle tre pagine, costruita una volta sola.
   ///
@@ -233,6 +238,7 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
   void didUpdateWidget(ScrollableSheetView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(widget.fields, oldWidget.fields) ||
+        !identical(widget.pages, oldWidget.pages) ||
         !identical(widget.controller, oldWidget.controller)) {
       _pages = null;
     }
@@ -241,15 +247,20 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
   Widget _buildPages() => _pages ??= Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      for (var page = 0; page < sheetPageCount; page++) ...[
+      for (var page = 0; page < _pageCount; page++) ...[
         SheetPage(
           pageIndex: page,
-          fields: widget.fields[page],
+          fields: widget.pages != null
+              ? widget.pages![page].fields
+              : widget.fields[page],
+          lightAsset: widget.pages?[page].lightAsset,
+          darkAsset: widget.pages?[page].darkAsset,
+          imageFields: widget.pages?[page].imageFields,
           controller: widget.controller,
           onFieldFocused: _ensureVisible,
           onFieldUnfocused: _clearPendingField,
         ),
-        if (page < sheetPageCount - 1) const SizedBox(height: sheetPageGap),
+        if (page < _pageCount - 1) const SizedBox(height: sheetPageGap),
       ],
     ],
   );
@@ -273,11 +284,15 @@ class _ScrollableSheetViewState extends State<ScrollableSheetView>
             _transformationController.value = Matrix4.identity()
               ..translateByDouble(
                 sheetCenterOffset(constraints.maxWidth, sheetPageWidth * scale),
-                -(widget.initialPage * (sheetPageHeight + sheetPageGap) * scale)
+                -(widget.initialPage.clamp(0, _pageCount - 1) *
+                        (sheetPageHeight + sheetPageGap) *
+                        scale)
                     .clamp(
                       0.0,
-                      (sheetContentHeight * scale - constraints.maxHeight)
-                          .clamp(0.0, double.infinity),
+                      (_contentHeight * scale - constraints.maxHeight).clamp(
+                        0.0,
+                        double.infinity,
+                      ),
                     ),
                 0,
                 1,

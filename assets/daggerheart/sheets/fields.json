@@ -1,0 +1,2020 @@
+{
+  "mainCommon": [
+    {
+      "name": "CharacterName",
+      "type": "text",
+      "x": 209.0,
+      "y": 14.0,
+      "w": 184.0,
+      "h": 11.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Pronouns",
+      "type": "text",
+      "x": 402.5,
+      "y": 14.0,
+      "w": 128.5,
+      "h": 11.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Heritage",
+      "type": "text",
+      "x": 198.5,
+      "y": 34.0,
+      "w": 165.0,
+      "h": 11.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Subclass",
+      "type": "text",
+      "x": 372.5,
+      "y": 34.0,
+      "w": 158.5,
+      "h": 11.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Level",
+      "type": "text",
+      "x": 554.0,
+      "y": 16.0,
+      "w": 35.0,
+      "h": 27.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Evasion",
+      "type": "text",
+      "x": 21.0,
+      "y": 86.0,
+      "w": 36.5,
+      "h": 28.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_ArmorScore",
+      "type": "text",
+      "x": 86.5,
+      "y": 86.0,
+      "w": 37.5,
+      "h": 28.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_ArmorSlot_1",
+      "type": "checkbox",
+      "x": 135.7,
+      "y": 78.7,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_2",
+      "type": "checkbox",
+      "x": 148.8,
+      "y": 78.7,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_3",
+      "type": "checkbox",
+      "x": 161.8,
+      "y": 78.7,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_4",
+      "type": "checkbox",
+      "x": 135.7,
+      "y": 93.1,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_5",
+      "type": "checkbox",
+      "x": 148.8,
+      "y": 93.1,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_6",
+      "type": "checkbox",
+      "x": 161.8,
+      "y": 93.1,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_7",
+      "type": "checkbox",
+      "x": 135.7,
+      "y": 107.5,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_8",
+      "type": "checkbox",
+      "x": 148.8,
+      "y": 107.5,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_9",
+      "type": "checkbox",
+      "x": 161.8,
+      "y": 107.5,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_10",
+      "type": "checkbox",
+      "x": 135.7,
+      "y": 121.8,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_11",
+      "type": "checkbox",
+      "x": 148.8,
+      "y": 121.8,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_ArmorSlot_12",
+      "type": "checkbox",
+      "x": 161.8,
+      "y": 121.8,
+      "w": 10.8,
+      "h": 12.0
+    },
+    {
+      "name": "DH_Trait_Agility",
+      "type": "text",
+      "x": 210.4,
+      "y": 81.0,
+      "w": 32.7,
+      "h": 29.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_TraitMark_Agility",
+      "type": "checkbox",
+      "x": 247.4,
+      "y": 66.3,
+      "w": 13.7,
+      "h": 13.7
+    },
+    {
+      "name": "DH_Trait_Strength",
+      "type": "text",
+      "x": 278.7,
+      "y": 81.0,
+      "w": 32.7,
+      "h": 29.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_TraitMark_Strength",
+      "type": "checkbox",
+      "x": 315.7,
+      "y": 66.3,
+      "w": 13.7,
+      "h": 13.7
+    },
+    {
+      "name": "DH_Trait_Finesse",
+      "type": "text",
+      "x": 345.2,
+      "y": 81.0,
+      "w": 32.7,
+      "h": 29.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_TraitMark_Finesse",
+      "type": "checkbox",
+      "x": 382.2,
+      "y": 66.3,
+      "w": 13.7,
+      "h": 13.7
+    },
+    {
+      "name": "DH_Trait_Instinct",
+      "type": "text",
+      "x": 411.8,
+      "y": 81.0,
+      "w": 32.7,
+      "h": 29.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_TraitMark_Instinct",
+      "type": "checkbox",
+      "x": 448.8,
+      "y": 66.3,
+      "w": 13.7,
+      "h": 13.7
+    },
+    {
+      "name": "DH_Trait_Presence",
+      "type": "text",
+      "x": 480.1,
+      "y": 81.0,
+      "w": 32.7,
+      "h": 29.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_TraitMark_Presence",
+      "type": "checkbox",
+      "x": 517.1,
+      "y": 66.3,
+      "w": 13.7,
+      "h": 13.7
+    },
+    {
+      "name": "DH_Trait_Knowledge",
+      "type": "text",
+      "x": 546.5,
+      "y": 81.0,
+      "w": 32.7,
+      "h": 29.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_TraitMark_Knowledge",
+      "type": "checkbox",
+      "x": 583.5,
+      "y": 66.3,
+      "w": 13.7,
+      "h": 13.7
+    },
+    {
+      "name": "DH_Threshold_Major",
+      "type": "text",
+      "x": 83.0,
+      "y": 190.5,
+      "w": 22.0,
+      "h": 17.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Threshold_Severe",
+      "type": "text",
+      "x": 171.0,
+      "y": 190.5,
+      "w": 22.0,
+      "h": 17.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_HP_1",
+      "type": "checkbox",
+      "x": 37.0,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_2",
+      "type": "checkbox",
+      "x": 55.77,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_3",
+      "type": "checkbox",
+      "x": 74.54,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_4",
+      "type": "checkbox",
+      "x": 93.31,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_5",
+      "type": "checkbox",
+      "x": 112.08,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_6",
+      "type": "checkbox",
+      "x": 130.85,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_7",
+      "type": "checkbox",
+      "x": 149.62,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_8",
+      "type": "checkbox",
+      "x": 168.39,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_9",
+      "type": "checkbox",
+      "x": 187.16,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_10",
+      "type": "checkbox",
+      "x": 205.93,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_11",
+      "type": "checkbox",
+      "x": 224.7,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_HP_12",
+      "type": "checkbox",
+      "x": 243.47,
+      "y": 229.6,
+      "w": 15.3,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_1",
+      "type": "checkbox",
+      "x": 62.9,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_2",
+      "type": "checkbox",
+      "x": 79.4,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_3",
+      "type": "checkbox",
+      "x": 95.9,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_4",
+      "type": "checkbox",
+      "x": 112.4,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_5",
+      "type": "checkbox",
+      "x": 128.9,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_6",
+      "type": "checkbox",
+      "x": 145.4,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_7",
+      "type": "checkbox",
+      "x": 161.9,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_8",
+      "type": "checkbox",
+      "x": 178.4,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_9",
+      "type": "checkbox",
+      "x": 194.9,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_10",
+      "type": "checkbox",
+      "x": 211.4,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_11",
+      "type": "checkbox",
+      "x": 227.9,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Stress_12",
+      "type": "checkbox",
+      "x": 244.4,
+      "y": 251.6,
+      "w": 13.4,
+      "h": 9.6
+    },
+    {
+      "name": "DH_Hope_1",
+      "type": "checkbox",
+      "x": 39.9,
+      "y": 302.3,
+      "w": 14.4,
+      "h": 14.4
+    },
+    {
+      "name": "DH_Hope_2",
+      "type": "checkbox",
+      "x": 75.3,
+      "y": 302.3,
+      "w": 14.4,
+      "h": 14.4
+    },
+    {
+      "name": "DH_Hope_3",
+      "type": "checkbox",
+      "x": 110.8,
+      "y": 302.3,
+      "w": 14.4,
+      "h": 14.4
+    },
+    {
+      "name": "DH_Hope_4",
+      "type": "checkbox",
+      "x": 146.3,
+      "y": 302.3,
+      "w": 14.4,
+      "h": 14.4
+    },
+    {
+      "name": "DH_Hope_5",
+      "type": "checkbox",
+      "x": 181.7,
+      "y": 302.3,
+      "w": 14.4,
+      "h": 14.4
+    },
+    {
+      "name": "DH_Hope_6",
+      "type": "checkbox",
+      "x": 217.2,
+      "y": 302.3,
+      "w": 14.4,
+      "h": 14.4
+    },
+    {
+      "name": "DH_Experience_1",
+      "type": "text",
+      "x": 16.0,
+      "y": 380.8,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_ExperienceMod_1",
+      "type": "text",
+      "x": 216.5,
+      "y": 380.8,
+      "w": 40.5,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Experience_2",
+      "type": "text",
+      "x": 16.0,
+      "y": 400.5,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_ExperienceMod_2",
+      "type": "text",
+      "x": 216.5,
+      "y": 400.5,
+      "w": 40.5,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Experience_3",
+      "type": "text",
+      "x": 16.0,
+      "y": 420.1,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_ExperienceMod_3",
+      "type": "text",
+      "x": 216.5,
+      "y": 420.1,
+      "w": 40.5,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Experience_4",
+      "type": "text",
+      "x": 16.0,
+      "y": 439.8,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_ExperienceMod_4",
+      "type": "text",
+      "x": 216.5,
+      "y": 439.8,
+      "w": 40.5,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Experience_5",
+      "type": "text",
+      "x": 16.0,
+      "y": 459.5,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_ExperienceMod_5",
+      "type": "text",
+      "x": 216.5,
+      "y": 459.5,
+      "w": 40.5,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_GoldHandful_1",
+      "type": "checkbox",
+      "x": 14.7,
+      "y": 512.5,
+      "w": 9.3,
+      "h": 9.3
+    },
+    {
+      "name": "DH_GoldHandful_2",
+      "type": "checkbox",
+      "x": 27.0,
+      "y": 512.5,
+      "w": 9.3,
+      "h": 9.3
+    },
+    {
+      "name": "DH_GoldHandful_3",
+      "type": "checkbox",
+      "x": 39.3,
+      "y": 512.5,
+      "w": 9.3,
+      "h": 9.3
+    },
+    {
+      "name": "DH_GoldHandful_4",
+      "type": "checkbox",
+      "x": 51.9,
+      "y": 512.5,
+      "w": 9.3,
+      "h": 9.3
+    },
+    {
+      "name": "DH_GoldHandful_5",
+      "type": "checkbox",
+      "x": 64.3,
+      "y": 512.5,
+      "w": 9.3,
+      "h": 9.3
+    },
+    {
+      "name": "DH_GoldHandful_6",
+      "type": "checkbox",
+      "x": 77.1,
+      "y": 512.5,
+      "w": 9.3,
+      "h": 9.3
+    },
+    {
+      "name": "DH_GoldHandful_7",
+      "type": "checkbox",
+      "x": 89.4,
+      "y": 512.5,
+      "w": 9.3,
+      "h": 9.3
+    },
+    {
+      "name": "DH_GoldHandful_8",
+      "type": "checkbox",
+      "x": 101.8,
+      "y": 512.5,
+      "w": 9.3,
+      "h": 9.3
+    },
+    {
+      "name": "DH_GoldHandful_9",
+      "type": "checkbox",
+      "x": 114.4,
+      "y": 512.5,
+      "w": 9.3,
+      "h": 9.3
+    },
+    {
+      "name": "DH_GoldBag_1",
+      "type": "checkbox",
+      "x": 133.8,
+      "y": 510.7,
+      "w": 10.2,
+      "h": 12.8
+    },
+    {
+      "name": "DH_GoldBag_2",
+      "type": "checkbox",
+      "x": 145.05,
+      "y": 510.7,
+      "w": 10.2,
+      "h": 12.8
+    },
+    {
+      "name": "DH_GoldBag_3",
+      "type": "checkbox",
+      "x": 156.3,
+      "y": 510.7,
+      "w": 10.2,
+      "h": 12.8
+    },
+    {
+      "name": "DH_GoldBag_4",
+      "type": "checkbox",
+      "x": 167.55,
+      "y": 510.7,
+      "w": 10.2,
+      "h": 12.8
+    },
+    {
+      "name": "DH_GoldBag_5",
+      "type": "checkbox",
+      "x": 178.8,
+      "y": 510.7,
+      "w": 10.2,
+      "h": 12.8
+    },
+    {
+      "name": "DH_GoldBag_6",
+      "type": "checkbox",
+      "x": 190.05,
+      "y": 510.7,
+      "w": 10.2,
+      "h": 12.8
+    },
+    {
+      "name": "DH_GoldBag_7",
+      "type": "checkbox",
+      "x": 201.3,
+      "y": 510.7,
+      "w": 10.2,
+      "h": 12.8
+    },
+    {
+      "name": "DH_GoldBag_8",
+      "type": "checkbox",
+      "x": 212.55,
+      "y": 510.7,
+      "w": 10.2,
+      "h": 12.8
+    },
+    {
+      "name": "DH_GoldBag_9",
+      "type": "checkbox",
+      "x": 223.8,
+      "y": 510.7,
+      "w": 10.2,
+      "h": 12.8
+    },
+    {
+      "name": "DH_GoldChest",
+      "type": "checkbox",
+      "x": 242.8,
+      "y": 508.9,
+      "w": 14.7,
+      "h": 14.7
+    },
+    {
+      "name": "DH_Proficiency_1",
+      "type": "checkbox",
+      "x": 439.0,
+      "y": 172.0,
+      "w": 9.9,
+      "h": 9.9
+    },
+    {
+      "name": "DH_Proficiency_2",
+      "type": "checkbox",
+      "x": 450.4,
+      "y": 172.0,
+      "w": 9.9,
+      "h": 9.9
+    },
+    {
+      "name": "DH_Proficiency_3",
+      "type": "checkbox",
+      "x": 461.9,
+      "y": 172.0,
+      "w": 9.9,
+      "h": 9.9
+    },
+    {
+      "name": "DH_Proficiency_4",
+      "type": "checkbox",
+      "x": 473.3,
+      "y": 172.0,
+      "w": 9.9,
+      "h": 9.9
+    },
+    {
+      "name": "DH_Proficiency_5",
+      "type": "checkbox",
+      "x": 484.8,
+      "y": 172.0,
+      "w": 9.9,
+      "h": 9.9
+    },
+    {
+      "name": "DH_Proficiency_6",
+      "type": "checkbox",
+      "x": 496.2,
+      "y": 172.0,
+      "w": 9.9,
+      "h": 9.9
+    },
+    {
+      "name": "DH_PrimaryWeapon_Name",
+      "type": "text",
+      "x": 291.0,
+      "y": 195.7,
+      "w": 123.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_PrimaryWeapon_TraitRange",
+      "type": "text",
+      "x": 417.0,
+      "y": 195.7,
+      "w": 92.5,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_PrimaryWeapon_Damage",
+      "type": "text",
+      "x": 512.5,
+      "y": 195.7,
+      "w": 82.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_PrimaryWeapon_Feature",
+      "type": "text",
+      "x": 291.0,
+      "y": 221.8,
+      "w": 303.5,
+      "h": 13.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_PrimaryWeapon_Feature2",
+      "type": "text",
+      "x": 328.0,
+      "y": 245.1,
+      "w": 266.5,
+      "h": 13.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_SecondaryWeapon_Name",
+      "type": "text",
+      "x": 291.0,
+      "y": 289.0,
+      "w": 123.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_SecondaryWeapon_TraitRange",
+      "type": "text",
+      "x": 417.0,
+      "y": 289.0,
+      "w": 92.5,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_SecondaryWeapon_Damage",
+      "type": "text",
+      "x": 512.5,
+      "y": 289.0,
+      "w": 82.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_SecondaryWeapon_Feature",
+      "type": "text",
+      "x": 291.0,
+      "y": 315.1,
+      "w": 303.5,
+      "h": 13.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_SecondaryWeapon_Feature2",
+      "type": "text",
+      "x": 328.0,
+      "y": 339.1,
+      "w": 266.5,
+      "h": 13.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Armor_Name",
+      "type": "text",
+      "x": 291.0,
+      "y": 393.0,
+      "w": 157.5,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Armor_Thresholds",
+      "type": "text",
+      "x": 451.5,
+      "y": 393.0,
+      "w": 80.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Armor_BaseScore",
+      "type": "text",
+      "x": 534.5,
+      "y": 393.0,
+      "w": 60.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Armor_Feature",
+      "type": "text",
+      "x": 291.0,
+      "y": 419.6,
+      "w": 303.5,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Armor_Feature2",
+      "type": "text",
+      "x": 328.0,
+      "y": 442.6,
+      "w": 266.5,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Inventory_1",
+      "type": "text",
+      "x": 291.0,
+      "y": 491.2,
+      "w": 303.5,
+      "h": 12.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Inventory_2",
+      "type": "text",
+      "x": 291.0,
+      "y": 509.0,
+      "w": 303.5,
+      "h": 15.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Inventory_3",
+      "type": "text",
+      "x": 291.0,
+      "y": 529.2,
+      "w": 303.5,
+      "h": 15.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Inventory_4",
+      "type": "text",
+      "x": 291.0,
+      "y": 549.4,
+      "w": 303.5,
+      "h": 15.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Inventory_5",
+      "type": "text",
+      "x": 291.0,
+      "y": 569.6,
+      "w": 303.5,
+      "h": 15.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon1_Primary",
+      "type": "checkbox",
+      "x": 498.1,
+      "y": 605.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_InvWeapon1_Secondary",
+      "type": "checkbox",
+      "x": 548.0,
+      "y": 605.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_InvWeapon1_Name",
+      "type": "text",
+      "x": 291.0,
+      "y": 617.0,
+      "w": 123.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon1_TraitRange",
+      "type": "text",
+      "x": 417.0,
+      "y": 617.0,
+      "w": 92.5,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon1_Damage",
+      "type": "text",
+      "x": 512.5,
+      "y": 617.0,
+      "w": 82.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon1_Feature",
+      "type": "text",
+      "x": 291.0,
+      "y": 643.1,
+      "w": 303.5,
+      "h": 13.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon1_Feature2",
+      "type": "text",
+      "x": 328.0,
+      "y": 665.1,
+      "w": 266.5,
+      "h": 13.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon2_Primary",
+      "type": "checkbox",
+      "x": 498.1,
+      "y": 696.1,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_InvWeapon2_Secondary",
+      "type": "checkbox",
+      "x": 548.0,
+      "y": 696.1,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_InvWeapon2_Name",
+      "type": "text",
+      "x": 291.0,
+      "y": 707.5,
+      "w": 123.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon2_TraitRange",
+      "type": "text",
+      "x": 417.0,
+      "y": 707.5,
+      "w": 92.5,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon2_Damage",
+      "type": "text",
+      "x": 512.5,
+      "y": 707.5,
+      "w": 82.0,
+      "h": 13.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon2_Feature",
+      "type": "text",
+      "x": 291.0,
+      "y": 733.7,
+      "w": 303.5,
+      "h": 13.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_InvWeapon2_Feature2",
+      "type": "text",
+      "x": 328.0,
+      "y": 755.7,
+      "w": 266.5,
+      "h": 13.0,
+      "multiline": false,
+      "align": 0
+    }
+  ],
+  "mainExtras": {
+    "blank": [
+      {
+        "name": "DH_HopeFeature",
+        "type": "text",
+        "x": 16.0,
+        "y": 326.0,
+        "w": 240.0,
+        "h": 15.0,
+        "multiline": false,
+        "align": 0
+      },
+      {
+        "name": "DH_ClassFeature",
+        "type": "text",
+        "x": 14.0,
+        "y": 566.0,
+        "w": 244.0,
+        "h": 190.0,
+        "multiline": true,
+        "align": 0
+      }
+    ],
+    "guardian": [
+      {
+        "name": "DH_UnstoppableDie",
+        "type": "text",
+        "x": 214.0,
+        "y": 603.0,
+        "w": 21.6,
+        "h": 21.6,
+        "multiline": false,
+        "align": 1
+      }
+    ],
+    "seraph": [
+      {
+        "name": "DH_PrayerDie_1",
+        "type": "text",
+        "x": 164.0,
+        "y": 584.5,
+        "w": 22.0,
+        "h": 22.0,
+        "multiline": false,
+        "align": 1
+      },
+      {
+        "name": "DH_PrayerDie_2",
+        "type": "text",
+        "x": 216.0,
+        "y": 584.5,
+        "w": 22.0,
+        "h": 22.0,
+        "multiline": false,
+        "align": 1
+      },
+      {
+        "name": "DH_PrayerDie_3",
+        "type": "text",
+        "x": 164.0,
+        "y": 647.5,
+        "w": 22.0,
+        "h": 22.0,
+        "multiline": false,
+        "align": 1
+      },
+      {
+        "name": "DH_PrayerDie_4",
+        "type": "text",
+        "x": 216.0,
+        "y": 647.5,
+        "w": 22.0,
+        "h": 22.0,
+        "multiline": false,
+        "align": 1
+      },
+      {
+        "name": "DH_PrayerDie_5",
+        "type": "text",
+        "x": 164.0,
+        "y": 710.5,
+        "w": 22.0,
+        "h": 22.0,
+        "multiline": false,
+        "align": 1
+      },
+      {
+        "name": "DH_PrayerDie_6",
+        "type": "text",
+        "x": 216.0,
+        "y": 710.5,
+        "w": 22.0,
+        "h": 22.0,
+        "multiline": false,
+        "align": 1
+      }
+    ],
+    "wizard": [
+      {
+        "name": "DH_StrangePatterns",
+        "type": "text",
+        "x": 201.0,
+        "y": 661.0,
+        "w": 47.5,
+        "h": 14.5,
+        "multiline": false,
+        "align": 1
+      }
+    ]
+  },
+  "guide": [
+    {
+      "name": "DH_Background_1",
+      "type": "text",
+      "x": 23.5,
+      "y": 285.5,
+      "w": 265.0,
+      "h": 31.0,
+      "multiline": true,
+      "align": 0
+    },
+    {
+      "name": "DH_Background_2",
+      "type": "text",
+      "x": 23.5,
+      "y": 333.5,
+      "w": 265.0,
+      "h": 36.0,
+      "multiline": true,
+      "align": 0
+    },
+    {
+      "name": "DH_Background_3",
+      "type": "text",
+      "x": 23.5,
+      "y": 394.5,
+      "w": 265.0,
+      "h": 27.0,
+      "multiline": true,
+      "align": 0
+    },
+    {
+      "name": "DH_Connection_1",
+      "type": "text",
+      "x": 330.5,
+      "y": 279.5,
+      "w": 256.0,
+      "h": 37.0,
+      "multiline": true,
+      "align": 0
+    },
+    {
+      "name": "DH_Connection_2",
+      "type": "text",
+      "x": 330.5,
+      "y": 333.5,
+      "w": 256.0,
+      "h": 36.0,
+      "multiline": true,
+      "align": 0
+    },
+    {
+      "name": "DH_Connection_3",
+      "type": "text",
+      "x": 330.5,
+      "y": 387.5,
+      "w": 256.0,
+      "h": 33.0,
+      "multiline": true,
+      "align": 0
+    },
+    {
+      "name": "DH_Tier2_Traits_1",
+      "type": "checkbox",
+      "x": 15.6,
+      "y": 547.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier2_Traits_2",
+      "type": "checkbox",
+      "x": 27.0,
+      "y": 547.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier2_Traits_3",
+      "type": "checkbox",
+      "x": 38.4,
+      "y": 547.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier2_HP_1",
+      "type": "checkbox",
+      "x": 27.0,
+      "y": 567.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier2_HP_2",
+      "type": "checkbox",
+      "x": 38.4,
+      "y": 567.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier2_Stress_1",
+      "type": "checkbox",
+      "x": 27.0,
+      "y": 579.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier2_Stress_2",
+      "type": "checkbox",
+      "x": 38.4,
+      "y": 579.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier2_Exp_1",
+      "type": "checkbox",
+      "x": 38.4,
+      "y": 592.0,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier2_DomainCard_1",
+      "type": "checkbox",
+      "x": 38.4,
+      "y": 612.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier2_Evasion_1",
+      "type": "checkbox",
+      "x": 38.4,
+      "y": 641.0,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Traits_1",
+      "type": "checkbox",
+      "x": 219.9,
+      "y": 547.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Traits_2",
+      "type": "checkbox",
+      "x": 231.3,
+      "y": 547.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Traits_3",
+      "type": "checkbox",
+      "x": 242.7,
+      "y": 547.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_HP_1",
+      "type": "checkbox",
+      "x": 231.3,
+      "y": 567.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_HP_2",
+      "type": "checkbox",
+      "x": 242.7,
+      "y": 567.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Stress_1",
+      "type": "checkbox",
+      "x": 231.3,
+      "y": 579.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Stress_2",
+      "type": "checkbox",
+      "x": 242.7,
+      "y": 579.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Exp_1",
+      "type": "checkbox",
+      "x": 242.7,
+      "y": 592.0,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_DomainCard_1",
+      "type": "checkbox",
+      "x": 242.7,
+      "y": 612.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Evasion_1",
+      "type": "checkbox",
+      "x": 242.7,
+      "y": 640.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Subclass_1",
+      "type": "checkbox",
+      "x": 242.7,
+      "y": 652.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Proficiency_1",
+      "type": "checkbox",
+      "x": 230.4,
+      "y": 677.6,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Proficiency_2",
+      "type": "checkbox",
+      "x": 241.7,
+      "y": 677.6,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Multiclass_1",
+      "type": "checkbox",
+      "x": 230.4,
+      "y": 693.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier3_Multiclass_2",
+      "type": "checkbox",
+      "x": 241.7,
+      "y": 693.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Traits_1",
+      "type": "checkbox",
+      "x": 426.7,
+      "y": 547.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Traits_2",
+      "type": "checkbox",
+      "x": 438.1,
+      "y": 547.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Traits_3",
+      "type": "checkbox",
+      "x": 449.5,
+      "y": 547.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_HP_1",
+      "type": "checkbox",
+      "x": 438.1,
+      "y": 567.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_HP_2",
+      "type": "checkbox",
+      "x": 449.5,
+      "y": 567.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Stress_1",
+      "type": "checkbox",
+      "x": 438.1,
+      "y": 579.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Stress_2",
+      "type": "checkbox",
+      "x": 449.5,
+      "y": 579.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Exp_1",
+      "type": "checkbox",
+      "x": 449.5,
+      "y": 592.0,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_DomainCard_1",
+      "type": "checkbox",
+      "x": 449.5,
+      "y": 612.3,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Evasion_1",
+      "type": "checkbox",
+      "x": 449.5,
+      "y": 640.5,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Subclass_1",
+      "type": "checkbox",
+      "x": 449.5,
+      "y": 652.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Proficiency_1",
+      "type": "checkbox",
+      "x": 437.2,
+      "y": 677.6,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Proficiency_2",
+      "type": "checkbox",
+      "x": 448.5,
+      "y": 677.6,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Multiclass_1",
+      "type": "checkbox",
+      "x": 437.2,
+      "y": 693.8,
+      "w": 9.2,
+      "h": 9.2
+    },
+    {
+      "name": "DH_Tier4_Multiclass_2",
+      "type": "checkbox",
+      "x": 448.5,
+      "y": 693.8,
+      "w": 9.2,
+      "h": 9.2
+    }
+  ],
+  "rangerCompanion": [
+    {
+      "name": "DH_Comp_Name",
+      "type": "text",
+      "x": 180.0,
+      "y": 62.0,
+      "w": 292.0,
+      "h": 17.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Comp_Evasion",
+      "type": "text",
+      "x": 502.0,
+      "y": 27.0,
+      "w": 36.0,
+      "h": 28.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Comp_Exp_1",
+      "type": "text",
+      "x": 172.5,
+      "y": 349.1,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Comp_ExpMod_1",
+      "type": "text",
+      "x": 372.5,
+      "y": 349.1,
+      "w": 41.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Comp_Exp_2",
+      "type": "text",
+      "x": 172.5,
+      "y": 368.8,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Comp_ExpMod_2",
+      "type": "text",
+      "x": 372.5,
+      "y": 368.8,
+      "w": 41.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Comp_Exp_3",
+      "type": "text",
+      "x": 172.5,
+      "y": 388.4,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Comp_ExpMod_3",
+      "type": "text",
+      "x": 372.5,
+      "y": 388.4,
+      "w": 41.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Comp_Exp_4",
+      "type": "text",
+      "x": 172.5,
+      "y": 408.1,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Comp_ExpMod_4",
+      "type": "text",
+      "x": 372.5,
+      "y": 408.1,
+      "w": 41.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Comp_Exp_5",
+      "type": "text",
+      "x": 172.5,
+      "y": 427.8,
+      "w": 196.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Comp_ExpMod_5",
+      "type": "text",
+      "x": 372.5,
+      "y": 427.8,
+      "w": 41.0,
+      "h": 14.0,
+      "multiline": false,
+      "align": 1
+    },
+    {
+      "name": "DH_Comp_Attack",
+      "type": "text",
+      "x": 161.0,
+      "y": 521.0,
+      "w": 77.5,
+      "h": 14.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Comp_Range",
+      "type": "text",
+      "x": 241.0,
+      "y": 521.0,
+      "w": 91.5,
+      "h": 14.5,
+      "multiline": false,
+      "align": 0
+    },
+    {
+      "name": "DH_Comp_Die_d6",
+      "type": "checkbox",
+      "x": 171.9,
+      "y": 554.8,
+      "w": 8.0,
+      "h": 8.0
+    },
+    {
+      "name": "DH_Comp_Die_d8",
+      "type": "checkbox",
+      "x": 209.4,
+      "y": 555.0,
+      "w": 8.0,
+      "h": 8.0
+    },
+    {
+      "name": "DH_Comp_Die_d10",
+      "type": "checkbox",
+      "x": 245.9,
+      "y": 554.8,
+      "w": 8.0,
+      "h": 8.0
+    },
+    {
+      "name": "DH_Comp_Die_d12",
+      "type": "checkbox",
+      "x": 283.4,
+      "y": 555.0,
+      "w": 8.0,
+      "h": 8.0
+    },
+    {
+      "name": "DH_Comp_Stress_1",
+      "type": "checkbox",
+      "x": 207.5,
+      "y": 653.0,
+      "w": 19.3,
+      "h": 10.5
+    },
+    {
+      "name": "DH_Comp_Stress_2",
+      "type": "checkbox",
+      "x": 227.7,
+      "y": 653.0,
+      "w": 19.3,
+      "h": 10.5
+    },
+    {
+      "name": "DH_Comp_Stress_3",
+      "type": "checkbox",
+      "x": 247.8,
+      "y": 653.0,
+      "w": 19.3,
+      "h": 10.5
+    },
+    {
+      "name": "DH_Comp_Stress_4",
+      "type": "checkbox",
+      "x": 268.2,
+      "y": 653.0,
+      "w": 19.3,
+      "h": 10.5
+    },
+    {
+      "name": "DH_Comp_Stress_5",
+      "type": "checkbox",
+      "x": 288.3,
+      "y": 653.0,
+      "w": 19.3,
+      "h": 10.5
+    },
+    {
+      "name": "DH_Comp_Stress_6",
+      "type": "checkbox",
+      "x": 308.5,
+      "y": 653.0,
+      "w": 19.3,
+      "h": 10.5
+    },
+    {
+      "name": "DH_Comp_Train_Intelligent_1",
+      "type": "checkbox",
+      "x": 352.8,
+      "y": 550.0,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Intelligent_2",
+      "type": "checkbox",
+      "x": 365.1,
+      "y": 550.0,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Intelligent_3",
+      "type": "checkbox",
+      "x": 377.4,
+      "y": 550.0,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_LightInDark_1",
+      "type": "checkbox",
+      "x": 377.4,
+      "y": 580.7,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_LightInDarkHope_1",
+      "type": "checkbox",
+      "x": 458.3,
+      "y": 581.0,
+      "w": 10.8,
+      "h": 10.8
+    },
+    {
+      "name": "DH_Comp_Train_CreatureComfort_1",
+      "type": "checkbox",
+      "x": 377.4,
+      "y": 601.0,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Armored_1",
+      "type": "checkbox",
+      "x": 377.5,
+      "y": 633.1,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Vicious_1",
+      "type": "checkbox",
+      "x": 352.8,
+      "y": 663.4,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Vicious_2",
+      "type": "checkbox",
+      "x": 365.1,
+      "y": 663.4,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Vicious_3",
+      "type": "checkbox",
+      "x": 377.4,
+      "y": 663.4,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Resilient_1",
+      "type": "checkbox",
+      "x": 352.8,
+      "y": 686.1,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Resilient_2",
+      "type": "checkbox",
+      "x": 365.1,
+      "y": 686.1,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Resilient_3",
+      "type": "checkbox",
+      "x": 377.4,
+      "y": 686.1,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Bonded_1",
+      "type": "checkbox",
+      "x": 377.4,
+      "y": 700.2,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Aware_1",
+      "type": "checkbox",
+      "x": 352.8,
+      "y": 748.4,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Aware_2",
+      "type": "checkbox",
+      "x": 365.1,
+      "y": 748.4,
+      "w": 10.0,
+      "h": 10.0
+    },
+    {
+      "name": "DH_Comp_Train_Aware_3",
+      "type": "checkbox",
+      "x": 377.4,
+      "y": 748.4,
+      "w": 10.0,
+      "h": 10.0
+    }
+  ]
+}

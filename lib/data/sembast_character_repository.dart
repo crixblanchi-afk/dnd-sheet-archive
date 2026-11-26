@@ -7,6 +7,7 @@ import '../models/character.dart';
 import '../models/character_edits.dart';
 import '../models/character_merge.dart';
 import '../models/character_version.dart';
+import '../models/game_system.dart';
 import '../models/image_payload.dart';
 import '../models/snapshot_policy.dart';
 import '../sync/archive_sync_tracker.dart';
@@ -66,15 +67,21 @@ class SembastCharacterRepository extends CharacterRepository {
       );
 
   @override
-  Future<Character> createCharacter(String name) async {
+  Future<Character> createCharacter(
+    String name, {
+    GameSystem system = GameSystem.dnd5e,
+    DaggerheartClass? daggerheartClass,
+  }) async {
     final now = _now().toUtc();
+    final trimmed = name.trim();
     final character = Character(
       id: _uuid.v4(),
-      name: name.trim(),
+      name: trimmed,
       createdAt: now,
       updatedAt: now,
       locked: false,
-      fields: {'CharacterName': name.trim()},
+      system: system,
+      daggerheartClass: daggerheartClass,
     );
     character.rename(character.name);
     stampCharacterChanges(before: null, after: character, now: now);

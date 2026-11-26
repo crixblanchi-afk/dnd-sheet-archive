@@ -2,6 +2,7 @@ import 'package:dnd_sheet_archive/controllers/sheet_controller.dart';
 import 'package:dnd_sheet_archive/data/character_repository.dart';
 import 'package:dnd_sheet_archive/models/character.dart';
 import 'package:dnd_sheet_archive/models/character_version.dart';
+import 'package:dnd_sheet_archive/models/game_system.dart';
 import 'package:dnd_sheet_archive/models/sheet_field.dart';
 import 'package:dnd_sheet_archive/widgets/checkbox_overlay.dart';
 import 'package:flutter/material.dart';
@@ -236,7 +237,11 @@ class _FakeRepository extends CharacterRepository {
   Future<void> createSnapshot(Character character, String reason) async {}
 
   @override
-  Future<Character> createCharacter(String name) => throw UnimplementedError();
+  Future<Character> createCharacter(
+    String name, {
+    GameSystem system = GameSystem.dnd5e,
+    DaggerheartClass? daggerheartClass,
+  }) => throw UnimplementedError();
 
   @override
   Future<void> deleteCharacter(String id) => throw UnimplementedError();

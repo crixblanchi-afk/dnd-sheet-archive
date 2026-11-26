@@ -84,6 +84,8 @@ Character mergeCharacters(Character a, Character b) {
     createdAt: a.createdAt.isBefore(b.createdAt) ? a.createdAt : b.createdAt,
     updatedAt: _latest(a.updatedAt, b.updatedAt),
     locked: a.locked,
+    system: a.system,
+    daggerheartClass: a.daggerheartClass ?? b.daggerheartClass,
     clockFloor: floor,
   );
   final clocks = <String, DateTime>{};

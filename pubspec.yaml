@@ -42,6 +42,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/sheet/
+    - assets/daggerheart/sheets/
+    - assets/daggerheart/cards/
     - assets/fonts/RobotoSlab-Regular.ttf
     - assets/fonts/licenses/
   fonts:

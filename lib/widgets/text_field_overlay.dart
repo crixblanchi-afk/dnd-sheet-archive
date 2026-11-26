@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 
 import '../controllers/sheet_controller.dart';
-import '../models/character.dart';
 import '../models/sheet_field.dart';
 import '../theme/sheet_palette.dart';
 import 'comment_dialog.dart';
@@ -69,9 +68,10 @@ class _TextFieldOverlayState extends State<TextFieldOverlay> {
   _FitKey? _fitKey;
   TextStyle? _fitStyle;
 
-  /// I due campi nome seguono il nome del personaggio invece di aspettare una
+  /// I campi nome seguono il nome del personaggio invece di aspettare una
   /// notifica dell'intero controller, che ricostruirebbe tutta la pagina.
-  bool get _followsName => characterNameFields.contains(widget.field.name);
+  bool get _followsName =>
+      widget.sheetController.character.nameFields.contains(widget.field.name);
 
   @override
   void initState() {

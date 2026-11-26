@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import '../data/character_repository.dart';
 import '../models/character.dart';
 import '../models/character_edits.dart';
+import '../models/daggerheart_card.dart';
 import '../models/sheet_field.dart';
 
 class SheetController extends ChangeNotifier with WidgetsBindingObserver {
@@ -72,7 +73,7 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
 
   void setText(String name, String value) {
     if (locked) return;
-    if (characterNameFields.contains(name)) {
+    if (character.nameFields.contains(name)) {
       character.rename(value);
       nameState.value = character.name;
       _changed();
@@ -84,6 +85,41 @@ class SheetController extends ChangeNotifier with WidgetsBindingObserver {
       character.fields[name] = value;
     }
     _changed();
+  }
+
+  DaggerheartCardState cardStateFor(String cardId) =>
+      DaggerheartCardState.fromStored(
+        character.fields[daggerheartCardFieldKey(cardId)],
+      );
+
+  Map<String, DaggerheartCardState> get selectedCards =>
+      selectedDaggerheartCardsFromFields(character.fields);
+
+  int get selectedCardCount => selectedCards.length;
+
+  void setCardState(String cardId, DaggerheartCardState state) {
+    if (locked) return;
+    final key = daggerheartCardFieldKey(cardId);
+    final stored = state.toStored();
+    if (stored == null) {
+      if (!character.fields.containsKey(key)) return;
+      character.fields.remove(key);
+    } else {
+      if (character.fields[key] == stored) return;
+      character.fields[key] = stored;
+    }
+    _changed();
+    notifyListeners();
+  }
+
+  void toggleCard(String cardId) {
+    final current = cardStateFor(cardId);
+    setCardState(
+      cardId,
+      current.isSelected
+          ? DaggerheartCardState.none
+          : DaggerheartCardState.loadout,
+    );
   }
 
   void setCheckbox(String name, SheetCheckboxValue value) {
