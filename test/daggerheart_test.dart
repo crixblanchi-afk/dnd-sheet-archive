@@ -486,7 +486,7 @@ void main() {
       expect(find.text('Compagno'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      // Jump to Tratti: empty experience rows are hidden until added, Gold steppers update checkboxes.
+      // Jump to Tratti: empty experience rows are hidden until added, Gold slots are selectable.
       await tester.ensureVisible(find.text('Tratti'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Tratti'));
@@ -501,12 +501,15 @@ void main() {
       expect(find.byKey(const ValueKey('DH_Experience_1')), findsOneWidget);
 
       await tester.ensureVisible(
-        find.byKey(const ValueKey('dh-gold-handful-inc')),
+        find.byKey(const ValueKey('DH_GoldHandful_1')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('dh-gold-handful-inc')));
+      await tester.tap(find.byKey(const ValueKey('DH_GoldHandful_1')));
       await tester.pumpAndSettle();
       expect(character.fields['DH_GoldHandful_1'], isTrue);
+      await tester.tap(find.byKey(const ValueKey('DH_GoldChest')));
+      await tester.pumpAndSettle();
+      expect(character.fields['DH_GoldChest'], isTrue);
 
       // Jump to Zaino: Inventory is a single multiline box synced with DH_Inventory_1..5.
       await tester.ensureVisible(find.text('Zaino'));
